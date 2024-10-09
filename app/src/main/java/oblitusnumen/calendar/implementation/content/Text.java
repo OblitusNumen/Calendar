@@ -1,5 +1,5 @@
 package oblitusnumen.calendar.implementation.content;
 
-public class Text extends Content {
+public class Text implements Content {
     public String text;
 }

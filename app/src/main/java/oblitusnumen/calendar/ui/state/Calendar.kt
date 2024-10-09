@@ -6,9 +6,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
@@ -16,69 +18,81 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import oblitusnumen.calendar.StringLocale
 import java.time.LocalDate
-import java.util.Calendar
-import java.util.Date
 
 class Calendar
 
 @Composable
 fun CalendarTab() {
     val now = LocalDate.now()
-    val dayOfMonthNow = now.dayOfMonth
-    Column(Modifier.verticalScroll(ScrollState(1))) {
-        var then = now.withDayOfMonth(1)
-        repeat(4) {
-            DisplayMonth(then, now.month.value, dayOfMonthNow)
-            then = then.plusMonths(1)
-            Log.v("calendar", "month" + then.dayOfMonth)
-        }
+    val listState = rememberLazyListState(Int.MAX_VALUE / 2)
+    LazyColumn(
+        state = listState,
+        modifier = Modifier
+    ) {
+        items(Int.MAX_VALUE, itemContent = {
+            DisplayMonth(now.withDayOfMonth(1).plusMonths((it - Int.MAX_VALUE / 2).toLong()))
+        })
     }
 }
 
 @Composable
 fun DisplayMonth(
-    then: LocalDate,
-    monthNow: Int,
-    dayOfMonthNow: Int
+    then: LocalDate
 ) {
-    val blockW = LocalConfiguration.current.screenWidthDp.dp.div(7)
-    val blockH = blockW.times(1.2f)
-    Log.v("calendar", "day" + then.dayOfWeek.value)
-    var dayOfWeek = (then.dayOfWeek.value + 6) % 7 + 1
-    var dayOfMonth = -dayOfWeek + 2
-    Text(StringLocale.monthName[then.month.value - 1] + ", " + then.year)
-    while (dayOfMonth <= then.month.maxLength()) {
-        Row {
-            while (dayOfMonth < 1) {
-                Box(
-                    Modifier.size(blockW, blockH)
-                ) {
+    Column {
+        val blockW = LocalConfiguration.current.screenWidthDp.dp.div(7)
+        val blockH = blockW.times(1.2f)
+        Log.v("calendar", "day" + then.dayOfWeek.value)
+        var dayOfWeek = (then.dayOfWeek.value + 6) % 7 + 1
+        var dayOfMonth = -dayOfWeek + 2
+        Text(StringLocale.monthName[then.month.value - 1] + ", " + then.year)
+        val monthLen = then.month.length(then.isLeapYear)
+        Log.v("calendar", "mLen:" + monthLen + "m:" + StringLocale.monthName[then.month.value - 1] + ", " + then.year)
+        while (dayOfMonth <= monthLen) {
+            Row {
+                while (dayOfMonth < 1) {
+                    Box(
+                        Modifier.size(blockW, blockH)
+                    ) {
+                    }
+                    dayOfMonth++
                 }
-                dayOfMonth++
-            }
-            while (dayOfWeek <= 7) {
-                var border = Modifier.size(blockW, blockH)
-                    .border(
-                        BorderStroke(
-                            2.dp, MaterialTheme.colorScheme.primary
-                        )
-                    )
-                var col: Color
-                if (monthNow == then.month.value && dayOfMonth == dayOfMonthNow) {
-                    border = border.background(MaterialTheme.colorScheme.primary)
-                    col = MaterialTheme.colorScheme.background
-                } else {
-                    col = MaterialTheme.colorScheme.primary
-                }
-                Box(border) {
-                    Text("" + dayOfMonth, Modifier, col)
-                }
+                while (dayOfWeek <= 7) {
+                    DisplayDay(blockW, blockH, then, dayOfMonth)
 
-                dayOfMonth++
-                dayOfWeek++
-                if (dayOfMonth > then.month.maxLength()) break
+                    dayOfMonth++
+                    dayOfWeek++
+                    if (dayOfMonth > monthLen) break
+                }
+                dayOfWeek = 1
             }
-            dayOfWeek = 1
         }
+    }
+}
+
+@Composable
+fun DisplayDay(
+    blockW: Dp,
+    blockH: Dp,
+    then: LocalDate,
+    dayOfMonth: Int
+) {
+    val now = LocalDate.now()
+    var border = Modifier.size(blockW, blockH)
+        .border(
+            BorderStroke(
+                2.dp, MaterialTheme.colorScheme.primary
+            )
+        )
+    val col: Color
+
+    if (now.year == then.year && now.month == then.month && dayOfMonth == now.dayOfMonth) {
+        border = border.background(MaterialTheme.colorScheme.primary)
+        col = MaterialTheme.colorScheme.background
+    } else {
+        col = MaterialTheme.colorScheme.primary
+    }
+    Box(border) {
+        Text("" + dayOfMonth, Modifier, col)
     }
 }

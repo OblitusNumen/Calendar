@@ -8,9 +8,10 @@ import java.util.UUID;
 
 public class Entry {
     public final UUID uid;
-    public String name = "";
-    public List<Tag> tags = new ArrayList<>();
-    public List<Content> contents = new ArrayList<>();
+    String name = "";
+    List<Tag> tags = new ArrayList<>();
+    CalendarDate calendarDate = new CalendarDate();
+    List<Content> contents = new ArrayList<>();
 
     public Entry(UUID uid) {
         this.uid = uid;

@@ -1,4 +1,4 @@
 package oblitusnumen.calendar.implementation.content;
 
-public class Content {
+public interface Content {
 }
