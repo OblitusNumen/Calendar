@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -26,8 +27,10 @@ class Calendar
 @Composable
 fun CalendarTab(calendarViewModel: MainActivity.CalendarViewModel) {
     val now = LocalDate.now()
+    if (calendarViewModel.calendarLazyListState == null)
+        calendarViewModel.calendarLazyListState = rememberLazyListState(calendarViewModel.listState)
     LazyColumn(
-        state = rememberLazyListState(calendarViewModel.listState),
+        state = calendarViewModel.calendarLazyListState!!,
         modifier = Modifier
     ) {
         items(Int.MAX_VALUE, itemContent = {

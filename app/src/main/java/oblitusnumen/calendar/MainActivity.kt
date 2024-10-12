@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.*
 import androidx.compose.runtime.getValue
@@ -13,12 +14,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import oblitusnumen.calendar.ui.state.CalendarTab
 import oblitusnumen.calendar.ui.theme.CalendarTheme
 import java.time.LocalDate
 
 class MainActivity : ComponentActivity() {
-    val calendarViewModel = CalendarViewModel()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 //        setContent {
@@ -31,6 +32,7 @@ class MainActivity : ComponentActivity() {
 //        }
         setContent {
             CalendarTheme {
+                val calendarViewModel = viewModel { CalendarViewModel() }
                 // A surface container using the 'background' color from the theme
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                     when (calendarViewModel.state) {
@@ -59,6 +61,7 @@ class MainActivity : ComponentActivity() {
 
         var listState by mutableStateOf(Int.MAX_VALUE / 2)
         var date: LocalDate? = null
+        var calendarLazyListState: LazyListState? = null
         var state by mutableStateOf(Screen.CALENDAR)
     }
 
