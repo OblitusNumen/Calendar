@@ -14,10 +14,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import oblitusnumen.calendar.MainActivity
-import oblitusnumen.calendar.StringLocale
+import oblitusnumen.calendar.R
 import java.time.LocalDate
 
 class Calendar
@@ -26,7 +27,7 @@ class Calendar
 fun CalendarTab(calendarViewModel: MainActivity.CalendarViewModel) {
     val now = LocalDate.now()
     LazyColumn(
-        state = rememberLazyListState(calendarViewModel.listState.value),
+        state = rememberLazyListState(calendarViewModel.listState),
         modifier = Modifier
     ) {
         items(Int.MAX_VALUE, itemContent = {
@@ -46,9 +47,9 @@ fun DisplayMonth(
         Log.v("calendar", "day" + then.dayOfWeek.value)
         var dayOfWeek = (then.dayOfWeek.value + 6) % 7 + 1
         var dayOfMonth = -dayOfWeek + 2
-        Text(StringLocale.monthName[then.month.value - 1] + ", " + then.year)
+        Text(stringArrayResource(R.array.monthNames)[then.month.value - 1] + ", " + then.year)
         val monthLen = then.month.length(then.isLeapYear)
-        Log.v("calendar", "mLen:" + monthLen + "m:" + StringLocale.monthName[then.month.value - 1] + ", " + then.year)
+        Log.v("calendar", "mLen:" + monthLen + "m:" + stringArrayResource(R.array.monthNames)[then.month.value - 1] + ", " + then.year)
         while (dayOfMonth <= monthLen) {
             Row {
                 while (dayOfMonth < 1) {
