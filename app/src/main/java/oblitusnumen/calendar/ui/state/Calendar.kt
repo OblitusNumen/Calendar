@@ -16,28 +16,29 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import oblitusnumen.calendar.MainActivity
 import oblitusnumen.calendar.StringLocale
 import java.time.LocalDate
 
 class Calendar
 
 @Composable
-fun CalendarTab() {
+fun CalendarTab(calendarViewModel: MainActivity.CalendarViewModel) {
     val now = LocalDate.now()
-    val listState = rememberLazyListState(Int.MAX_VALUE / 2)
     LazyColumn(
-        state = listState,
+        state = rememberLazyListState(calendarViewModel.listState.value),
         modifier = Modifier
     ) {
         items(Int.MAX_VALUE, itemContent = {
-            DisplayMonth(now.withDayOfMonth(1).plusMonths((it - Int.MAX_VALUE / 2).toLong()))
+            DisplayMonth(now.withDayOfMonth(1).plusMonths((it - Int.MAX_VALUE / 2).toLong()), calendarViewModel)
         })
     }
 }
 
 @Composable
 fun DisplayMonth(
-    then: LocalDate
+    then: LocalDate,
+    calendarViewModel: MainActivity.CalendarViewModel
 ) {
     Column {
         val blockW = LocalConfiguration.current.screenWidthDp.dp.div(7)
@@ -58,7 +59,7 @@ fun DisplayMonth(
                     dayOfMonth++
                 }
                 while (dayOfWeek <= 7) {
-                    DisplayDay(blockW, blockH, then, dayOfMonth)
+                    DisplayDay(blockW, blockH, then, dayOfMonth, calendarViewModel)
 
                     dayOfMonth++
                     dayOfWeek++
@@ -75,10 +76,11 @@ fun DisplayDay(
     blockW: Dp,
     blockH: Dp,
     then: LocalDate,
-    dayOfMonth: Int
+    dayOfMonth: Int,
+    calendarViewModel: MainActivity.CalendarViewModel
 ) {
     val now = LocalDate.now()
-    var border = Modifier.size(blockW, blockH)
+    var modifier = Modifier.size(blockW, blockH)
         .border(
             BorderStroke(
                 2.dp, MaterialTheme.colorScheme.primary
@@ -87,12 +89,16 @@ fun DisplayDay(
     val col: Color
 
     if (now.year == then.year && now.month == then.month && dayOfMonth == now.dayOfMonth) {
-        border = border.background(MaterialTheme.colorScheme.primary)
+        modifier = modifier.background(MaterialTheme.colorScheme.primary)
         col = MaterialTheme.colorScheme.background
     } else {
         col = MaterialTheme.colorScheme.primary
     }
-    Box(border) {
+    Box(modifier.clickable(onClick = {
+        Log.v("calendar", "clicked ${then.year}.${then.month}.$dayOfMonth")
+        calendarViewModel.date = then.withDayOfMonth(dayOfMonth)
+        calendarViewModel.setState0(MainActivity.Screen.DATE)
+    })) {
         Text("" + dayOfMonth, Modifier, col)
     }
 }
