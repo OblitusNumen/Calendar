@@ -3,23 +3,30 @@ package oblitusnumen.calendar
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.*
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import oblitusnumen.calendar.implementation.data.CalendarDate
+import oblitusnumen.calendar.implementation.data.DataManager
+import oblitusnumen.calendar.implementation.data.Entry
+import oblitusnumen.calendar.ui.model.CalendarTab
+import oblitusnumen.calendar.ui.model.DateScreen
+import oblitusnumen.calendar.ui.model.Screen
 import oblitusnumen.calendar.ui.state.CalendarTab
 import oblitusnumen.calendar.ui.theme.CalendarTheme
-import java.time.LocalDate
+import java.time.LocalDateTime
+import java.util.*
 
 class MainActivity : ComponentActivity() {
+    private val dataManager = DataManager(this)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 //        setContent {
@@ -30,19 +37,65 @@ class MainActivity : ComponentActivity() {
 //                modifier = Modifier.clickable( onClick = { count.value += 1 })
 //            )
 //        }
+        dataManager.initialize()
         setContent {
             CalendarTheme {
-                val calendarViewModel = viewModel { CalendarViewModel() }
+                val calendarViewModel = viewModel { CalendarViewModel(dataManager) }
                 // A surface container using the 'background' color from the theme
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    when (calendarViewModel.state) {
-                        Screen.CALENDAR ->
-                            CalendarTab(calendarViewModel)
+                    Scaffold(topBar = {
+                        Button(onClick = {
+                            calendarViewModel.back()
+                        }, Modifier.offset(200.dp)) {
+                            Text("back")
+                        }
+                    },
+                        bottomBar = {
+                            Button(onClick = {
+                            }) {
+                                Text("bottom")
+                            }
+                        },
+                        floatingActionButton = {
+                            if (calendarViewModel.screen is DateScreen) {
+                                Button(onClick = {
+                                    val now = LocalDateTime.now()
+                                    val entry = Entry(dataManager)
+                                    entry.set(
+                                        "huh", ArrayList(), setOf(
+                                            CalendarDate(
+                                                (calendarViewModel.screen as DateScreen).date.atStartOfDay()
+                                                    .withHour(now.hour).withMinute(now.minute).withSecond(now.second),
+                                                entry
+                                            )
+                                        ), ArrayList()
+                                    )
+                                }) {
+                                    Text("+")
+                                }
+                            }
+                        }) {
+                        when (calendarViewModel.screen) {
+                            is CalendarTab -> CalendarTab(calendarViewModel)
+                            is DateScreen ->
+                                Column {
+                                    Text("Date ${(calendarViewModel.screen as DateScreen).date}")
+//                                    Log.v("calendar", "" + (calendarViewModel.screen as DateScreen).dates.size)
+                                    for (date in (calendarViewModel.screen as DateScreen).dates) {
+                                        Box(
+                                            Modifier.height(200.dp)
+                                                .border(width = 2.dp, color = MaterialTheme.colorScheme.primary)
+                                        ) {
+                                            Column {
+                                                Text(date.desc)
+                                                Text(date.entry.name)
+                                                Text(date.date.toString())
+                                            }
+                                        }
+                                    }
+                                }
 
-                        Screen.DATE -> Text("Date ${calendarViewModel.date}", Modifier.clickable(onClick = {
-                            calendarViewModel.setState0(Screen.CALENDAR)
-                        }))
-                        Screen.ENTRY -> TODO()
+                        }
                     }
                 }
             }
@@ -54,20 +107,17 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    class CalendarViewModel : ViewModel() {
-        fun setState0(state: Screen) {
-            this.state = state
+    class CalendarViewModel(val dataManager: DataManager) : ViewModel() {
+        var screen: Screen by mutableStateOf(CalendarTab())
+        private val stateStack = LinkedList<Screen>()
+
+        fun back() {
+            if (!stateStack.isEmpty()) screen = stateStack.pop()
         }
 
-        var listState by mutableStateOf(Int.MAX_VALUE / 2)
-        var date: LocalDate? = null
-        var calendarLazyListState: LazyListState? = null
-        var state by mutableStateOf(Screen.CALENDAR)
-    }
-
-    enum class Screen {
-        CALENDAR,
-        DATE,
-        ENTRY
+        fun open(screen: Screen) {
+            stateStack.push(this.screen)
+            this.screen = screen
+        }
     }
 }
