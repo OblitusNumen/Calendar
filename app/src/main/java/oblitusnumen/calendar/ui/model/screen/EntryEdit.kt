@@ -47,13 +47,19 @@ class EntryEdit(val entry: Entry) : Screen, TopBarModifier {
     }
 
     @Composable
-    override fun topBar(calendarViewModel: MainActivity.CalendarViewModel) {
+    override fun topBar(calendarViewModel: MainActivity.CalendarViewModel) {// TODO: confirm
         Row {
             BackButton(calendarViewModel)
             Button(onClick = {
                 entry.set(newName!!.value.text, tags, calendarDates, contents)
             }, modifier = Modifier.align(Alignment.Top)) {
                 Text("save")
+            }
+            Button(onClick = {
+                entry.remove()
+                calendarViewModel.back()
+            }, modifier = Modifier.align(Alignment.Top)) {
+                Text("delete")
             }
         }
     }

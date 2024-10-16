@@ -27,7 +27,7 @@ class DateScreen(var date: LocalDate, private var dates: List<CalendarDate>) : S
     // TODO:
     @Composable
     override fun compose(calendarViewModel: MainActivity.CalendarViewModel) {
-        Column(Modifier.verticalScroll(ScrollState(0))) {
+        Column(Modifier.verticalScroll(ScrollState(0))) {// TODO: update state 
             Text("Date $date")
             for (date in dates) {
                 Box(
