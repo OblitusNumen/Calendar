@@ -7,7 +7,7 @@ import oblitusnumen.calendar.implementation.Utils;
 import java.io.*;
 import java.time.LocalDateTime;
 import java.util.HashSet;
-import java.util.Optional;
+import java.util.Objects;
 import java.util.Set;
 
 public class DataManager {
@@ -86,14 +86,23 @@ public class DataManager {
         tags.add(tag);
     }
 
-    Tag getTag(String tag) {
-        Optional<Tag> optionalTag = tags.stream().findFirst();
-        if (optionalTag.isEmpty()) {
-            Tag tag1 = new Tag(this);
-            tag1.name = tag;
-            return tag1;
+    Tag getTag(Tag tag) {
+        Tag tagHere = null;
+        for (Tag t : tags) {
+            if (Objects.equals(t.name, tag.name)) {
+                tagHere = t;
+                break;
+            }
         }
-        return optionalTag.get();
+
+        if (tagHere == null) {
+            addTag(tag);
+            return tag;
+        }
+//        if (tag != tagHere) {
+        // TODO: 10/16/24 change color here
+//        }
+        return tagHere;
     }
 
     public Set<Tag> getTags() {

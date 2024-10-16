@@ -1,4 +1,9 @@
-package oblitusnumen.calendar.ui.model;
+package oblitusnumen.calendar.ui.model
 
-public class Screen {
+import androidx.compose.runtime.Composable
+import oblitusnumen.calendar.MainActivity.CalendarViewModel
+
+interface Screen {
+    @Composable
+    fun compose(calendarViewModel: CalendarViewModel)
 }

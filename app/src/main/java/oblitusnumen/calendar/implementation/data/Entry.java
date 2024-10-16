@@ -33,12 +33,12 @@ public class Entry implements Serializable {
         return new File(dataManager.activity.getFilesDir() + File.separator + "entry-" + uid);
     }
 
-    public void set(String name1, Iterable<String> tags2, Set<CalendarDate> calendarDates1, List<Content> contents1) {
+    public void set(String name1, Iterable<Tag> tags2, Set<CalendarDate> calendarDates1, List<Content> contents1) {
         if (!name1.equals(name)) {
             name = name1;
         }
         Set<Tag> tags1 = new HashSet<>();
-        for (String t : tags2) {
+        for (Tag t : tags2) {
             tags1.add(dataManager.getTag(t));
         }
         for (Tag tag : tags.toArray(new Tag[0])) {
@@ -72,15 +72,15 @@ public class Entry implements Serializable {
         return name;
     }
 
-    public Set<Tag> getTags() {
-        return tags;
+    public HashSet<Tag> getTags() {
+        return new HashSet<>(tags);
     }
 
     public Set<CalendarDate> getCalendarDates() {
-        return calendarDates;
+        return new HashSet<>(calendarDates);
     }
 
     public List<Content> getContents() {
-        return contents;
+        return new LinkedList<>(contents);
     }
 }
