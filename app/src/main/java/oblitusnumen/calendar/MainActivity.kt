@@ -1,6 +1,7 @@
 package oblitusnumen.calendar
 
 import android.os.Bundle
+import android.view.KeyEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.border
@@ -26,6 +27,7 @@ import java.util.*
 
 class MainActivity : ComponentActivity() {
     private val dataManager = DataManager(this)
+    var calendarViewModel: CalendarViewModel? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,6 +43,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             CalendarTheme {
                 val calendarViewModel = viewModel { CalendarViewModel(dataManager) }
+                this.calendarViewModel = calendarViewModel
                 // A surface container using the 'background' color from the theme
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                     Scaffold(topBar = {
@@ -105,6 +108,16 @@ class MainActivity : ComponentActivity() {
 //            )
 
         }
+    }
+
+    override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
+        if ((keyCode == KeyEvent.KEYCODE_BACK && event.isTracking
+                    && !event.isCanceled)
+        ) {//fixme back press from main screen does not close app
+            calendarViewModel?.back()
+            return true
+        }
+        return super.onKeyUp(keyCode, event)
     }
 
     class CalendarViewModel(val dataManager: DataManager) : ViewModel() {
