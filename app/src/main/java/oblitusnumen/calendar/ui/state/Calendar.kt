@@ -1,5 +1,6 @@
 package oblitusnumen.calendar.ui.state
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -20,7 +21,9 @@ import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import oblitusnumen.calendar.MainActivity
+import oblitusnumen.calendar.MainActivity.Companion.PADDING
 import oblitusnumen.calendar.R
+import oblitusnumen.calendar.implementation.data.CalendarDate
 import oblitusnumen.calendar.ui.model.CalendarTab
 import oblitusnumen.calendar.ui.model.DateScreen
 import java.time.LocalDate
@@ -48,15 +51,12 @@ fun DisplayMonth(
     calendarViewModel: MainActivity.CalendarViewModel
 ) {
     Column {
-        val blockW = LocalConfiguration.current.screenWidthDp.dp.div(7)
-        val blockH = blockW.times(1.2f)
-//        Log.v("calendar", "day" + then.dayOfWeek.value)
+        val blockW = getWidthPartIncludePadding(7f)
+        val blockH = blockW.times(1.5f)
         var dayOfWeek = (then.dayOfWeek.value + 6) % 7 + 1
         var dayOfMonth = -dayOfWeek + 2
         Text(stringArrayResource(R.array.monthNames)[then.month.value - 1] + ", " + then.year)
         val monthLen = then.month.length(then.isLeapYear)
-//        Log.v("calendar", "mLen:" + monthLen + "m:" + stringArrayResource(R.array.monthNames)[then.month.value - 1] + ", " + then.year)
-//        calendarViewModel.dataManager.getDates(then.atStartOfDay(), then.plusMonths(1).atStartOfDay())
         while (dayOfMonth <= monthLen) {
             Row {
                 while (dayOfMonth < 1) {
@@ -67,7 +67,9 @@ fun DisplayMonth(
                     dayOfMonth++
                 }
                 while (dayOfWeek <= 7) {
-                    DisplayDay(blockW, blockH, then.withDayOfMonth(dayOfMonth), calendarViewModel)
+    val dates =
+        ArrayList(calendarViewModel.dataManager.getDates(then.atStartOfDay(), then.plusMonths(1).atStartOfDay()).toList())
+                    DisplayDay(blockW, blockH, then.withDayOfMonth(dayOfMonth), calendarViewModel, dates)
 
                     dayOfMonth++
                     dayOfWeek++
@@ -79,12 +81,14 @@ fun DisplayMonth(
     }
 }
 
+@SuppressLint("NewApi")
 @Composable
 fun DisplayDay(
     blockW: Dp,
     blockH: Dp,
     then: LocalDate,
-    calendarViewModel: MainActivity.CalendarViewModel
+    calendarViewModel: MainActivity.CalendarViewModel,
+    dates: ArrayList<CalendarDate>
 ) {
     val now = LocalDate.now()
     var modifier = Modifier.size(blockW, blockH)
@@ -101,19 +105,35 @@ fun DisplayDay(
     } else {
         col = MaterialTheme.colorScheme.primary
     }
-    val dates =
-        ArrayList(calendarViewModel.dataManager.getDates(then.atStartOfDay(), then.plusDays(1).atStartOfDay()).toList())
+    val begin = then.atStartOfDay()
+    val end = then.plusDays(1).atStartOfDay()
+    val eventDates = ArrayList(dates.stream().filter({ date -> date.date.isAfter(begin) && date.date.isBefore(end) }).toList())
     Box(modifier.clickable(onClick = {
 //        Log.v("calendar", "clicked ${then.year}.${then.month}.$dayOfMonth")
-        dates.sortBy { it.date }
-        calendarViewModel.open(DateScreen(then, dates))
+        eventDates.sortBy { it.date }
+        calendarViewModel.open(DateScreen(then, eventDates))
     })) {
         Column {
             Text("" + then.dayOfMonth, Modifier, col)
-            for (date in dates) {
+            for (date in eventDates) {
                 Text(date.desc, Modifier.background(Color(0x989800)))
             }
         }
 
     }
+}
+
+@Composable
+fun getWidthPart(divisor: Float): Dp {
+    return LocalConfiguration.current.screenWidthDp.dp.div(divisor)
+}
+
+@Composable
+fun getWidthPartIncludePadding(divisor: Float): Dp {
+    return LocalConfiguration.current.screenWidthDp.dp.minus(PADDING.times(2)).div(divisor)
+}
+
+@Composable
+fun getHeightPart(divisor: Float): Dp {
+    return LocalConfiguration.current.screenHeightDp.dp.div(divisor)
 }

@@ -96,6 +96,10 @@ public class DataManager {
         return optionalTag.get();
     }
 
+    public Set<Tag> getTags() {
+        return new HashSet<>(tags);
+    }
+
     public Set<CalendarDate> getDates(LocalDateTime start, LocalDateTime end) {
         Set<CalendarDate> result = new HashSet<>();
         for (Entry entry : entries) {
