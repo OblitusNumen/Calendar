@@ -14,6 +14,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -153,16 +154,11 @@ class CalendarTab : Tab, Functional, TopBarModifier {
     // TODO:
     @Composable
     override fun topBar(calendarViewModel: MainActivity.CalendarViewModel) {
+        val coroutineScope = rememberCoroutineScope()
         Button(onClick = {
-            runBlocking {
-                launch {
-                    Utils.log("a1")
-                    calendarLazyListState!!.stopScroll()
-                    Utils.log("a2")
+            coroutineScope.launch {
                     calendarLazyListState!!.scrollToItem(Int.MAX_VALUE / 2)
-                    Utils.log("a3")
                 }
-            }
         }) {
             Text("to current date")
         }
