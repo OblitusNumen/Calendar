@@ -1,10 +1,13 @@
 package oblitusnumen.calendar.implementation.data;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
 public class Tag implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1;
     public String name = "";
     transient DataManager dataManager;
     Set<Entry> entries = new HashSet<>();

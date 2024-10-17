@@ -1,9 +1,12 @@
 package oblitusnumen.calendar.implementation.data;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
 public class CalendarDate implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1;
     final LocalDateTime date;
     private final Entry entry;
     private String desc;

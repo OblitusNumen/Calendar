@@ -3,11 +3,14 @@ package oblitusnumen.calendar.implementation.data;
 import oblitusnumen.calendar.implementation.data.content.Content;
 
 import java.io.File;
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.*;
 
 public class Entry implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1;
     public final UUID uid;
     transient DataManager dataManager;
     String name = "";
