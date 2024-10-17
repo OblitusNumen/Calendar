@@ -157,8 +157,8 @@ class CalendarTab : Tab, Functional, TopBarModifier {
         val coroutineScope = rememberCoroutineScope()
         Button(onClick = {
             coroutineScope.launch {
-                    calendarLazyListState!!.scrollToItem(Int.MAX_VALUE / 2)
-                }
+                calendarLazyListState!!.scrollToItem(Int.MAX_VALUE / 2)
+            }
         }) {
             Text("to current date")
         }

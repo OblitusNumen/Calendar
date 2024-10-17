@@ -47,11 +47,23 @@ class MainActivity : ComponentActivity(), TopBarModifier {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                     Scaffold(
                         topBar = {// FIXME:
-                            Box(Modifier.width(getWidthPart(1f)).height(getWidthPart(7f))) {
-                                @Suppress("IMPLICIT_CAST_TO_ANY")
-                                ((if (calendarViewModel.screen is TopBarModifier) calendarViewModel.screen else this@MainActivity) as TopBarModifier).topBar(
-                                    calendarViewModel
-                                )
+                            Row {
+                                var width = getWidthPart(1f)
+                                if (calendarViewModel.screen is Tab) {
+                                    Button(onClick = {
+                                        // FIXME:
+//                                openOptionsMenu()
+                                    }) {
+                                        Text("三")
+                                    }
+                                    width = width.minus(50.dp)
+                                }
+                                Box(Modifier.width(width).height(getWidthPart(7f))) {
+                                    @Suppress("IMPLICIT_CAST_TO_ANY")
+                                    ((if (calendarViewModel.screen is TopBarModifier) calendarViewModel.screen else this@MainActivity) as TopBarModifier).topBar(
+                                        calendarViewModel
+                                    )
+                                }
                             }
                         },
                         bottomBar = { BottomBar(calendarViewModel) },
@@ -174,6 +186,7 @@ fun BackButton(calendarViewModel: CalendarViewModel) {
     Button(onClick = {
         calendarViewModel.back()
     }) {
-        Text("←")
+        Text("く")
+//        Text("←")
     }
 }

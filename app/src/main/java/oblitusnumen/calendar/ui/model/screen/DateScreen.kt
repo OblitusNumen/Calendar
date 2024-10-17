@@ -46,6 +46,7 @@ class DateScreen(var date: LocalDate, private var dates: List<CalendarDate>) : S
             }
         }
     }
+    // TODO: fix orientation
 
     @Composable
     override fun functionButton(calendarViewModel: MainActivity.CalendarViewModel) {
@@ -61,8 +62,10 @@ class DateScreen(var date: LocalDate, private var dates: List<CalendarDate>) : S
                     )
                 ), ArrayList()
             )
+            calendarViewModel.open(EntryEdit(entry))
         }) {
-            Text("+")
+            Text("十")
+//            Text("+")
         }
     }
 
