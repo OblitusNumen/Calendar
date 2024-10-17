@@ -5,6 +5,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.stopScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,15 +22,20 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import oblitusnumen.calendar.MainActivity
 import oblitusnumen.calendar.R
 import oblitusnumen.calendar.getWidthPartIncludePadding
+import oblitusnumen.calendar.implementation.Utils
 import oblitusnumen.calendar.implementation.data.CalendarDate
+import oblitusnumen.calendar.ui.model.Functional
 import oblitusnumen.calendar.ui.model.Tab
+import oblitusnumen.calendar.ui.model.TopBarModifier
 import oblitusnumen.calendar.ui.model.screen.DateScreen
 import java.time.LocalDate
 
-class CalendarTab : Tab {
+class CalendarTab : Tab, Functional, TopBarModifier {
     private var calendarLazyListState: LazyListState? = null
 
     @Composable
@@ -125,6 +132,29 @@ class CalendarTab : Tab {
                     Text(date.desc, Modifier.background(Color(0x989800)))
                 }
             }
+        }
+    }
+
+    @Composable
+    override fun functionButton(calendarViewModel: MainActivity.CalendarViewModel) {
+//        TODO("Not yet implemented")
+    }
+
+    // TODO:
+    @Composable
+    override fun topBar(calendarViewModel: MainActivity.CalendarViewModel) {
+        Button(onClick = {
+            runBlocking {
+                launch {
+                    Utils.log("a1")
+                    calendarLazyListState!!.stopScroll()
+                    Utils.log("a2")
+                    calendarLazyListState!!.scrollToItem(Int.MAX_VALUE / 2)
+                    Utils.log("a3")
+                }
+            }
+        }) {
+            Text("to current date")
         }
     }
 }

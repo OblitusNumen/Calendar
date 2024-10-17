@@ -113,14 +113,11 @@ public class DataManager {
         Set<CalendarDate> result = new HashSet<>();
         for (Entry entry : entries) {
             for (CalendarDate calendarDate : entry.calendarDates) {
-                Log.v("c", start + " : " + calendarDate.date + " : " + end);
                 if (calendarDate.date.isAfter(start) && calendarDate.date.isBefore(end)) {
                     result.add(calendarDate);
                 }
             }
         }
-        Log.v("calendar", "" + entries.size());
-        Log.v("calendar", "" + result.size());
         return result;
     }
 }
