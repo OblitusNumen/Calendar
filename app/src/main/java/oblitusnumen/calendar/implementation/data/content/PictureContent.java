@@ -4,7 +4,7 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.UUID;
 
-public class Picture implements Content, Serializable {
+public class PictureContent implements Content, Serializable {
     @Serial
     private static final long serialVersionUID = 1;
     public UUID pictureUuid;
