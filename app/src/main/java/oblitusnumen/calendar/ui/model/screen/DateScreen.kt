@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -31,8 +32,7 @@ class DateScreen(var date: LocalDate, private var dates: List<CalendarDate>) : S
             Text("Date $date")
             for (date in dates) {
                 Box(
-                    Modifier.height(200.dp)
-                        .border(width = 2.dp, color = MaterialTheme.colorScheme.primary)
+                    Modifier.fillMaxWidth().border(width = 2.dp, color = MaterialTheme.colorScheme.primary)
                         .clickable(onClick = {
                             calendarViewModel.open(EntryEdit(date.entry))
                         })

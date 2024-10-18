@@ -79,8 +79,12 @@ public class Entry implements Serializable {
         return new HashSet<>(tags);
     }
 
-    public Set<CalendarDate> getCalendarDates() {
-        return new HashSet<>(calendarDates);
+    public HashSet<CalendarDate> getCalendarDates() {
+        HashSet<CalendarDate> dates = new HashSet<>();
+        for (CalendarDate calendarDate : calendarDates) {
+            dates.add(calendarDate.clone());
+        }
+        return dates;
     }
 
     public List<Content> getContents() {

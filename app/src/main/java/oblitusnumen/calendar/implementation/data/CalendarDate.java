@@ -1,5 +1,8 @@
 package oblitusnumen.calendar.implementation.data;
 
+import androidx.annotation.NonNull;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -21,6 +24,10 @@ public class CalendarDate implements Serializable {
         this.desc = desc;
     }
 
+    public CalendarDate(CalendarDate calendarDate) {
+        this(calendarDate.date, calendarDate.desc, calendarDate.entry);
+    }
+
     public String getDesc() {
         return desc.isEmpty() ? entry.name : desc;
     }
@@ -35,5 +42,11 @@ public class CalendarDate implements Serializable {
 
     public Entry getEntry() {
         return entry;
+    }
+
+    @NonNull
+    @Override
+    public @NotNull CalendarDate clone() {
+        return new CalendarDate(this);
     }
 }

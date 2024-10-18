@@ -2,20 +2,30 @@ package oblitusnumen.calendar
 
 import android.os.Bundle
 import android.view.KeyEvent
+import android.widget.CalendarView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.window.Popup
 import androidx.core.util.Supplier
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -30,6 +40,7 @@ import oblitusnumen.calendar.ui.model.tab.CalendarTab
 import oblitusnumen.calendar.ui.model.tab.SearchTab
 import oblitusnumen.calendar.ui.model.tab.TagsTab
 import oblitusnumen.calendar.ui.theme.CalendarTheme
+import java.text.SimpleDateFormat
 import java.util.*
 
 class MainActivity : ComponentActivity(), TopBarModifier {
@@ -44,7 +55,7 @@ class MainActivity : ComponentActivity(), TopBarModifier {
                 val calendarViewModel = viewModel { CalendarViewModel(dataManager) }
                 this.calendarViewModel = calendarViewModel
                 // A surface container using the 'background' color from the theme
-                Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+                Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.primary) {
                     Scaffold(
                         topBar = {// FIXME:
                             Row {
