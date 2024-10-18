@@ -11,32 +11,23 @@ import java.util.*;
 public class Entry implements Serializable {
     @Serial
     private static final long serialVersionUID = 1;
-    public final UUID uid;
+    public final UUID uid = UUID.randomUUID();
     transient DataManager dataManager;
     String name = "";
-    Set<Tag> tags = new HashSet<>();
+    Set<String> tags = new HashSet<>();
     Set<CalendarDate> calendarDates = new HashSet<>();
     List<Content> contents = new ArrayList<>();
 
-    public Entry(DataManager dataManager) {
-        this(UUID.randomUUID(), dataManager);
-    }
-
-    Entry(UUID uid, DataManager dataManager) {
-        this.uid = uid;
+    Entry(DataManager dataManager) {
         this.dataManager = dataManager;
         dataManager.addEntry(this);
-    }
-
-    public void addDate(LocalDateTime date) {
-
     }
 
     public File getDir() {
         return new File(dataManager.activity.getFilesDir() + File.separator + "entry-" + uid);
     }
 
-    public void set(String name1, Iterable<Tag> tags2, Set<CalendarDate> calendarDates1, List<Content> contents1) {
+    public void set(String name1, Iterable<String> tags2, Set<CalendarDate> calendarDates1, List<Content> contents1) {
         if (!name1.equals(name)) {
             name = name1;
         }

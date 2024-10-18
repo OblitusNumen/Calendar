@@ -4,13 +4,14 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 public class Tag implements Serializable {
     @Serial
     private static final long serialVersionUID = 1;
     public String name = "";
     transient DataManager dataManager;
-    Set<Entry> entries = new HashSet<>();
+    Set<UUID> entries = new HashSet<>();
 
     public Tag(DataManager dataManager) {
         this.dataManager = dataManager;

@@ -6,15 +6,14 @@ import oblitusnumen.calendar.implementation.Utils;
 
 import java.io.*;
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 public class DataManager {
     public static final String DATA_FILE = "data.ces";
     final MainActivity activity;
-    private final Set<Tag> tags = new HashSet<>();
-    private final Set<Entry> entries = new HashSet<>();
+    private final HashMap<String, Tag> tags = new HashMap<>();
+    private final HashMap<UUID, Entry> entries = new HashMap<>();
+    private final CalendarDates dates = new CalendarDates();
     boolean hasInitialized = false;
 
     public DataManager(MainActivity activity) {
