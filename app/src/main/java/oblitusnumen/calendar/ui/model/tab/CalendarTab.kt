@@ -5,7 +5,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.stopScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -13,7 +12,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Shapes
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
@@ -24,8 +22,8 @@ import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import oblitusnumen.calendar.MainActivity
+import oblitusnumen.calendar.MainActivity.Companion.LIST_CENTER
 import oblitusnumen.calendar.R
 import oblitusnumen.calendar.getWidthPartIncludePadding
 import oblitusnumen.calendar.implementation.Utils
@@ -35,6 +33,7 @@ import oblitusnumen.calendar.ui.model.Tab
 import oblitusnumen.calendar.ui.model.TopBarModifier
 import oblitusnumen.calendar.ui.model.screen.DateScreen
 import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 
 class CalendarTab : Tab, Functional, TopBarModifier {
     private var calendarLazyListState: LazyListState? = null
@@ -53,16 +52,58 @@ class CalendarTab : Tab, Functional, TopBarModifier {
                 }
             }
             val now = LocalDate.now()
-            if (calendarLazyListState == null) calendarLazyListState = rememberLazyListState(Int.MAX_VALUE / 2)
+            if (calendarLazyListState == null) calendarLazyListState = rememberLazyListState(getNowItemIndex(now))
             LazyColumn(
                 state = calendarLazyListState!!,
                 modifier = Modifier
             ) {
                 items(Int.MAX_VALUE, itemContent = {
-                    DisplayMonth(now.withDayOfMonth(1).plusMonths((it - Int.MAX_VALUE / 2).toLong()), calendarViewModel)
+                    Utils.log(it)
+                    val monthItemIndex = getMonthItemIndex(it)
+                    val mon = LIST_CENTER.plusMonths(((it - Int.MAX_VALUE / 2) / 7).toLong()).withDayOfMonth(1)
+                    if (monthItemIndex == 0) {
+                        Text(stringArrayResource(R.array.monthNames)[mon.month.value - 1] + " " + mon.year)
+                    } else {
+                        DisplayWeek(mon.monthValue, mon.plusDays(7*(monthItemIndex-1)-(mon.dayOfWeek.value - 1).toLong()), calendarViewModel)
+                    }
                 })
             }
         }
+    }
+
+    private fun getNowItemIndex(now: LocalDate) =
+        (Int.MAX_VALUE / 2 + ChronoUnit.MONTHS.between(LIST_CENTER, now) * 7).toInt()
+
+    @Composable
+    fun DisplayWeek(monthValue: Int, date0: LocalDate, calendarViewModel: MainActivity.CalendarViewModel) {
+        var date = date0
+            val blockW = getWidthPartIncludePadding(7f)
+            val blockH = blockW.times(1.5f)
+        Row {
+            while (date.month.value % 12 + 1 == monthValue) {
+                Box(
+                    Modifier.size(blockW, blockH)
+                ) {
+                }
+                date = date.plusDays(1)
+            }
+            while (date.month.value == monthValue) {
+                        val dates =
+                            ArrayList(
+                                calendarViewModel.dataManager.getDates(
+                                    date.atStartOfDay(),
+                                    date.plusMonths(1).atStartOfDay()
+                                ).toList()
+                            )
+                DisplayDay(blockW, blockH, date, calendarViewModel, dates)
+                date = date.plusDays(1)
+            }
+        }
+    }
+
+    private fun getMonthItemIndex(it: Int): Int {
+        val offset = it - Int.MAX_VALUE / 2
+        return if (offset < 0) 7 + offset % 7 else offset % 7
     }
 
     @Composable
@@ -161,7 +202,7 @@ class CalendarTab : Tab, Functional, TopBarModifier {
         val coroutineScope = rememberCoroutineScope()
         Button(onClick = {
             coroutineScope.launch {
-                calendarLazyListState!!.scrollToItem(Int.MAX_VALUE / 2)
+                calendarLazyListState!!.scrollToItem(getNowItemIndex(LocalDate.now()))
             }
         }) {
             Text("to current date")

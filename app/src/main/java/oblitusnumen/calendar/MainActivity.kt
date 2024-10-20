@@ -41,11 +41,17 @@ import oblitusnumen.calendar.ui.model.tab.SearchTab
 import oblitusnumen.calendar.ui.model.tab.TagsTab
 import oblitusnumen.calendar.ui.theme.CalendarTheme
 import java.text.SimpleDateFormat
+import java.time.LocalDate
 import java.util.*
 
 class MainActivity : ComponentActivity(), TopBarModifier {
     private val dataManager = DataManager(this)
     private var calendarViewModel: CalendarViewModel? = null
+
+    companion object {
+        val PADDING: Dp = 5.dp
+        val LIST_CENTER = LocalDate.of(1970, 1, 1);
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -148,10 +154,6 @@ class MainActivity : ComponentActivity(), TopBarModifier {
         fun changeTab(searchTab: Screen) {
             open(searchTab)
         }
-    }
-
-    companion object {
-        val PADDING: Dp = 5.dp
     }
 
     @Composable
