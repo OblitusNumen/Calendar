@@ -69,9 +69,8 @@ class MainActivity : ComponentActivity(), TopBarModifier {
                                     }
                                     width = width.minus(50.dp)
                                 }
-                                Box(Modifier.width(width).height(getWidthPart(7f))) {
-                                    @Suppress("IMPLICIT_CAST_TO_ANY")
-                                    ((if (calendarViewModel.screen is TopBarModifier) calendarViewModel.screen else this@MainActivity) as TopBarModifier).topBar(
+                                Box(Modifier.width(width).height(50.dp)) {
+                                    (if (calendarViewModel.screen is TopBarModifier) (calendarViewModel.screen as TopBarModifier) else this@MainActivity).topBar(
                                         calendarViewModel
                                     )
                                 }
@@ -85,8 +84,8 @@ class MainActivity : ComponentActivity(), TopBarModifier {
                         }) {
                         Box(
                             Modifier.absolutePadding(
-                                PADDING, getWidthPart(7f),
-                                PADDING, getWidthPart(7f)
+                                PADDING, 50.dp,
+                                PADDING, 50.dp
                             )
                         ) {
                             calendarViewModel.screen.compose(calendarViewModel)
@@ -99,7 +98,7 @@ class MainActivity : ComponentActivity(), TopBarModifier {
 
     @Composable
     fun BottomBar(calendarViewModel: CalendarViewModel) {
-        Box(Modifier.width(getWidthPart(1f)).height(getWidthPart(7f))) {
+        Box(Modifier.width(getWidthPart(1f)).height(50.dp)) {
             Row {
                 Box(getTabBoxModifier({ CalendarTab() }, calendarViewModel = calendarViewModel)) {
                     Text("calendar")
@@ -181,7 +180,7 @@ inline fun <reified T : Screen> getTabBoxModifier(
     classSupplier: Supplier<T>,
     calendarViewModel: CalendarViewModel
 ): Modifier {
-    var modifier = Modifier.width(getWidthPart(3f)).height(getWidthPart(7f))
+    var modifier = Modifier.width(getWidthPart(3f)).height(50.dp)
     modifier = modifier.clickable(
         onClick = {
             calendarViewModel.changeTab(classSupplier.get())

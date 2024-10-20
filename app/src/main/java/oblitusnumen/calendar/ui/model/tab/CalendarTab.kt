@@ -10,8 +10,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
@@ -43,7 +45,7 @@ class CalendarTab : Tab, Functional, TopBarModifier {
             Row {
                 var i = 1;
                 while (i <= 7) {
-                    Box(Modifier.width(getWidthPartIncludePadding(7f)).height(getWidthPartIncludePadding(14f))
+                    Box(Modifier.width(getWidthPartIncludePadding(7f)).height(25.dp)
                         .border(2.dp, MaterialTheme.colorScheme.primary)) {
                         Text(stringArrayResource(R.array.weekdayNames)[i-1], Modifier.align(Alignment.Center))
                     }
@@ -114,11 +116,11 @@ class CalendarTab : Tab, Functional, TopBarModifier {
         dates: ArrayList<CalendarDate>
     ) {
         val now = LocalDate.now()
-        var modifier = Modifier.size(blockW, blockH)
+        var modifier = Modifier.padding(2.dp).size(blockW.minus(4.dp), blockH.minus(4.dp))
             .border(
                 BorderStroke(
                     2.dp, MaterialTheme.colorScheme.primary
-                )
+                ), shape = RoundedCornerShape(10.dp)
             )
         val col: Color
 
@@ -138,7 +140,9 @@ class CalendarTab : Tab, Functional, TopBarModifier {
             calendarViewModel.open(DateScreen(then, eventDates))
         })) {
             Column {
-                Text("" + then.dayOfMonth, Modifier, col)
+                Box(Modifier.fillMaxWidth()) {
+                    Text("" + then.dayOfMonth, Modifier.align(Alignment.TopCenter), col)
+                }
                 for (date in eventDates) {
                     Text(date.desc, Modifier.background(Color(0x989800)))
                 }
