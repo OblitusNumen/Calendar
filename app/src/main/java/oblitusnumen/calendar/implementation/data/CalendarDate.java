@@ -6,22 +6,22 @@ import org.jetbrains.annotations.NotNull;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.Comparator;
 import java.util.UUID;
 
 public class CalendarDate implements Serializable {
     @Serial
     private static final long serialVersionUID = 1;
+    transient DataManager dataManager;
     public final UUID uid = UUID.randomUUID();
     final LocalDateTime date;
-    final Entry entry;
+    final UUID entry;
     private String desc;
 
-    public CalendarDate(LocalDateTime date, Entry entry) {
+    public CalendarDate(LocalDateTime date, UUID entry) {
         this(date, "", entry);
     }
 
-    public CalendarDate(LocalDateTime date, String desc, Entry entry) {
+    public CalendarDate(LocalDateTime date, String desc, UUID entry) {
         this.date = date;
         this.entry = entry;
         this.desc = desc;
@@ -32,7 +32,7 @@ public class CalendarDate implements Serializable {
     }
 
     public String getDesc() {
-        return desc.isEmpty() ? entry.name : desc;
+        return desc.isEmpty() ? dataManager.getEntryUnsafe(entry).name : desc;
     }
 
     public void setDesc(String desc) {
@@ -43,7 +43,7 @@ public class CalendarDate implements Serializable {
         return date;
     }
 
-    public Entry getEntry() {
+    public UUID getEntry() {
         return entry;
     }
 
@@ -51,14 +51,5 @@ public class CalendarDate implements Serializable {
     @Override
     public @NotNull CalendarDate clone() {
         return new CalendarDate(this);
-    }
-
-    public static class DateComparator implements Comparator<CalendarDate>, Serializable {
-    @Serial
-    private static final long serialVersionUID = 1;
-        @Override
-        public int compare(CalendarDate d1, CalendarDate d2) {
-            return d1.date.compareTo(d2.date);
-        }
     }
 }

@@ -51,7 +51,7 @@ class CalendarTab : Tab, Functional, TopBarModifier {
                 }
             }
             val now = LocalDate.now()
-            if (calendarLazyListState == null) calendarLazyListState = rememberLazyListState(Int.MAX_VALUE / 2)
+            if (calendarLazyListState == null) calendarLazyListState = rememberLazyListState(Int.MAX_VALUE / 2)// FIXME: should be from certain date, not now
             LazyColumn(
                 state = calendarLazyListState!!,
                 modifier = Modifier

@@ -5,80 +5,91 @@ import oblitusnumen.calendar.implementation.data.content.Content;
 import java.io.File;
 import java.io.Serial;
 import java.io.Serializable;
-import java.time.LocalDateTime;
 import java.util.*;
 
 public class Entry implements Serializable {
     @Serial
     private static final long serialVersionUID = 1;
-    public final UUID uid = UUID.randomUUID();
+    public final UUID uid;
     transient DataManager dataManager;
     String name = "";
     Set<String> tags = new HashSet<>();
-    Set<CalendarDate> calendarDates = new HashSet<>();
+    Set<UUID> calendarDates = new HashSet<>();
     List<Content> contents = new ArrayList<>();
 
-    Entry(DataManager dataManager) {
-        this.dataManager = dataManager;
-        dataManager.addEntry(this);
+    Entry() {
+        uid = UUID.randomUUID();
     }
 
-    public File getDir() {
+    Entry(Entry entry) {
+        uid = entry.uid;
+        dataManager = entry.dataManager;
+        name = entry.name;
+        tags.addAll(entry.tags);
+        calendarDates.addAll(entry.calendarDates);
+        contents.addAll(entry.contents);
+    }
+
+    Entry(UUID uid) {
+        this.uid = uid;
+    }
+
+    File getDir() {
         return new File(dataManager.activity.getFilesDir() + File.separator + "entry-" + uid);
     }
 
-    public void set(String name1, Iterable<String> tags2, Set<CalendarDate> calendarDates1, List<Content> contents1) {
-        if (!name1.equals(name)) {
-            name = name1;
+    void set(Entry entry) {
+        name = entry.name;
+        // TODO: 10/18/24 updateContents
+//        getDir();
+        contents = new ArrayList<>(entry.contents);
+        Set<String> toRemove = new HashSet<>(tags);
+        toRemove.removeAll(entry.tags);
+        for (String s : toRemove) {
+            rmTag(s);
         }
-        Set<Tag> tags1 = new HashSet<>();
-        for (Tag t : tags2) {
-            tags1.add(dataManager.getTag(t));
+        Set<String> toAdd = new HashSet<>(entry.tags);
+        toRemove.removeAll(tags);
+        for (String s : toAdd) {
+            addTag(s);
         }
-        for (Tag tag : tags.toArray(new Tag[0])) {
-            rmTag(tag);
-        }
-        for (Tag tag : tags1) {
-            addTag(tag);
-        }
+        tags.clear();
+        tags.addAll(entry.tags);
+        CalendarDates managerDates = dataManager.getDates();
+        managerDates.list.removeAll(managerDates.withEntry(uid).list);
+        managerDates.list.addAll();
         calendarDates.clear();
-        calendarDates.addAll(calendarDates1);
-        contents.clear();
-        contents.addAll(contents1);
-        dataManager.save();
-    }
-
-    private void addTag(Tag tag) {
-        tags.add(tag);
-        tag.addEntry(this);
-    }
-
-    private void rmTag(Tag tag) {
-        tags.remove(tag);
-        tag.rmEntry(this);
-    }
-
-    public void remove() {
-        dataManager.rmEntry(this);
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public HashSet<Tag> getTags() {
-        return new HashSet<>(tags);
-    }
-
-    public HashSet<CalendarDate> getCalendarDates() {
-        HashSet<CalendarDate> dates = new HashSet<>();
-        for (CalendarDate calendarDate : calendarDates) {
-            dates.add(calendarDate.clone());
+        for (CalendarDate date : managerDates) {
+            calendarDates.add(date.uid);
         }
-        return dates;
     }
 
-    public List<Content> getContents() {
-        return new LinkedList<>(contents);
+    private void addTag(String tag) {
+        dataManager.addTagEntryLink(tag, uid);
+    }
+
+    private void rmTag(String tag) {
+        dataManager.rmTagEntryLink(tag, uid);
+    }
+
+    void remove() {
+        dataManager.rmEntry(this.uid);
+    }
+
+    void update(CalendarDates dates) {
+        dataManager.updateEntry(this, dates);
+    }
+
+    HashSet<Tag> getTags() {
+        HashSet<Tag> result = new HashSet<>();
+        for (String tag : tags) {
+            result.add(dataManager.getTag(tag));
+        }
+        return result;
+    }
+
+    @Override
+    protected Entry clone() {
+        return new Entry(this);
     }
 }

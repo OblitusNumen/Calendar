@@ -26,19 +26,15 @@ import oblitusnumen.calendar.ui.model.TopBarModifier
 import java.time.LocalDateTime
 
 class EntryEdit(val entry: Entry) : Screen, TopBarModifier {
-    var newName: MutableState<TextFieldValue>? = null
-    var tags: HashSet<Tag> = entry.tags
-    var calendarDates: HashSet<CalendarDate> = entry.calendarDates
-    var contents: MutableList<Content> = entry.contents
+    val dates = entry.calendarDates
 
     // TODO:
     @Composable
     override fun compose(calendarViewModel: MainActivity.CalendarViewModel) {
         Column(Modifier.verticalScroll(ScrollState(0))) {
-            val entry = (calendarViewModel.screen as EntryEdit).entry
-            if (newName == null) newName = remember { mutableStateOf(TextFieldValue(entry.name)) }
-            TextField(value = newName!!.value, onValueChange = { t ->
-                newName!!.value = t
+            var newName by remember { mutableStateOf(TextFieldValue(entry.name)) }
+            TextField(value = newName, onValueChange = { t ->
+                newName = t
             }, placeholder = { Text("name") })
             Column {
                 Dates()
@@ -53,7 +49,7 @@ class EntryEdit(val entry: Entry) : Screen, TopBarModifier {
         Text("contents")
             var flag = remember {mutableStateOf(false)}
             flag.value
-        for ((i, content) in contents.withIndex()) {
+        for ((i, content) in entry.contents.withIndex()) {
             when (content) {
                 is TextContent -> {
                     TextContent(calendarViewModel, flag, content, i)
@@ -137,8 +133,7 @@ class EntryEdit(val entry: Entry) : Screen, TopBarModifier {
             Text("addTag")
             val allTags = calendarViewModel.dataManager.tags
             val textFieldValue = remember { mutableStateOf(TextFieldValue("")) }
-            val tag = Tag(calendarViewModel.dataManager)
-            tag.name = textFieldValue.value.text
+            val tag = calendarViewModel.dataManager.getTag(textFieldValue.value.text)
             val addTag = { tag: Tag ->
                 tags.add(tag)
                 addingTag.value = false

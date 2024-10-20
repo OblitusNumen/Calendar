@@ -1,11 +1,11 @@
 package oblitusnumen.calendar.implementation.data;
 
+import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 import oblitusnumen.calendar.MainActivity;
 import oblitusnumen.calendar.implementation.Utils;
 
 import java.io.*;
-import java.time.LocalDateTime;
 import java.util.*;
 
 public class DataManager {
@@ -27,6 +27,7 @@ public class DataManager {
     }
 
     private synchronized void load() {
+        getWritableDatabase();
         File filesDir = activity.getFilesDir();
         if (!filesDir.exists()) filesDir.mkdirs();
         File file = new File(filesDir + File.separator + DATA_FILE);
@@ -34,42 +35,30 @@ public class DataManager {
         try (FileInputStream fis = new FileInputStream(file)) {
             try (ObjectInputStream ois = new ObjectInputStream(fis)) {
                 //noinspection unchecked
-                Set<Entry> entries1 = (Set<Entry>) ois.readObject();
-                for (Entry entry : entries1) {
+                HashMap<UUID, Entry> entries1 = (HashMap<UUID, Entry>) ois.readObject();
+                for (Entry entry : entries1.values()) {
                     entry.dataManager = this;
+                    entries.put(entry.uid, entry);
                 }
-                entries.addAll(entries1);
+                dates.addAll((CalendarDates) ois.readObject());
+                for (CalendarDate date : dates) {
+                    date.dataManager = this;
+                }
                 //noinspection unchecked
-                Set<Tag> tags1 = (Set<Tag>) ois.readObject();
-                for (Tag tag : tags1) {
-                    tag.dataManager = this;
-                }
-                tags.addAll(tags1);
+                HashMap<String, Tag> tags1 = (HashMap<String, Tag>) ois.readObject();
+                tags.putAll(tags1);
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    void addEntry(Entry entry) {
-        if (entries.contains(entry)) return;
-        if (!entry.getDir().mkdirs()) throw new RuntimeException("could not create dir for entry " + entry.uid);
-        entries.add(entry);
-        save();
-    }
-
-    void rmEntry(Entry entry) {
-        if (!entries.contains(entry)) return;
-        Utils.rmRecursively(entry.getDir());
-        entries.remove(entry);
-        save();
-    }
-
-    synchronized void save() {
+    private synchronized void save() {
         Log.v("calendar", "saving data...");
         try (FileOutputStream fos = new FileOutputStream(activity.getFilesDir() + File.separator + DATA_FILE)) {
             try (ObjectOutputStream oos = new ObjectOutputStream(fos)) {
                 oos.writeObject(entries);
+                oos.writeObject(dates);
                 oos.writeObject(tags);
             }
         } catch (Exception e) {
@@ -77,46 +66,87 @@ public class DataManager {
         }
     }
 
-    void rmTag(Tag tag) {
-        tags.remove(tag);
+    public Entry createEntry() {
+        Entry entry = new Entry();
+        if (!entry.getDir().mkdirs()) throw new RuntimeException("could not create dir for entry " + entry.uid);
+        entries.put(entry.uid, entry);
+        save();
+        return entry.clone();
     }
 
-    void addTag(Tag tag) {
-        tags.add(tag);
+    void updateEntry(Entry entry, CalendarDates entryDates) {
+        Entry entry1 = entries.get(entry.uid);
+        if (entry1 == null) throw new RuntimeException("should never happen");
+        entry1.set(entry, entryDates.withEntry(entry.uid));
+        save();
     }
 
-    Tag getTag(Tag tag) {
-        Tag tagHere = null;
-        for (Tag t : tags) {
-            if (Objects.equals(t.name, tag.name)) {
-                tagHere = t;
-                break;
-            }
-        }
+    void rmEntry(UUID entry) {
+        Entry entry1 = entries.remove(entry);
+        if (entry1 == null) return;
+        entry1.set(new Entry(entry1.uid), new CalendarDates());
+        Utils.rmRecursively(entry1.getDir());
+        save();
+    }
 
-        if (tagHere == null) {
-            addTag(tag);
-            return tag;
-        }
-//        if (tag != tagHere) {
-        // TODO: 10/16/24 change color here
+//    Tag getTag(Tag tag) {
+//        Tag tag1 = tags.get(tag.name);
+//        if (tag1 != null) {
+//            if (tag1 == tag) return tag1;
+//            // FIXME: 10/18/24 change color here
 //        }
-        return tagHere;
+//        Tag tagHere = null;
+//        for (Tag t : tags) {
+//            if (Objects.equals(t.name, tag.name)) {
+//                tagHere = t;
+//                break;
+//            }
+//        }
+//
+//        if (tagHere == null) {
+//            addTag(tag);
+//            return tag;
+//        }
+//        return tagHere;
+//    }
+
+    public Tag getTag(String tag) {
+        Tag tag1 = tags.get(tag);
+        if (tag1 == null) return new Tag(tag);
+        return tag1.clone();
     }
 
     public Set<Tag> getTags() {
-        return new HashSet<>(tags);
+        return new HashSet<>(tags.values());
     }
 
-    public Set<CalendarDate> getDates(LocalDateTime start, LocalDateTime end) {
-        Set<CalendarDate> result = new HashSet<>();
-        for (Entry entry : entries) {
-            for (CalendarDate calendarDate : entry.calendarDates) {
-                if (calendarDate.date.isAfter(start) && calendarDate.date.isBefore(end)) {
-                    result.add(calendarDate);
-                }
-            }
+    public CalendarDates getDates() {
+        return dates.clone();
+    }
+
+    void rmTagEntryLink(String tag, UUID entry) {
+        entries.get(entry).tags.remove(tag);
+        Set<UUID> entries1 = tags.get(tag).entries;
+        entries1.remove(entry);
+        // FIXME: 10/18/24 rm tag if no entries in it
+//        if (entries1.isEmpty()) tags.remove(tag);
+    }
+
+    void addTagEntryLink(String tag, UUID entry) {
+        entries.get(entry).tags.add(tag);
+        Tag tag1 = tags.get(tag);
+        if (tag1 == null) {
+            tag1 = new Tag(tag);
+            tags.put(tag, tag1);
         }
-        return result;
+        tag1.entries.add(entry);
+    }
+
+    public Entry getEntry(UUID entry) {
+        return entries.get(entry);
+    }
+
+    Entry getEntryUnsafe(UUID entry) {
+        return entries.get(entry);
     }
 }

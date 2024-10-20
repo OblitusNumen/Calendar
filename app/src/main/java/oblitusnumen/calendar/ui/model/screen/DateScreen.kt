@@ -6,7 +6,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
@@ -17,7 +16,7 @@ import androidx.compose.ui.unit.dp
 import oblitusnumen.calendar.BackButton
 import oblitusnumen.calendar.MainActivity
 import oblitusnumen.calendar.implementation.data.CalendarDate
-import oblitusnumen.calendar.implementation.data.Entry
+import oblitusnumen.calendar.implementation.data.CalendarDates
 import oblitusnumen.calendar.ui.model.Functional
 import oblitusnumen.calendar.ui.model.Screen
 import oblitusnumen.calendar.ui.model.TopBarModifier
@@ -31,15 +30,16 @@ class DateScreen(var date: LocalDate, private var dates: List<CalendarDate>) : S
         Column(Modifier.verticalScroll(ScrollState(0))) {// TODO: update state 
             Text("Date $date")
             for (date in dates) {
+                val entry = calendarViewModel.dataManager.getEntry(date.entry)
                 Box(
                     Modifier.fillMaxWidth().border(width = 2.dp, color = MaterialTheme.colorScheme.primary)
                         .clickable(onClick = {
-                            calendarViewModel.open(EntryEdit(date.entry))
+                            calendarViewModel.open(EntryEdit(entry))
                         })
                 ) {
                     Column {
                         Text(date.desc)
-                        Text(date.entry.name)
+                        Text(entry.name)
                         Text(date.date.toString())
                     }
                 }
@@ -52,16 +52,15 @@ class DateScreen(var date: LocalDate, private var dates: List<CalendarDate>) : S
     override fun functionButton(calendarViewModel: MainActivity.CalendarViewModel) {
         Button(onClick = {
             val now = LocalDateTime.now()
-            val entry = Entry(calendarViewModel.dataManager)
-            entry.set(
-                "huh", ArrayList(), setOf(
-                    CalendarDate(
-                        (calendarViewModel.screen as DateScreen).date.atStartOfDay()
-                            .withHour(now.hour).withMinute(now.minute).withSecond(now.second),
-                        entry
-                    )
-                ), ArrayList()
-            )
+            val entry = calendarViewModel.dataManager.createEntry()
+            entry.name = "huh"
+            val eDates = entry.calendarDates
+            eDates.add(CalendarDate(
+                (calendarViewModel.screen as DateScreen).date.atStartOfDay()
+                    .withHour(now.hour).withMinute(now.minute).withSecond(now.second),
+                entry.uid
+            ))
+            entry.update(eDates)
             calendarViewModel.open(EntryEdit(entry))
         }) {
             Text("十")

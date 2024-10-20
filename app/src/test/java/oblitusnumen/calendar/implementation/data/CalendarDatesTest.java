@@ -4,11 +4,11 @@ import junit.framework.TestCase;
 
 import java.util.*;
 
-public class SortedListTest extends TestCase {
+public class CalendarDatesTest extends TestCase {
 
     public void testAdd2() {
         String[] strings = {"a", "c", "r", "g", "b", "m", "d", "e"};
-        SortedList<A> list = new SortedList<>(Comparator.comparing(e -> e.s));
+        CalendarDates<A> list = new CalendarDates<>(Comparator.comparing(e -> e.s));
         for (int i = 0; i < 2; i++) {
             for (String string : strings) {
                 list.add(new A(string, i));
@@ -27,7 +27,7 @@ public class SortedListTest extends TestCase {
 
     public void testAdd() {
         String[] strings = {"a", "c", "r", "g", "b", "m", "d", "e"};
-        SortedList<String> list = new SortedList<>(Comparator.naturalOrder());
+        CalendarDates<String> list = new CalendarDates<>(Comparator.naturalOrder());
         for (int i = 0; i < 2; i++) {
             for (String string : strings) {
                 list.add(string);
