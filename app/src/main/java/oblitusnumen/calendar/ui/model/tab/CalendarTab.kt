@@ -58,7 +58,6 @@ class CalendarTab : Tab, Functional, TopBarModifier {
                 modifier = Modifier
             ) {
                 items(Int.MAX_VALUE, itemContent = {
-                    Utils.log(it)
                     val monthItemIndex = getMonthItemIndex(it)
                     val mon = LIST_CENTER.plusMonths(((it - Int.MAX_VALUE / 2) / 7).toLong()).withDayOfMonth(1)
                     if (monthItemIndex == 0) {
@@ -87,7 +86,7 @@ class CalendarTab : Tab, Functional, TopBarModifier {
                 }
                 date = date.plusDays(1)
             }
-            while (date.month.value == monthValue) {
+            while (date.month.value == monthValue && date.dayOfWeek.value <= 7) {
                         val dates =
                             ArrayList(
                                 calendarViewModel.dataManager.getDates(

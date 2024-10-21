@@ -64,6 +64,7 @@ class MainActivity : ComponentActivity(), TopBarModifier {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.primary) {
                     Scaffold(
                         topBar = {// FIXME:
+//                            TopAppBar()
                             Row {
                                 var width = getWidthPart(1f)
                                 if (calendarViewModel.screen is Tab) {
