@@ -103,48 +103,7 @@ class CalendarTab : Tab, Functional, TopBarModifier {
 
     private fun getMonthItemIndex(it: Int): Int {
         val offset = it - Int.MAX_VALUE / 2
-        return if (offset < 0) 7 + offset % 7 else offset % 7
-    }
-
-    @Composable
-    fun DisplayMonth(
-        then: LocalDate,
-        calendarViewModel: MainActivity.CalendarViewModel
-    ) {
-        Column {
-            val blockW = getWidthPartIncludePadding(7f)
-            val blockH = blockW.times(1.5f)
-            var dayOfWeek = (then.dayOfWeek.value + 6) % 7 + 1
-            var dayOfMonth = -dayOfWeek + 2
-            Text(stringArrayResource(R.array.monthNames)[then.month.value - 1] + ", " + then.year)
-            val monthLen = then.month.length(then.isLeapYear)
-            while (dayOfMonth <= monthLen) {
-                Row {
-                    while (dayOfMonth < 1) {
-                        Box(
-                            Modifier.size(blockW, blockH)
-                        ) {
-                        }
-                        dayOfMonth++
-                    }
-                    while (dayOfWeek <= 7) {
-                        val dates =
-                            ArrayList(
-                                calendarViewModel.dataManager.getDates(
-                                    then.atStartOfDay(),
-                                    then.plusMonths(1).atStartOfDay()
-                                ).toList()
-                            )
-                        DisplayDay(blockW, blockH, then.withDayOfMonth(dayOfMonth), calendarViewModel, dates)
-
-                        dayOfMonth++
-                        dayOfWeek++
-                        if (dayOfMonth > monthLen) break
-                    }
-                    dayOfWeek = 1
-                }
-            }
-        }
+        return if (offset < 0) 6 + offset % 7 else offset % 7
     }
 
     @SuppressLint("NewApi")
@@ -166,7 +125,7 @@ class CalendarTab : Tab, Functional, TopBarModifier {
         val col: Color
 
         if (now.year == then.year && now.month == then.month && then.dayOfMonth == now.dayOfMonth) {
-            modifier = modifier.background(MaterialTheme.colorScheme.primary)
+            modifier = modifier.background(MaterialTheme.colorScheme.primary, shape = RoundedCornerShape(10.dp))
             col = MaterialTheme.colorScheme.background
         } else {
             col = MaterialTheme.colorScheme.primary
