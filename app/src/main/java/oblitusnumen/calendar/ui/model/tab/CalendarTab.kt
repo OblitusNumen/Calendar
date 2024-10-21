@@ -86,15 +86,16 @@ class CalendarTab : Tab, Functional, TopBarModifier {
                 }
                 date = date.plusDays(1)
             }
-            while (date.month.value == monthValue && date.dayOfWeek.value <= 7) {
-                        val dates =
-                            ArrayList(
-                                calendarViewModel.dataManager.getDates(
-                                    date.atStartOfDay(),
-                                    date.plusMonths(1).atStartOfDay()
-                                ).toList()
-                            )
+            while (date.month.value == monthValue) {
+                val dates =
+                    ArrayList(
+                        calendarViewModel.dataManager.getDates(
+                            date.atStartOfDay(),
+                            date.plusMonths(1).atStartOfDay()
+                        ).toList()
+                    )
                 DisplayDay(blockW, blockH, date, calendarViewModel, dates)
+                if (date.dayOfWeek.value == 7) break
                 date = date.plusDays(1)
             }
         }
