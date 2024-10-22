@@ -58,8 +58,10 @@ class CalendarTab : Tab, Functional, TopBarModifier {
                 modifier = Modifier
             ) {
                 items(Int.MAX_VALUE, itemContent = {
-                    val monthItemIndex = getMonthItemIndex(it)
-                    val mon = LIST_CENTER.plusMonths(((it - Int.MAX_VALUE / 2) / 7).toLong()).withDayOfMonth(1)
+                    val offset = it - Int.MAX_VALUE / 2
+                    val monthItemIndex = if (offset < 0) 6 + offset % 7 else offset % 7
+                    val monthIdx = if (offset < 0) offset / 7 - 1 else offset / 7
+                    val mon = LIST_CENTER.plusMonths(monthIdx.toLong()).withDayOfMonth(1)
                     if (monthItemIndex == 0) {
                         Text(stringArrayResource(R.array.monthNames)[mon.month.value - 1] + " " + mon.year)
                     } else {
@@ -99,11 +101,6 @@ class CalendarTab : Tab, Functional, TopBarModifier {
                 date = date.plusDays(1)
             }
         }
-    }
-
-    private fun getMonthItemIndex(it: Int): Int {
-        val offset = it - Int.MAX_VALUE / 2
-        return if (offset < 0) 6 + offset % 7 else offset % 7
     }
 
     @SuppressLint("NewApi")
