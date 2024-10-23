@@ -6,7 +6,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
@@ -17,7 +16,6 @@ import androidx.compose.ui.unit.dp
 import oblitusnumen.calendar.BackButton
 import oblitusnumen.calendar.MainActivity
 import oblitusnumen.calendar.implementation.data.CalendarDate
-import oblitusnumen.calendar.implementation.data.Entry
 import oblitusnumen.calendar.ui.model.Functional
 import oblitusnumen.calendar.ui.model.Screen
 import oblitusnumen.calendar.ui.model.TopBarModifier

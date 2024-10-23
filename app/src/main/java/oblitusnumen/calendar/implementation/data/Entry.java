@@ -1,93 +1,48 @@
 package oblitusnumen.calendar.implementation.data;
 
-import oblitusnumen.calendar.implementation.data.content.Content;
 
-import java.io.File;
-import java.io.Serial;
-import java.io.Serializable;
-import java.time.LocalDateTime;
-import java.util.*;
+import android.annotation.SuppressLint;
+import android.content.ContentValues;
+import android.database.Cursor;
+import android.provider.BaseColumns;
 
-public class Entry implements Serializable {
-    @Serial
-    private static final long serialVersionUID = 1;
-    public final UUID uid;
-    transient DataManager dataManager;
-    String name = "";
-    Set<Tag> tags = new HashSet<>();
-    Set<CalendarDate> calendarDates = new HashSet<>();
-    List<Content> contents = new ArrayList<>();
+public class Entry implements BaseColumns {
+    public static final String TABLE_NAME = "entries";
+    public static final String COLUMN_NAME_ID = "id";
+    public static final String COLUMN_NAME_NAME = "name";
+    private final DbHelper dbHelper;
+    int id;
+    String name;
 
-    public Entry(DataManager dataManager) {
-        this(UUID.randomUUID(), dataManager);
+    Entry(DbHelper dbHelper, ContentValues contentValues) {
+        this.dbHelper = dbHelper;
+        this.id = (int) contentValues.get(COLUMN_NAME_ID);
+        this.name = (String) contentValues.get(COLUMN_NAME_NAME);
     }
 
-    Entry(UUID uid, DataManager dataManager) {
-        this.uid = uid;
-        this.dataManager = dataManager;
-        dataManager.addEntry(this);
+    Entry(DbHelper dbHelper) {
+        this.dbHelper = dbHelper;
     }
 
-    public void addDate(LocalDateTime date) {
-
+    private Entry(DbHelper dbHelper, int id, String name) {
+        this.dbHelper = dbHelper;
+        this.id = id;
+        this.name = name;
     }
 
-    public File getDir() {
-        return new File(dataManager.activity.getFilesDir() + File.separator + "entry-" + uid);
+    ContentValues toContentValues() {
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(COLUMN_NAME_ID, id);
+        contentValues.put(COLUMN_NAME_NAME, name);
+        return contentValues;
     }
 
-    public void set(String name1, Iterable<Tag> tags2, Set<CalendarDate> calendarDates1, List<Content> contents1) {
-        if (!name1.equals(name)) {
-            name = name1;
+    @SuppressLint("Range")
+    static Entry byId(DbHelper dbHelper, int entryId) {
+        try (Cursor cursor = dbHelper.getReadableDatabase().query(Entry.TABLE_NAME, new String[]{Entry.COLUMN_NAME_ID, Entry.COLUMN_NAME_NAME},
+                Entry.COLUMN_NAME_ID + " = ?", new String[]{String.valueOf(entryId)}, null, null, Entry.COLUMN_NAME_ID + " DESC")) {
+            cursor.moveToFirst();
+            return new Entry(dbHelper, cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_ID)), cursor.getString(cursor.getColumnIndex(COLUMN_NAME_NAME)));
         }
-        Set<Tag> tags1 = new HashSet<>();
-        for (Tag t : tags2) {
-            tags1.add(dataManager.getTag(t));
-        }
-        for (Tag tag : tags.toArray(new Tag[0])) {
-            rmTag(tag);
-        }
-        for (Tag tag : tags1) {
-            addTag(tag);
-        }
-        calendarDates.clear();
-        calendarDates.addAll(calendarDates1);
-        contents.clear();
-        contents.addAll(contents1);
-        dataManager.save();
-    }
-
-    private void addTag(Tag tag) {
-        tags.add(tag);
-        tag.addEntry(this);
-    }
-
-    private void rmTag(Tag tag) {
-        tags.remove(tag);
-        tag.rmEntry(this);
-    }
-
-    public void remove() {
-        dataManager.rmEntry(this);
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public HashSet<Tag> getTags() {
-        return new HashSet<>(tags);
-    }
-
-    public HashSet<CalendarDate> getCalendarDates() {
-        HashSet<CalendarDate> dates = new HashSet<>();
-        for (CalendarDate calendarDate : calendarDates) {
-            dates.add(calendarDate.clone());
-        }
-        return dates;
-    }
-
-    public List<Content> getContents() {
-        return new LinkedList<>(contents);
     }
 }

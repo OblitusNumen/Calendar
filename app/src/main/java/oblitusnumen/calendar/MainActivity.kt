@@ -103,6 +103,11 @@ class MainActivity : ComponentActivity(), TopBarModifier {
         }
     }
 
+    override fun onDestroy() {
+        dataManager.close()
+        super.onDestroy()
+    }
+
     @Composable
     fun BottomBar(calendarViewModel: CalendarViewModel) {
         Box(Modifier.width(getWidthPart(1f)).height(50.dp)) {

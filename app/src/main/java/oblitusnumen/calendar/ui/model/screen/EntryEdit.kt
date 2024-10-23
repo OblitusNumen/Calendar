@@ -17,7 +17,6 @@ import androidx.compose.ui.unit.dp
 import oblitusnumen.calendar.BackButton
 import oblitusnumen.calendar.MainActivity
 import oblitusnumen.calendar.implementation.data.CalendarDate
-import oblitusnumen.calendar.implementation.data.Entry
 import oblitusnumen.calendar.implementation.data.Tag
 import oblitusnumen.calendar.implementation.data.content.Content
 import oblitusnumen.calendar.implementation.data.content.TextContent
