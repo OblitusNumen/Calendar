@@ -19,7 +19,7 @@ class TagsTab : Tab {
     @Composable
     override fun compose(calendarViewModel: MainActivity.CalendarViewModel) {
         Column(Modifier.verticalScroll(ScrollState(0))) {
-            for (tag in calendarViewModel.dataManager.tags) {
+            for (tag in calendarViewModel.dbManager.tags) {
                 Box(
                     Modifier.height(200.dp)
                         .border(width = 2.dp, color = MaterialTheme.colorScheme.primary)

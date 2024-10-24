@@ -7,19 +7,23 @@ public class EntryTagLinks implements BaseColumns {
     public static final String TABLE_NAME = "entryTagLinks";
     public static final String COLUMN_NAME_ENTRY_ID = "entryId";
     public static final String COLUMN_NAME_TAG_ID = "tagId";
-    private final DbHelper dbHelper;
+    private final DbManager dbManager;
     int entryId;
     int tagId;
 
-    EntryTagLinks(DbHelper dbHelper, ContentValues contentValues) {
-        this.dbHelper = dbHelper;
-        entryId = (int) contentValues.get(COLUMN_NAME_ENTRY_ID);
-        tagId = (int) contentValues.get(COLUMN_NAME_TAG_ID);
-    }
-
-    EntryTagLinks(DbHelper dbHelper, int entryId, int tagId) {
-        this.dbHelper = dbHelper;
+    EntryTagLinks(DbManager dbManager, int entryId, int tagId) {
+        this.dbManager = dbManager;
         this.entryId = entryId;
         this.tagId = tagId;
+    }
+
+    public void create() {
+        dbManager.getWritableDatabase().execSQL("INSERT OR IGNORE INTO " + TABLE_NAME + " (" + COLUMN_NAME_ENTRY_ID + ", " + COLUMN_NAME_TAG_ID + ") " +
+                "VALUES (?, ?)", new String[]{String.valueOf(entryId), String.valueOf(tagId)});
+    }
+
+    public void delete() {
+        dbManager.getWritableDatabase().execSQL("INSERT OR IGNORE INTO " + TABLE_NAME + " (" + COLUMN_NAME_ENTRY_ID + ", " + COLUMN_NAME_TAG_ID + ") " +
+                "VALUES (?, ?)", new String[]{String.valueOf(entryId), String.valueOf(tagId)});
     }
 }

@@ -13,8 +13,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -26,12 +25,12 @@ import oblitusnumen.calendar.MainActivity
 import oblitusnumen.calendar.MainActivity.Companion.LIST_CENTER
 import oblitusnumen.calendar.R
 import oblitusnumen.calendar.getWidthPartIncludePadding
-import oblitusnumen.calendar.implementation.Utils
-import oblitusnumen.calendar.implementation.data.CalendarDate
+import oblitusnumen.calendar.implementation.data.Date
 import oblitusnumen.calendar.ui.model.Functional
 import oblitusnumen.calendar.ui.model.Tab
 import oblitusnumen.calendar.ui.model.TopBarModifier
 import oblitusnumen.calendar.ui.model.screen.DateScreen
+import oblitusnumen.calendar.ui.model.screen.EntryEdit
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
@@ -88,14 +87,21 @@ class CalendarTab : Tab, Functional, TopBarModifier {
                 }
                 date = date.plusDays(1)
             }
-            while (date.month.value == monthValue) {
-                val dates =
-                    ArrayList(
-                        calendarViewModel.dataManager.getDates(
-                            date.atStartOfDay(),
-                            date.plusMonths(1).atStartOfDay()
+            var dates = ArrayList<Date>()
+            var loaded by remember{ mutableStateOf(false) }
+            if (!loaded) {
+                val coroutineScope = rememberCoroutineScope()
+                coroutineScope.launch {
+                    dates = ArrayList(
+                        calendarViewModel.dbManager.getDates(
+                            date,
+                            date.plusMonths(1)
                         ).toList()
                     )
+                    loaded = true
+                }
+            }
+            while (date.month.value == monthValue) {
                 DisplayDay(blockW, blockH, date, calendarViewModel, dates)
                 if (date.dayOfWeek.value == 7) break
                 date = date.plusDays(1)
@@ -110,7 +116,7 @@ class CalendarTab : Tab, Functional, TopBarModifier {
         blockH: Dp,
         then: LocalDate,
         calendarViewModel: MainActivity.CalendarViewModel,
-        dates: ArrayList<CalendarDate>
+        dates: ArrayList<Date>
     ) {
         val now = LocalDate.now()
         var modifier = Modifier.padding(2.dp).size(blockW.minus(4.dp), blockH.minus(4.dp))
@@ -128,12 +134,9 @@ class CalendarTab : Tab, Functional, TopBarModifier {
             col = MaterialTheme.colorScheme.primary
         }
         val begin = then.atStartOfDay()
-        val end = then.plusDays(1).atStartOfDay()
-        val eventDates =
-            ArrayList(dates.stream().filter({ date -> date.date.isAfter(begin) && date.date.isBefore(end) }).toList())
+        val eventDates = ArrayList(dates.stream().filter({ date -> date.forDay(begin) != (-1).toLong() }).toList())
+        eventDates.sortBy { it.forDay(begin) }
         Box(modifier.clickable(onClick = {
-//        Log.v("calendar", "clicked ${then.year}.${then.month}.$dayOfMonth")
-            eventDates.sortBy { it.date }
             calendarViewModel.open(DateScreen(then, eventDates))
         })) {
             Column {
@@ -149,7 +152,13 @@ class CalendarTab : Tab, Functional, TopBarModifier {
 
     @Composable
     override fun functionButton(calendarViewModel: MainActivity.CalendarViewModel) {
-//        TODO("Not yet implemented")
+        Button(onClick = {
+            val entry = calendarViewModel.dbManager.createEntry()
+            calendarViewModel.open(EntryEdit(calendarViewModel, entry))
+        }) {
+            Text("十")
+//            Text("+")
+        }
     }
 
     // TODO:

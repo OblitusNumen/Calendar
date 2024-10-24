@@ -15,30 +15,32 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import oblitusnumen.calendar.BackButton
 import oblitusnumen.calendar.MainActivity
-import oblitusnumen.calendar.implementation.data.CalendarDate
+import oblitusnumen.calendar.implementation.Utils.toLocalDateTime
+import oblitusnumen.calendar.implementation.data.Date
 import oblitusnumen.calendar.ui.model.Functional
 import oblitusnumen.calendar.ui.model.Screen
 import oblitusnumen.calendar.ui.model.TopBarModifier
-import java.time.LocalDate
-import java.time.LocalDateTime
+import java.time.*
 
-class DateScreen(var date: LocalDate, private var dates: List<CalendarDate>) : Screen, Functional, TopBarModifier {
+class DateScreen(var day: LocalDate, private var dates: List<Date>) : Screen, Functional, TopBarModifier {
     // TODO:
     @Composable
     override fun compose(calendarViewModel: MainActivity.CalendarViewModel) {
         Column(Modifier.verticalScroll(ScrollState(0))) {// TODO: update state 
-            Text("Date $date")
+            Text("Date $day")
             for (date in dates) {
+                val entry = date.entry
+                val forDay = date.forDay(day.atStartOfDay())
                 Box(
                     Modifier.fillMaxWidth().border(width = 2.dp, color = MaterialTheme.colorScheme.primary)
                         .clickable(onClick = {
-                            calendarViewModel.open(EntryEdit(date.entry))
+                            calendarViewModel.open(EntryEdit(calendarViewModel, entry))
                         })
                 ) {
                     Column {
                         Text(date.desc)
-                        Text(date.entry.name)
-                        Text(date.date.toString())
+                        Text(entry.name)
+                        Text("" + toLocalDateTime(forDay))
                     }
                 }
             }
@@ -49,18 +51,8 @@ class DateScreen(var date: LocalDate, private var dates: List<CalendarDate>) : S
     @Composable
     override fun functionButton(calendarViewModel: MainActivity.CalendarViewModel) {
         Button(onClick = {
-            val now = LocalDateTime.now()
-            val entry = Entry(calendarViewModel.dataManager)
-            entry.set(
-                "huh", ArrayList(), setOf(
-                    CalendarDate(
-                        (calendarViewModel.screen as DateScreen).date.atStartOfDay()
-                            .withHour(now.hour).withMinute(now.minute).withSecond(now.second),
-                        entry
-                    )
-                ), ArrayList()
-            )
-            calendarViewModel.open(EntryEdit(entry))
+            val entry = calendarViewModel.dbManager.createEntry()
+            calendarViewModel.open(EntryEdit(calendarViewModel, entry))
         }) {
             Text("十")
 //            Text("+")

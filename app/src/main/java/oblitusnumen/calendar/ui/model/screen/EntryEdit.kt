@@ -16,20 +16,20 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import oblitusnumen.calendar.BackButton
 import oblitusnumen.calendar.MainActivity
-import oblitusnumen.calendar.implementation.data.CalendarDate
+import oblitusnumen.calendar.implementation.Utils.toLocalDateTime
+import oblitusnumen.calendar.implementation.data.Date
+import oblitusnumen.calendar.implementation.data.Entry
 import oblitusnumen.calendar.implementation.data.Tag
-import oblitusnumen.calendar.implementation.data.content.Content
-import oblitusnumen.calendar.implementation.data.content.TextContent
 import oblitusnumen.calendar.ui.model.Screen
 import oblitusnumen.calendar.ui.model.TopBarModifier
 import java.time.LocalDateTime
 
-class EntryEdit(val entry: Entry) : Screen, TopBarModifier {
+class EntryEdit(val calendarViewModel: MainActivity.CalendarViewModel, val entry: Entry) : Screen, TopBarModifier {
     var newName: MutableState<TextFieldValue>? = null
-    var tags: HashSet<Tag> = entry.tags
-    var calendarDates: HashSet<CalendarDate> = entry.calendarDates
-    var contents: MutableList<Content> = entry.contents
-
+    var tags: MutableList<Tag>
+    var dates: MutableList<Date>
+    var contents: String   // FIXME: this should be List<Content>
+    
     // TODO:
     @Composable
     override fun compose(calendarViewModel: MainActivity.CalendarViewModel) {
@@ -39,61 +39,20 @@ class EntryEdit(val entry: Entry) : Screen, TopBarModifier {
             TextField(value = newName!!.value, onValueChange = { t ->
                 newName!!.value = t
             }, placeholder = { Text("name") })
-            Column {
-                Dates()
-                Tags(calendarViewModel)
-                Contents(calendarViewModel)
-            }
+            Dates()
+            Tags()
+            Contents()
         }
     }
 
     @Composable
-    fun Contents(calendarViewModel: MainActivity.CalendarViewModel) {
-        Text("contents")
-            var flag = remember {mutableStateOf(false)}
-            flag.value
-        for ((i, content) in contents.withIndex()) {
-            when (content) {
-                is TextContent -> {
-                    TextContent(calendarViewModel, flag, content, i)
-                }
-            }
-        }
-        Button(onClick = {
-            // TODO:
-            contents.add(TextContent())
-                        flag.value = !flag.value
-        }) {
-            Text("十")
-        }
-    }
-
-    @Composable
-    fun TextContent(calendarViewModel: MainActivity.CalendarViewModel, flag: MutableState<Boolean>, textContent: TextContent, i: Int) {
-        var editing by remember { mutableStateOf(false) }
-        Box(Modifier.fillMaxWidth().wrapContentHeight().clickable(onClick = {
-            editing = true
-        }).border(2.dp, MaterialTheme.colorScheme.primary)) {
-            if (editing) {
-                Row {
-                    Button(onClick = {
-                        contents.remove(textContent)
-                        flag.value = !flag.value
-                    }) {
-                        Text("一")
-                    }
-                    Button(onClick = {
-                        editing = false
-                    }) { Text("✓") }
-                    var textFieldValue by remember { mutableStateOf(TextFieldValue(textContent.text)) }
-                    TextField(textFieldValue, onValueChange = { value ->
-                        textContent.text = value.text
-                        textFieldValue = value
-                    })
-                }
-            } else {
-                Text(textContent.text)
-            }
+    fun Contents() {
+        Box(Modifier.fillMaxWidth().wrapContentHeight().border(2.dp, MaterialTheme.colorScheme.primary)) {
+            var textFieldValue by remember { mutableStateOf(TextFieldValue(contents)) }
+            TextField(textFieldValue, onValueChange = { value ->
+                contents = value.text
+                textFieldValue = value
+            })
         }
     }
 
@@ -102,15 +61,15 @@ class EntryEdit(val entry: Entry) : Screen, TopBarModifier {
         Text("dates")
             var flag by remember {mutableStateOf(false)}
             flag
-        for (date in calendarDates) {
+        for (date in dates) {
             Row {
                 Button(onClick = {
-                    calendarDates.remove(date)
+                    dates.remove(date)
                     flag = !flag
                 }) {
                     Text("一")
                 }
-                Text(date.date.toString())
+                Text(toLocalDateTime(date.start).toString())
                 val desk = remember { mutableStateOf(TextFieldValue(date.desc)) }
                 TextField(desk.value, onValueChange = { value ->
                     date.desc = value.text
@@ -120,7 +79,7 @@ class EntryEdit(val entry: Entry) : Screen, TopBarModifier {
         }
         Button(onClick = {
             // TODO:
-            calendarDates.add(CalendarDate(LocalDateTime.now(), entry))
+            dates.add(Date(calendarViewModel.dbManager, LocalDateTime.now(), entry))
                         flag = !flag
         }) {
             Text("十")
@@ -128,16 +87,15 @@ class EntryEdit(val entry: Entry) : Screen, TopBarModifier {
     }
 
     @Composable
-    fun Tags(calendarViewModel: MainActivity.CalendarViewModel) {
+    fun Tags() {
         val addingTag = remember{
             mutableStateOf(false)
         }
         if (addingTag.value) {
             Text("addTag")
-            val allTags = calendarViewModel.dataManager.tags
+            val allTags = calendarViewModel.dbManager.tags
             val textFieldValue = remember { mutableStateOf(TextFieldValue("")) }
-            val tag = Tag(calendarViewModel.dataManager)
-            tag.name = textFieldValue.value.text
+            val tag = Tag(calendarViewModel.dbManager, textFieldValue.value.text)
             val addTag = { tag: Tag ->
                 tags.add(tag)
                 addingTag.value = false
@@ -186,16 +144,24 @@ class EntryEdit(val entry: Entry) : Screen, TopBarModifier {
         Row {
             BackButton(calendarViewModel)
             Button(onClick = {
-                entry.set(newName!!.value.text, tags, calendarDates, contents)
+                entry.set(newName!!.value.text, tags, dates, contents)
             }, modifier = Modifier.align(Alignment.Top)) {
                 Text("save")
             }
             Button(onClick = {
-                entry.remove()
+                entry.delete()
                 calendarViewModel.back()
             }, modifier = Modifier.align(Alignment.Top)) {
                 Text("delete")
             }
         }
+    }
+
+    init {
+        this.tags = entry.tags
+        tags.sortBy { it.name }
+        this.dates = entry.dates
+        dates.sortBy { it.start }
+        this.contents = entry.contents
     }
 }

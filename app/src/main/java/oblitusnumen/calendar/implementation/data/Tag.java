@@ -1,31 +1,87 @@
 package oblitusnumen.calendar.implementation.data;
 
+import android.annotation.SuppressLint;
 import android.content.ContentValues;
+import android.database.Cursor;
 import android.provider.BaseColumns;
-
-import java.io.Serial;
-import java.io.Serializable;
-import java.util.HashSet;
-import java.util.Set;
 
 public class Tag implements BaseColumns {
     public static final String TABLE_NAME = "tags";
     public static final String COLUMN_NAME_ID = "id";
     public static final String COLUMN_NAME_NAME = "name";
     public static final String COLUMN_NAME_COLOR = "color";
-    private final DbHelper dbHelper;
-    int id;
+    private final DbManager dbManager;
+    int id = -1;
     String name;
-    int color;
+    int color = -1;
 
-    Tag(DbHelper dbHelper, ContentValues contentValues) {
-        this.dbHelper = dbHelper;
+    Tag(DbManager dbManager, ContentValues contentValues) {
+        this.dbManager = dbManager;
         this.id = (int) contentValues.get(COLUMN_NAME_ID);
         this.name = (String) contentValues.get(COLUMN_NAME_NAME);
         this.color = (int) contentValues.get(COLUMN_NAME_COLOR);
     }
 
-    Tag(DbHelper dbHelper) {
-        this.dbHelper = dbHelper;
+    public Tag(DbManager dbManager, String name) {
+        this.dbManager = dbManager;
+        this.name = name;
+        Tag tag = dbManager.tagByName(name);
+        if (tag != null) {
+            id = tag.id;
+            this.name = tag.name;
+            color = tag.color;
+        }
+    }
+
+    public Tag(DbManager dbManager, int id, String name, int color) {
+        this.dbManager = dbManager;
+        this.id = id;
+        this.name = name;
+        this.color = color;
+    }
+
+    @SuppressLint("Range")
+    Tag(DbManager dbManager, Cursor cursor) {
+        this(dbManager, cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_ID)),
+                cursor.getString(cursor.getColumnIndex(COLUMN_NAME_NAME)),
+                cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_COLOR)));
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setColor(int color) {
+        this.color = color;
+    }
+
+    public int getColor() {
+        return color;
+    }
+
+    void create() {
+        ContentValues contentValues = toContentValues();
+        contentValues.put(COLUMN_NAME_ID, (Integer) null);
+        id = (int) dbManager.getWritableDatabase().insert(TABLE_NAME, null, contentValues);
+    }
+
+    ContentValues toContentValues() {
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(COLUMN_NAME_ID, id);
+        contentValues.put(COLUMN_NAME_NAME, name);
+        contentValues.put(COLUMN_NAME_COLOR, color);
+        return contentValues;
+    }
+
+    void addEntry(int entryId) {
+        new EntryTagLinks(dbManager, entryId, id).create();
+    }
+
+    void rmEntry(int entryId) {
+        new EntryTagLinks(dbManager, entryId, id).delete();
     }
 }
