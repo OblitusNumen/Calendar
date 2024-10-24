@@ -13,7 +13,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -43,9 +44,11 @@ class CalendarTab : Tab, Functional, TopBarModifier {
             Row {
                 var i = 1;
                 while (i <= 7) {
-                    Box(Modifier.width(getWidthPartIncludePadding(7f)).height(25.dp)
-                        .border(2.dp, MaterialTheme.colorScheme.primary)) {
-                        Text(stringArrayResource(R.array.weekdayNames)[i-1], Modifier.align(Alignment.Center))
+                    Box(
+                        Modifier.width(getWidthPartIncludePadding(7f)).height(25.dp)
+                            .border(2.dp, MaterialTheme.colorScheme.primary)
+                    ) {
+                        Text(stringArrayResource(R.array.weekdayNames)[i - 1], Modifier.align(Alignment.Center))
                     }
                     i++;
                 }
@@ -64,7 +67,11 @@ class CalendarTab : Tab, Functional, TopBarModifier {
                     if (monthItemIndex == 0) {
                         Text(stringArrayResource(R.array.monthNames)[mon.month.value - 1] + " " + mon.year)
                     } else {
-                        DisplayWeek(mon.monthValue, mon.plusDays(7*(monthItemIndex-1)-(mon.dayOfWeek.value - 1).toLong()), calendarViewModel)
+                        DisplayWeek(
+                            mon.monthValue,
+                            mon.plusDays(7 * (monthItemIndex - 1) - (mon.dayOfWeek.value - 1).toLong()),
+                            calendarViewModel
+                        )
                     }
                 })
             }
@@ -77,8 +84,8 @@ class CalendarTab : Tab, Functional, TopBarModifier {
     @Composable
     fun DisplayWeek(monthValue: Int, date0: LocalDate, calendarViewModel: MainActivity.CalendarViewModel) {
         var date = date0
-            val blockW = getWidthPartIncludePadding(7f)
-            val blockH = blockW.times(1.5f)
+        val blockW = getWidthPartIncludePadding(7f)
+        val blockH = blockW.times(1.5f)
         Row {
             while (date.month.value % 12 + 1 == monthValue) {
                 Box(
@@ -87,20 +94,12 @@ class CalendarTab : Tab, Functional, TopBarModifier {
                 }
                 date = date.plusDays(1)
             }
-            var dates = ArrayList<Date>()
-            var loaded by remember{ mutableStateOf(false) }
-            if (!loaded) {
-                val coroutineScope = rememberCoroutineScope()
-                coroutineScope.launch {
-                    dates = ArrayList(
-                        calendarViewModel.dbManager.getDates(
-                            date,
-                            date.plusMonths(1)
-                        ).toList()
-                    )
-                    loaded = true
-                }
-            }
+            val dates = ArrayList(
+                calendarViewModel.dbManager.getDates(
+                    date,
+                    date.plusMonths(1)
+                ).toList()
+            )
             while (date.month.value == monthValue) {
                 DisplayDay(blockW, blockH, date, calendarViewModel, dates)
                 if (date.dayOfWeek.value == 7) break

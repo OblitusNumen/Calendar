@@ -1,6 +1,5 @@
 package oblitusnumen.calendar.implementation.data;
 
-import android.content.ContentValues;
 import android.provider.BaseColumns;
 
 public class EntryTagLinks implements BaseColumns {
@@ -23,7 +22,8 @@ public class EntryTagLinks implements BaseColumns {
     }
 
     public void delete() {
-        dbManager.getWritableDatabase().execSQL("INSERT OR IGNORE INTO " + TABLE_NAME + " (" + COLUMN_NAME_ENTRY_ID + ", " + COLUMN_NAME_TAG_ID + ") " +
-                "VALUES (?, ?)", new String[]{String.valueOf(entryId), String.valueOf(tagId)});
+        dbManager.getWritableDatabase().execSQL("DELETE FROM " + TABLE_NAME + " " +
+                        "WHERE " + COLUMN_NAME_ENTRY_ID + " = ? AND " + COLUMN_NAME_TAG_ID + " = ?",
+                new String[]{String.valueOf(entryId), String.valueOf(tagId)});
     }
 }

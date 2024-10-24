@@ -8,7 +8,10 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.Dp
@@ -24,13 +27,10 @@ import oblitusnumen.calendar.ui.model.Screen
 import oblitusnumen.calendar.ui.model.Tab
 import oblitusnumen.calendar.ui.model.TopBarModifier
 import oblitusnumen.calendar.ui.model.tab.CalendarTab
-import oblitusnumen.calendar.ui.model.tab.SearchTab
+import oblitusnumen.calendar.ui.model.tab.EntriesTab
 import oblitusnumen.calendar.ui.model.tab.TagsTab
 import oblitusnumen.calendar.ui.theme.CalendarTheme
-import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
-import java.time.ZoneOffset
 import java.util.*
 
 class MainActivity : ComponentActivity(), TopBarModifier {
@@ -44,6 +44,7 @@ class MainActivity : ComponentActivity(), TopBarModifier {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        dbManager.init()
         setContent {
             CalendarTheme {
                 val calendarViewModel = viewModel { CalendarViewModel(dbManager) }
@@ -106,8 +107,8 @@ class MainActivity : ComponentActivity(), TopBarModifier {
                 Box(getTabBoxModifier({ TagsTab() }, calendarViewModel = calendarViewModel)) {
                     Text("tags")
                 }
-                Box(getTabBoxModifier({ SearchTab() }, calendarViewModel = calendarViewModel)) {
-                    Text("search")
+                Box(getTabBoxModifier({ EntriesTab() }, calendarViewModel = calendarViewModel)) {
+                    Text("entries")
                 }
             }
         }

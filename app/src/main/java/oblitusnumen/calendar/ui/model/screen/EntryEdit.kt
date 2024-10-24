@@ -24,12 +24,13 @@ import oblitusnumen.calendar.ui.model.Screen
 import oblitusnumen.calendar.ui.model.TopBarModifier
 import java.time.LocalDateTime
 
-class EntryEdit(val calendarViewModel: MainActivity.CalendarViewModel, val entry: Entry) : Screen, TopBarModifier {
-    var newName: MutableState<TextFieldValue>? = null
-    var tags: MutableList<Tag>
-    var dates: MutableList<Date>
-    var contents: String   // FIXME: this should be List<Content>
-    
+class EntryEdit(private val calendarViewModel: MainActivity.CalendarViewModel, private val entry: Entry) : Screen,
+    TopBarModifier {
+    private var newName: MutableState<TextFieldValue>? = null
+    var tags: MutableList<Tag> = entry.tags
+    private var dates: MutableList<Date>
+    private var contents: String   // FIXME: this should be List<Content>
+
     // TODO:
     @Composable
     override fun compose(calendarViewModel: MainActivity.CalendarViewModel) {
@@ -49,7 +50,7 @@ class EntryEdit(val calendarViewModel: MainActivity.CalendarViewModel, val entry
     fun Contents() {
         Box(Modifier.fillMaxWidth().wrapContentHeight().border(2.dp, MaterialTheme.colorScheme.primary)) {
             var textFieldValue by remember { mutableStateOf(TextFieldValue(contents)) }
-            TextField(textFieldValue, onValueChange = { value ->
+            TextField(textFieldValue, modifier = Modifier.fillMaxWidth(), onValueChange = { value ->
                 contents = value.text
                 textFieldValue = value
             })
@@ -59,8 +60,8 @@ class EntryEdit(val calendarViewModel: MainActivity.CalendarViewModel, val entry
     @Composable
     fun Dates() {
         Text("dates")
-            var flag by remember {mutableStateOf(false)}
-            flag
+        var flag by remember { mutableStateOf(false) }
+        flag
         for (date in dates) {
             Row {
                 Button(onClick = {
@@ -80,7 +81,7 @@ class EntryEdit(val calendarViewModel: MainActivity.CalendarViewModel, val entry
         Button(onClick = {
             // TODO:
             dates.add(Date(calendarViewModel.dbManager, LocalDateTime.now(), entry))
-                        flag = !flag
+            flag = !flag
         }) {
             Text("十")
         }
@@ -88,7 +89,7 @@ class EntryEdit(val calendarViewModel: MainActivity.CalendarViewModel, val entry
 
     @Composable
     fun Tags() {
-        val addingTag = remember{
+        val addingTag = remember {
             mutableStateOf(false)
         }
         if (addingTag.value) {
@@ -117,7 +118,7 @@ class EntryEdit(val calendarViewModel: MainActivity.CalendarViewModel, val entry
             }
         } else {
             Text("tags")
-            var flag by remember {mutableStateOf(false)}
+            var flag by remember { mutableStateOf(false) }
             flag
             for (tag in tags) {
                 Row {
@@ -158,7 +159,6 @@ class EntryEdit(val calendarViewModel: MainActivity.CalendarViewModel, val entry
     }
 
     init {
-        this.tags = entry.tags
         tags.sortBy { it.name }
         this.dates = entry.dates
         dates.sortBy { it.start }

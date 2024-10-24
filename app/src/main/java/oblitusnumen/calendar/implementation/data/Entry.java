@@ -8,7 +8,10 @@ import android.provider.BaseColumns;
 import oblitusnumen.calendar.implementation.Utils;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -22,7 +25,43 @@ public class Entry implements BaseColumns {
     public static final String CONTENTS_FILENAME = "contents.md";
     private final DbManager dbManager;
     int id = -1;
-    String name;
+    String name = "";
+
+    Entry(DbManager dbManager, ContentValues contentValues) {
+        this.dbManager = dbManager;
+        this.id = (int) contentValues.get(COLUMN_NAME_ID);
+        this.name = (String) contentValues.get(COLUMN_NAME_NAME);
+    }
+
+    @SuppressLint("Range")
+    Entry(DbManager dbManager, Cursor cursor) {
+        this(dbManager, cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_ID)), cursor.getString(cursor.getColumnIndex(COLUMN_NAME_NAME)));
+    }
+
+    /**
+     * we initialize <code>Entry</code> here and only here
+     *
+     * @param dbManager
+     */
+    Entry(DbManager dbManager) {
+        this.dbManager = dbManager;
+        ContentValues contentValues = toContentValues();
+        contentValues.put(COLUMN_NAME_ID, (Integer) null);
+        id = (int) dbManager.getWritableDatabase().insert(TABLE_NAME, null, contentValues);
+        if (!getDir().mkdirs())
+            throw new RuntimeException("could not create directory for entry " + id + ", filename: " + getDir());
+        try {
+            if (!getContentsFile().createNewFile()) throw new IOException();
+        } catch (IOException e) {
+            throw new RuntimeException("could not create directory for entry " + id + ", filename: " + getDir(), e);
+        }
+    }
+
+    private Entry(DbManager dbManager, int id, String name) {
+        this.dbManager = dbManager;
+        this.id = id;
+        this.name = name;
+    }
 
     @SuppressLint("NewApi")
     public String getContents() {
@@ -46,34 +85,6 @@ public class Entry implements BaseColumns {
         return dates;
     }
 
-    Entry(DbManager dbManager, ContentValues contentValues) {
-        this.dbManager = dbManager;
-        this.id = (int) contentValues.get(COLUMN_NAME_ID);
-        this.name = (String) contentValues.get(COLUMN_NAME_NAME);
-    }
-
-    @SuppressLint("Range")
-    Entry(DbManager dbManager, Cursor cursor) {
-        this(dbManager, cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_ID)), cursor.getString(cursor.getColumnIndex(COLUMN_NAME_NAME)));
-    }
-
-    /**
-     * we initialize <code>Entry</code> here and only here
-     * @param dbManager
-     */
-    Entry(DbManager dbManager) {
-        this.dbManager = dbManager;
-        ContentValues contentValues = toContentValues();
-        contentValues.put(COLUMN_NAME_ID, (Integer) null);
-        id = (int) dbManager.getWritableDatabase().insert(TABLE_NAME, null, contentValues);
-        if (!getDir().mkdirs()) throw new RuntimeException("could not create directory for entry " + id + ", filename: " + getDir());
-        try {
-            if (getContentsFile().createNewFile()) throw new IOException();
-        } catch (IOException e) {
-            throw new RuntimeException("could not create directory for entry " + id + ", filename: " + getDir(), e);
-        }
-    }
-
     public File getDir() {
         return new File(dbManager.activity.getFilesDir(), String.valueOf(id));
     }
@@ -91,12 +102,6 @@ public class Entry implements BaseColumns {
         dbManager.getWritableDatabase().execSQL("DELETE FROM " + Notification.TABLE_NAME + " WHERE " + Notification.COLUMN_NAME_ENTRY_ID + " = ?", new String[]{String.valueOf(id)});
 
         // FIXME: 10/24/24 remove all asociated entries i.e.
-    }
-
-    private Entry(DbManager dbManager, int id, String name) {
-        this.dbManager = dbManager;
-        this.id = id;
-        this.name = name;
     }
 
     ContentValues toContentValues() {
@@ -135,17 +140,17 @@ public class Entry implements BaseColumns {
 
         this.name = name;
         update();
-
         LinkedList<Tag> tags1 = new LinkedList<>(tags);
+        Map<Integer, Tag> tagsOld = getTags().stream().collect(Collectors.toMap(t -> t.id, t -> t));
         tags1.removeIf(t -> {
             if (t.id == -1) {
                 t.create();
                 addTag(t.id);
                 return true;
-            } return false;
+            }
+            return false;
         });
 //        Map<Integer, Tag> tagsNew = tags1.stream().collect(Collectors.toMap(t -> t.id, t -> t));
-        Map<Integer, Tag> tagsOld = getTags().stream().collect(Collectors.toMap(t -> t.id, t -> t));
         for (Tag tag : tags1) {
             if (tagsOld.containsKey(tag.id)) {
                 tagsOld.remove(tag.id);
@@ -158,14 +163,15 @@ public class Entry implements BaseColumns {
         }
 
         LinkedList<Date> dates1 = new LinkedList<>(dates);
-        dates1.removeIf(t -> {
-            if (t.id == -1) {
-                t.createOrUpdate();
+        Map<Integer, Date> datesOld = getDates().stream().collect(Collectors.toMap(t -> t.id, t -> t));
+        dates1.removeIf(date -> {
+            if (date.id == -1) {
+                date.createOrUpdate();
                 return true;
-            } return false;
+            }
+            return false;
         });
 //        Map<Integer, Date> datesNew = dates1.stream().collect(Collectors.toMap(t -> t.id, t -> t));
-        Map<Integer, Date> datesOld = getDates().stream().collect(Collectors.toMap(t -> t.id, t -> t));
         for (Date date : dates1) {
             if (datesOld.containsKey(date.id)) {
                 datesOld.remove(date.id);
@@ -180,7 +186,7 @@ public class Entry implements BaseColumns {
 
     void update() {
         dbManager.getWritableDatabase().execSQL("UPDATE " + TABLE_NAME + " " +
-                "SET " + COLUMN_NAME_NAME + " = ?", new String[]{name});
+                "SET " + COLUMN_NAME_NAME + " = ? WHERE " + COLUMN_NAME_ID + " = ?", new String[]{name, String.valueOf(id)});
     }
 
     void addTag(int tagId) {

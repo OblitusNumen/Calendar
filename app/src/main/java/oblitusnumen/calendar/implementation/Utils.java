@@ -1,7 +1,6 @@
 package oblitusnumen.calendar.implementation;
 
 import android.util.Log;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.time.Instant;

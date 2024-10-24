@@ -8,10 +8,8 @@ import android.database.sqlite.SQLiteDatabase;
 import android.provider.BaseColumns;
 import oblitusnumen.calendar.implementation.Utils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 
 public class Date implements BaseColumns { // TODO 10/24/24 8:31 PM sorted
     public static final String TABLE_NAME = "dates";
@@ -25,11 +23,11 @@ public class Date implements BaseColumns { // TODO 10/24/24 8:31 PM sorted
     private final DbManager dbManager;
     int id = -1;
     int entryId;
-    String desc;
+    String desc = "";
     long start;
     long duration = 0;
     int timesRepeat = 1;
-    long period = -1;
+    long period = 86400;
 
     @SuppressLint("Range")
     Date(DbManager dbManager, Cursor cursor) {
@@ -42,7 +40,7 @@ public class Date implements BaseColumns { // TODO 10/24/24 8:31 PM sorted
                 cursor.getLong(cursor.getColumnIndex(COLUMN_NAME_PERIOD)));
     }
 
-    public Date(DbManager dbManager, int id, int entryId, String desc, long start, long duration, int timesRepeat, long period) {
+    Date(DbManager dbManager, int id, int entryId, String desc, long start, long duration, int timesRepeat, long period) {
         this.dbManager = dbManager;
         this.id = id;
         this.entryId = entryId;
@@ -95,7 +93,7 @@ public class Date implements BaseColumns { // TODO 10/24/24 8:31 PM sorted
     }
 
     public String getDesc() {
-        return desc == null ? getEntry().name : desc;
+        return desc.isEmpty() ? getEntry().name : desc;
     }
 
     public void setDesc(String desc) {

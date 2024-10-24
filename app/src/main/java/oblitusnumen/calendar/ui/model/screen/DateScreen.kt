@@ -20,7 +20,7 @@ import oblitusnumen.calendar.implementation.data.Date
 import oblitusnumen.calendar.ui.model.Functional
 import oblitusnumen.calendar.ui.model.Screen
 import oblitusnumen.calendar.ui.model.TopBarModifier
-import java.time.*
+import java.time.LocalDate
 
 class DateScreen(var day: LocalDate, private var dates: List<Date>) : Screen, Functional, TopBarModifier {
     // TODO:

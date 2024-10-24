@@ -14,6 +14,7 @@ public class Tag implements BaseColumns {
     int id = -1;
     String name;
     int color = -1;
+    // TODO: 10/25/24 fix dupe tags
 
     Tag(DbManager dbManager, ContentValues contentValues) {
         this.dbManager = dbManager;
@@ -55,12 +56,12 @@ public class Tag implements BaseColumns {
         this.name = name;
     }
 
-    public void setColor(int color) {
-        this.color = color;
-    }
-
     public int getColor() {
         return color;
+    }
+
+    public void setColor(int color) {
+        this.color = color;
     }
 
     void create() {
