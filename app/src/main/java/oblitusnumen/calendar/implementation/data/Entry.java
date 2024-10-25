@@ -93,15 +93,15 @@ public class Entry implements BaseColumns {
         return new File(getDir(), CONTENTS_FILENAME);
     }
 
-    public void delete() { //fixme wrong deletion order
-        dbManager.getWritableDatabase().execSQL("DELETE FROM " + TABLE_NAME + " WHERE " + COLUMN_NAME_ID + " = ?", new String[]{String.valueOf(id)});
-        Utils.rmRecursively(getDir());
+    public void delete() {
+        // FIXME: 10/24/24 remove all asociated entries i.e.
+
         dbManager.getWritableDatabase().execSQL("DELETE FROM " + EntryTagLinks.TABLE_NAME + " WHERE " + EntryTagLinks.COLUMN_NAME_ENTRY_ID + " = ?", new String[]{String.valueOf(id)});
 //        dbManager.getWritableDatabase().execSQL("DELETE FROM " + Tag.TABLE_NAME + " WHERE " + Tag.COLUMN_NAME_ENTRY_ID + " = ?", new String[]{String.valueOf(id)});
-        dbManager.getWritableDatabase().execSQL("DELETE FROM " + Date.TABLE_NAME + " WHERE " + Date.COLUMN_NAME_ENTRY_ID + " = ?", new String[]{String.valueOf(id)});
         dbManager.getWritableDatabase().execSQL("DELETE FROM " + Notification.TABLE_NAME + " WHERE " + Notification.COLUMN_NAME_ENTRY_ID + " = ?", new String[]{String.valueOf(id)});
-
-        // FIXME: 10/24/24 remove all asociated entries i.e.
+        dbManager.getWritableDatabase().execSQL("DELETE FROM " + Date.TABLE_NAME + " WHERE " + Date.COLUMN_NAME_ENTRY_ID + " = ?", new String[]{String.valueOf(id)});
+        Utils.rmRecursively(getDir());
+        dbManager.getWritableDatabase().execSQL("DELETE FROM " + TABLE_NAME + " WHERE " + COLUMN_NAME_ID + " = ?", new String[]{String.valueOf(id)});
     }
 
     ContentValues toContentValues() {
