@@ -86,14 +86,14 @@ public class Entry implements BaseColumns {
     }
 
     public File getDir() {
-        return new File(dbManager.activity.getFilesDir(), String.valueOf(id));
+        return new File(dbManager.context.getFilesDir(), String.valueOf(id));
     }
 
     public File getContentsFile() {
         return new File(getDir(), CONTENTS_FILENAME);
     }
 
-    public void delete() {
+    public void delete() { //fixme wrong deletion order
         dbManager.getWritableDatabase().execSQL("DELETE FROM " + TABLE_NAME + " WHERE " + COLUMN_NAME_ID + " = ?", new String[]{String.valueOf(id)});
         Utils.rmRecursively(getDir());
         dbManager.getWritableDatabase().execSQL("DELETE FROM " + EntryTagLinks.TABLE_NAME + " WHERE " + EntryTagLinks.COLUMN_NAME_ENTRY_ID + " = ?", new String[]{String.valueOf(id)});

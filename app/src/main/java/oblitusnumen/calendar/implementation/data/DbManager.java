@@ -1,9 +1,9 @@
 package oblitusnumen.calendar.implementation.data;
 
+import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import oblitusnumen.calendar.MainActivity;
 import oblitusnumen.calendar.implementation.Utils;
 import org.jetbrains.annotations.NotNull;
 
@@ -16,37 +16,37 @@ import java.util.List;
 public class DbManager extends SQLiteOpenHelper {
     public static final int DATABASE_VERSION = 1;
     public static final String DB_NAME = "entries.db";
-    private static final String SQL_CREATE_ENTRIES = "CREATE TABLE IF NOT EXISTS " + Entry.TABLE_NAME + " (\n" +
-            "    " + Entry.COLUMN_NAME_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,\n" +
-            "    " + Entry.COLUMN_NAME_NAME + " TEXT NOT NULL\n" +
-            ");";
-    private static final String SQL_CREATE_TAGS = "CREATE TABLE IF NOT EXISTS " + Tag.TABLE_NAME + " (\n" +
-            "    " + Tag.COLUMN_NAME_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,\n" +
-            "    " + Tag.COLUMN_NAME_NAME + " TEXT NOT NULL,\n" +
-            "    " + Tag.COLUMN_NAME_COLOR + " INTEGER NOT NULL\n" +
-            ");";
-    private static final String SQL_CREATE_ENTRY_TAG_LINKS = "CREATE TABLE IF NOT EXISTS " + EntryTagLinks.TABLE_NAME + " (\n" +
-            "    " + EntryTagLinks.COLUMN_NAME_ENTRY_ID + " INTEGER NOT NULL,\n" +
-            "    " + EntryTagLinks.COLUMN_NAME_TAG_ID + " INTEGER NOT NULL\n" +
-            ");";
-    private static final String SQL_CREATE_DATES = "CREATE TABLE IF NOT EXISTS " + Date.TABLE_NAME + " (\n" +
-            "    " + Date.COLUMN_NAME_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,\n" +
-            "    " + Date.COLUMN_NAME_ENTRY_ID + " INTEGER NOT NULL,\n" +
-            "    " + Date.COLUMN_NAME_DESC + " TEXT NOT NULL,\n" +
-            "    " + Date.COLUMN_NAME_TIME_START + " BIGINT NOT NULL,\n" +
-            "    " + Date.COLUMN_NAME_DURATION + " BIGINT NOT NULL,\n" +
-            "    " + Date.COLUMN_NAME_TIMES_REPEATS + " INTEGER NOT NULL,\n" +
-            "    " + Date.COLUMN_NAME_PERIOD + " BIGINT NOT NULL\n" +
-            ");";
-    private static final String SQL_CREATE_NOTIFICATIONS = "CREATE TABLE IF NOT EXISTS " + Notification.TABLE_NAME + " (\n" +
-            "    " + Notification.COLUMN_NAME_ENTRY_ID + " INTEGER NOT NULL,\n" +
-            "    " + Notification.COLUMN_NAME_TIME_OFFSET + " BIGINT NOT NULL\n" +
-            ");";
-    final MainActivity activity;
+    private static final String SQL_CREATE_ENTRIES =
+            "CREATE TABLE IF NOT EXISTS " + Entry.TABLE_NAME + " (" +
+            Entry.COLUMN_NAME_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
+            Entry.COLUMN_NAME_NAME + " TEXT NOT NULL);";
+    private static final String SQL_CREATE_TAGS =
+            "CREATE TABLE IF NOT EXISTS " + Tag.TABLE_NAME + " (" +
+            Tag.COLUMN_NAME_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
+            Tag.COLUMN_NAME_NAME + " TEXT NOT NULL UNIQUE," +
+            Tag.COLUMN_NAME_COLOR + " INTEGER NOT NULL);";
+    private static final String SQL_CREATE_ENTRY_TAG_LINKS =
+            "CREATE TABLE IF NOT EXISTS " + EntryTagLinks.TABLE_NAME + " (" +
+            EntryTagLinks.COLUMN_NAME_ENTRY_ID + " INTEGER NOT NULL," +
+            EntryTagLinks.COLUMN_NAME_TAG_ID + " INTEGER NOT NULL);";
+    private static final String SQL_CREATE_DATES =
+            "CREATE TABLE IF NOT EXISTS " + Date.TABLE_NAME + " (" +
+            Date.COLUMN_NAME_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
+            Date.COLUMN_NAME_ENTRY_ID + " INTEGER NOT NULL," +
+            Date.COLUMN_NAME_DESC + " TEXT NOT NULL," +
+            Date.COLUMN_NAME_TIME_START + " BIGINT NOT NULL," +
+            Date.COLUMN_NAME_DURATION + " BIGINT NOT NULL," +
+            Date.COLUMN_NAME_TIMES_REPEATS + " INTEGER NOT NULL," +
+            Date.COLUMN_NAME_PERIOD + " BIGINT NOT NULL);";
+    private static final String SQL_CREATE_NOTIFICATIONS =
+            "CREATE TABLE IF NOT EXISTS " + Notification.TABLE_NAME + " (" +
+            Notification.COLUMN_NAME_ENTRY_ID + " INTEGER NOT NULL," +
+            Notification.COLUMN_NAME_TIME_OFFSET + " BIGINT NOT NULL);";
+    final Context context;
 
-    public DbManager(MainActivity activity) {
-        super(activity, DB_NAME, null, DATABASE_VERSION);
-        this.activity = activity;
+    public DbManager(Context context) {
+        super(context, DB_NAME, null, DATABASE_VERSION);
+        this.context = context;
         Utils.log("DbManager created");
     }
 
@@ -63,7 +63,7 @@ public class DbManager extends SQLiteOpenHelper {
     }
 
     public void init() {
-        File filesDir = activity.getFilesDir();
+        File filesDir = context.getFilesDir();
         if (filesDir.exists()) return;
         if (!filesDir.mkdirs()) throw new RuntimeException("could not create directory for data: " + filesDir);
         Utils.log("Created files directory");
