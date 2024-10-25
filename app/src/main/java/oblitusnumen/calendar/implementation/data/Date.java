@@ -1,7 +1,6 @@
 package oblitusnumen.calendar.implementation.data;
 
 
-import android.annotation.SuppressLint;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -29,7 +28,6 @@ public class Date implements BaseColumns { // TODO 10/24/24 8:31 PM sorted
     int timesRepeat = 1;
     long period = 86400;
 
-    @SuppressLint("Range")
     Date(DbManager dbManager, Cursor cursor) {
         this(dbManager, cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_ID)),
                 cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_ENTRY_ID)),

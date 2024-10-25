@@ -1,17 +1,13 @@
 package oblitusnumen.calendar.implementation.data;
 
 
-import android.annotation.SuppressLint;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.provider.BaseColumns;
 import oblitusnumen.calendar.implementation.Utils;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -33,7 +29,6 @@ public class Entry implements BaseColumns {
         this.name = (String) contentValues.get(COLUMN_NAME_NAME);
     }
 
-    @SuppressLint("Range")
     Entry(DbManager dbManager, Cursor cursor) {
         this(dbManager, cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_ID)), cursor.getString(cursor.getColumnIndex(COLUMN_NAME_NAME)));
     }
@@ -63,11 +58,16 @@ public class Entry implements BaseColumns {
         this.name = name;
     }
 
-    @SuppressLint("NewApi")
     public String getContents() {
-        try (FileInputStream fis = new FileInputStream(getContentsFile())) {
-            return new String(fis.readAllBytes());
-        } catch (Exception e) {
+        try (InputStream fis = new FileInputStream(getContentsFile())) {
+            byte[] buffer = new byte[4096]; // Buffer to hold file data
+            StringBuilder content = new StringBuilder();
+            int bytesRead;
+            while ((bytesRead = fis.read(buffer)) != -1) {
+                content.append(new String(buffer, 0, bytesRead)); // Convert bytes to string
+            }
+            return content.toString(); // Return the complete content as a string
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }

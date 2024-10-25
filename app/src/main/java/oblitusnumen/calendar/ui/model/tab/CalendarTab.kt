@@ -1,6 +1,5 @@
 package oblitusnumen.calendar.ui.model.tab
 
-import android.annotation.SuppressLint
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -42,7 +41,7 @@ class CalendarTab : Tab, Functional, TopBarModifier {
     override fun compose(calendarViewModel: MainActivity.CalendarViewModel) {
         Column {
             Row {
-                var i = 1;
+                var i = 1
                 while (i <= 7) {
                     Box(
                         Modifier.width(getWidthPartIncludePadding(7f)).height(25.dp)
@@ -50,7 +49,7 @@ class CalendarTab : Tab, Functional, TopBarModifier {
                     ) {
                         Text(stringArrayResource(R.array.weekdayNames)[i - 1], Modifier.align(Alignment.Center))
                     }
-                    i++;
+                    i++
                 }
             }
             val now = LocalDate.now()
@@ -108,7 +107,6 @@ class CalendarTab : Tab, Functional, TopBarModifier {
         }
     }
 
-    @SuppressLint("NewApi")
     @Composable
     fun DisplayDay(
         blockW: Dp,
@@ -133,7 +131,7 @@ class CalendarTab : Tab, Functional, TopBarModifier {
             col = MaterialTheme.colorScheme.primary
         }
         val begin = then.atStartOfDay()
-        val eventDates = ArrayList(dates.stream().filter({ date -> date.forDay(begin) != (-1).toLong() }).toList())
+        val eventDates = ArrayList(dates.filter { date -> date.forDay(begin) != (-1).toLong() }.toList())
         eventDates.sortBy { it.forDay(begin) }
         Box(modifier.clickable(onClick = {
             calendarViewModel.open(DateScreen(then, eventDates))

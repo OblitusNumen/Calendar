@@ -18,30 +18,30 @@ public class DbManager extends SQLiteOpenHelper {
     public static final String DB_NAME = "entries.db";
     private static final String SQL_CREATE_ENTRIES =
             "CREATE TABLE IF NOT EXISTS " + Entry.TABLE_NAME + " (" +
-            Entry.COLUMN_NAME_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
-            Entry.COLUMN_NAME_NAME + " TEXT NOT NULL);";
+                    Entry.COLUMN_NAME_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
+                    Entry.COLUMN_NAME_NAME + " TEXT NOT NULL);";
     private static final String SQL_CREATE_TAGS =
             "CREATE TABLE IF NOT EXISTS " + Tag.TABLE_NAME + " (" +
-            Tag.COLUMN_NAME_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
-            Tag.COLUMN_NAME_NAME + " TEXT NOT NULL UNIQUE," +
-            Tag.COLUMN_NAME_COLOR + " INTEGER NOT NULL);";
+                    Tag.COLUMN_NAME_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
+                    Tag.COLUMN_NAME_NAME + " TEXT NOT NULL UNIQUE," +
+                    Tag.COLUMN_NAME_COLOR + " INTEGER NOT NULL);";
     private static final String SQL_CREATE_ENTRY_TAG_LINKS =
             "CREATE TABLE IF NOT EXISTS " + EntryTagLinks.TABLE_NAME + " (" +
-            EntryTagLinks.COLUMN_NAME_ENTRY_ID + " INTEGER NOT NULL," +
-            EntryTagLinks.COLUMN_NAME_TAG_ID + " INTEGER NOT NULL);";
+                    EntryTagLinks.COLUMN_NAME_ENTRY_ID + " INTEGER NOT NULL," +
+                    EntryTagLinks.COLUMN_NAME_TAG_ID + " INTEGER NOT NULL);";
     private static final String SQL_CREATE_DATES =
             "CREATE TABLE IF NOT EXISTS " + Date.TABLE_NAME + " (" +
-            Date.COLUMN_NAME_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
-            Date.COLUMN_NAME_ENTRY_ID + " INTEGER NOT NULL," +
-            Date.COLUMN_NAME_DESC + " TEXT NOT NULL," +
-            Date.COLUMN_NAME_TIME_START + " BIGINT NOT NULL," +
-            Date.COLUMN_NAME_DURATION + " BIGINT NOT NULL," +
-            Date.COLUMN_NAME_TIMES_REPEATS + " INTEGER NOT NULL," +
-            Date.COLUMN_NAME_PERIOD + " BIGINT NOT NULL);";
+                    Date.COLUMN_NAME_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
+                    Date.COLUMN_NAME_ENTRY_ID + " INTEGER NOT NULL," +
+                    Date.COLUMN_NAME_DESC + " TEXT NOT NULL," +
+                    Date.COLUMN_NAME_TIME_START + " BIGINT NOT NULL," +
+                    Date.COLUMN_NAME_DURATION + " BIGINT NOT NULL," +
+                    Date.COLUMN_NAME_TIMES_REPEATS + " INTEGER NOT NULL," +
+                    Date.COLUMN_NAME_PERIOD + " BIGINT NOT NULL);";
     private static final String SQL_CREATE_NOTIFICATIONS =
             "CREATE TABLE IF NOT EXISTS " + Notification.TABLE_NAME + " (" +
-            Notification.COLUMN_NAME_ENTRY_ID + " INTEGER NOT NULL," +
-            Notification.COLUMN_NAME_TIME_OFFSET + " BIGINT NOT NULL);";
+                    Notification.COLUMN_NAME_ENTRY_ID + " INTEGER NOT NULL," +
+                    Notification.COLUMN_NAME_TIME_OFFSET + " BIGINT NOT NULL);";
     final Context context;
 
     public DbManager(Context context) {

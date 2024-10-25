@@ -1,6 +1,5 @@
 package oblitusnumen.calendar.implementation.data;
 
-import android.annotation.SuppressLint;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.provider.BaseColumns;
@@ -41,7 +40,6 @@ public class Tag implements BaseColumns {
         this.color = color;
     }
 
-    @SuppressLint("Range")
     Tag(DbManager dbManager, Cursor cursor) {
         this(dbManager, cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_ID)),
                 cursor.getString(cursor.getColumnIndex(COLUMN_NAME_NAME)),

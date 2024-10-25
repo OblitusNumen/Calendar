@@ -39,7 +39,7 @@ class MainActivity : ComponentActivity(), TopBarModifier {
 
     companion object {
         val PADDING: Dp = 5.dp
-        val LIST_CENTER: LocalDate = LocalDate.of(1970, 1, 1);
+        val LIST_CENTER: LocalDate = LocalDate.of(1970, 1, 1)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
