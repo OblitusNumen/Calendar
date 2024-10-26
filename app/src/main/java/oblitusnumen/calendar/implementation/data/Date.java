@@ -90,16 +90,14 @@ public class Date implements BaseColumns { // TODO 10/24/24 8:31 PM sorted
         return getZoneDateTime(idx).toEpochSecond();
     }
 
-    void create() {
-        ContentValues contentValues = toContentValues();
-        contentValues.put(COLUMN_NAME_ID, (Integer) null);
-        id = (int) dbManager.getWritableDatabase().insert(TABLE_NAME, null, contentValues);
-    }
-
     void createOrUpdate() {
-        ContentValues contentValues = toContentValues();
-        contentValues.put(COLUMN_NAME_ID, (Integer) null);
-        id = (int) dbManager.getWritableDatabase().insertWithOnConflict(TABLE_NAME, null, contentValues, SQLiteDatabase.CONFLICT_REPLACE);
+        if (removed.hasAny()) {
+            ContentValues contentValues = toContentValues();
+            contentValues.put(COLUMN_NAME_ID, (Integer) null);
+            id = (int) dbManager.getWritableDatabase().insertWithOnConflict(TABLE_NAME, null, contentValues, SQLiteDatabase.CONFLICT_REPLACE);
+        } else {
+            delete();
+        }
     }
 
     ContentValues toContentValues() {
@@ -267,30 +265,74 @@ public class Date implements BaseColumns { // TODO 10/24/24 8:31 PM sorted
         }
 
         void addIndex(int idx) {
-            Rule rule = new Rule(idx);
-            int additionIndex = findAdditionIndex(rule);
+            System.out.println("idx" + idx);
+            System.out.println(this);
+            int additionIndex = findAdditionIndex(idx);
             if (additionIndex-- > 0) {
                 Rule rule1 = rules.get(additionIndex);
-                if (rule1.idxTo == idx)
-                    if (rule1.idxFrom == idx) {
+                if (rule1.idxEnd == idx)
+                    if (rule1.idxBegin == idx) {
                         rules.remove(rule1);
                     } else {
-                        rule1.idxTo--;
+                        rule1.idxEnd--;
                     }
-                else if (rule1.idxFrom == idx) rule1.idxFrom++;
+                else if (rule1.idxBegin == idx) rule1.idxBegin++;
                 else {
-                    Rule rule2 = new Rule(rule1.idxTo);
-                    rule1.idxTo = idx - 1;
-                    rule2.idxFrom = idx + 1;
+                    Rule rule2 = new Rule(idx + 1, rule1.idxEnd);
+                    rule1.idxEnd = idx - 1;
                     rules.add(additionIndex + 1, rule2);
                 }
             }
         }
 
-        void rmIndex(int idx) {
-            Rule rule = new Rule(idx);
-            int additionIndex = findAdditionIndex(rule);
-            rules.add(additionIndex, rule);
+        void addIndexes(int beginIdx, int endIdx) {//end not including
+            endIdx = endIdx == date.timesRepeat - 1 ? -1 : endIdx;
+            int idx0 = findAdditionIndex(beginIdx);//index after rule to be changed before interval
+            int idx1 = findAdditionIndex(endIdx);;//index after rule to be changed after interval
+            if (idx0 > 0 && idx0 <= rules.size()) {//before interval
+            System.out.println("mm");
+                Rule rule0 = rules.get(idx0 - 1);
+                System.out.println("rule0.idxFrom"+rule0.idxBegin);
+                System.out.println("beginIdx"+beginIdx);
+                if (rule0.idxBegin >= beginIdx) {
+                    idx0--;
+                } else {
+                    int maxIdxTo = Rule.getMaxIdxTo(rule0.idxEnd, endIdx);//index before first present
+                    if (maxIdxTo != endIdx) {//splitting rule
+                        rules.add(new Rule(endIdx, rule0.idxEnd));
+                        rule0.idxEnd = beginIdx - 1;
+                        return;
+                    }//lowering ceiling of rule
+                    rule0.idxEnd = Rule.getMinIdxTo(beginIdx - 1, rule0.idxEnd);
+                }
+            }
+            System.out.println("bb");
+            if (idx1 > 0) {//index-1 is in range | after interval
+            System.out.println("aa");
+                Rule rule1 = rules.get(idx1 - 1);
+                int maxIdxTo = Rule.getMaxIdxTo(rule1.idxEnd, endIdx);//index before first present
+                if (maxIdxTo != endIdx) {
+                    if (rule1.idxBegin > endIdx) throw new RuntimeException();
+                    rule1.idxBegin = endIdx;
+                    idx1--;
+                }
+            }
+            System.out.println("tt");
+            rules.subList(idx0, idx1).clear();
+        }
+
+        void rmIndexes(int beginIdx, int endIdx) {
+            addIndexes(beginIdx, endIdx);
+            System.out.println("this" + this);
+            int additionIndex = findAdditionIndex(beginIdx);
+            System.out.println(this);
+            rules.add(additionIndex, new Rule(beginIdx, endIdx == - 1 ? -1 : endIdx - 1));
+            System.out.println("before merge" +this);
+            mergeAround(additionIndex);
+            System.out.println("after merge" +this);
+        }
+
+        private void mergeAround(int additionIndex) {
             if (additionIndex > 0) {
                 merge(--additionIndex);
             }
@@ -299,22 +341,39 @@ public class Date implements BaseColumns { // TODO 10/24/24 8:31 PM sorted
             }
         }
 
+        void rmIndex(int idx) {
+            System.out.println(this);
+            System.out.println("idx" + idx);
+            int additionIndex = findAdditionIndex(idx);
+            if (additionIndex > 0 && !rules.get(additionIndex - 1).isPresent(idx)) return;
+            rules.add(additionIndex, new Rule(idx, idx));
+            System.out.println("add" + additionIndex);
+            System.out.println(rules);
+            mergeAround(additionIndex);
+            System.out.println(this);
+        }
+
         private void merge(int i) {
             Rule r0 = rules.get(i);
             Rule r1 = rules.get(i + 1);
-            if (r0.idxTo + 1 == r1.idxFrom) {
-                r0.idxTo = r1.idxTo;
+            if (r0.idxEnd + 1 == r1.idxBegin) {
+                r0.idxEnd = r1.idxEnd;
                 rules.remove(r1);
             }
         }
 
         private int findAdditionIndex(Rule rule) {
+            return findAdditionIndex(rule.idxBegin);
+        }
+
+        private int findAdditionIndex(int beginIdx) {
+            if (beginIdx == -1) return rules.size();
             int begin = 0;
             int end = rules.size();
             while (true) {
                 int center = (begin + end) / 2;
                 if (center == end) return center;
-                if (rules.get(center).idxFrom > rule.idxFrom) {
+                if (rules.get(center).idxBegin > beginIdx) {
                     end = center;
                 } else {
                     if (begin == center) return end;
@@ -324,11 +383,10 @@ public class Date implements BaseColumns { // TODO 10/24/24 8:31 PM sorted
         }
 
         boolean isPresent(int idx) {
-            if (idx >= date.timesRepeat || idx < 0) return false;
-            for (Rule rule : rules) {
-                if (!rule.isPresent(idx)) return false;
-            }
-            return true;
+            int additionIndex = findAdditionIndex(idx);
+            if (additionIndex > 0) {
+                return rules.get(additionIndex - 1).isPresent(idx);
+            } return true;
         }
 
         @Override
@@ -340,40 +398,60 @@ public class Date implements BaseColumns { // TODO 10/24/24 8:31 PM sorted
             return result.toString();
         }
 
-        static class Rule {
-            int idxFrom;
-            int idxTo;
+        public boolean hasAny() {
+            if (rules.size() != 1) return true;//no removed idxes or more than one interval removed
+            Rule rule = rules.get(0);
+            return rule.idxBegin > 0 || rule.idxEnd != -1;//before or after there is some
+        }
+
+        class Rule {
+            int idxBegin;
+            int idxEnd;
 
             Rule(String rule) {
                 String[] split = rule.split("-");
                 switch (split.length) {
                     case 1 -> {
-                        idxFrom = Integer.parseInt(split[0]);
-                        idxTo = rule.endsWith("-") ? -1 : idxFrom;
+                        idxBegin = Integer.parseInt(split[0]);
+                        idxEnd = rule.endsWith("-") ? -1 : idxBegin;
                     }
                     case 2 -> {
-                        idxFrom = Integer.parseInt(split[0]);
-                        idxTo = Integer.parseInt(split[1]);
+                        idxBegin = Integer.parseInt(split[0]);
+                        idxEnd = Integer.parseInt(split[1]);
                     }
                     default -> throw new RuntimeException("impossible outcome");
                 }
             }
 
-            Rule(int idx) {
-                idxTo = idxFrom = idx;
+            Rule(int beginIdx, int endIdx) {
+                if (beginIdx < 0) throw new IllegalArgumentException();
+                idxBegin = beginIdx;
+                idxEnd = (endIdx >= date.timesRepeat - 1 ? -1 : endIdx);
             }
 
             boolean isPresent(int idx) {
-                return idx < idxFrom || idxTo == -1 || idxTo < idx;
+                if (idxBegin < 0) throw new IllegalArgumentException();
+                return idx < idxBegin || idxEnd == -1 || idxEnd < idx;
             }
 
             boolean isEnding() {
-                return idxTo == -1;
+                return idxEnd == -1;
             }
 
             @Override
             public @NotNull String toString() {
-                return idxFrom + "-" + (idxTo == -1 ? "" : idxTo);
+                return idxBegin + "-" + (idxEnd == -1 ? "" : idxEnd);
+            }
+
+            private static int getMinIdxTo(int idx1, int idx2) {
+                if (idx2 == -1) return idx1;
+                if (idx1 == -1) return idx2;
+                return Math.min(idx1, idx2);
+            }
+
+            private static int getMaxIdxTo(int idx1, int idx2) {
+                if (idx2 == -1 || idx1 == -1) return -1;
+                return Math.max(idx1, idx2);
             }
         }
     }

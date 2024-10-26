@@ -179,7 +179,7 @@ public class Entry implements BaseColumns {
             if (datesOld.containsKey(date.id)) {
                 datesOld.remove(date.id);
             } else {
-                date.create();
+                date.createOrUpdate();
             }
         }
         for (Date d : datesOld.values()) {
