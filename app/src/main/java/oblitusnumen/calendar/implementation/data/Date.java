@@ -161,11 +161,10 @@ public class Date implements BaseColumns {
     }
 
     /**
-     *
      * @return -1 if date is endless otherwise count of date occurring (without respect to deleted occurrences)
      */
     public int getTimesRepeat() {
-        return timesRepeat == Integer.MAX_VALUE ? -1 : timesRepeat;
+        return isEndless() ? -1 : timesRepeat;
     }
 
     private void setTimesRepeat(int timesRepeat) {
@@ -327,13 +326,14 @@ public class Date implements BaseColumns {
                     Rule rule = rules.get(idx0 - 1);
                     if (rule.end > from) {
                         rule.end = from;
+                        throw new IllegalStateException();// FIXME: 10/26/24 idk, this might happen one day
                     }
                 }
                 clearRules(idx0, rules.size());
                 return;
             }
             int idx1 = findIndex(to);//index after rule to be changed after interval
-            if (idx0 > 0 && idx0 <= rules.size()) {//before interval
+            if (idx0 > 0) {//before interval
                 Rule rule0 = rules.get(idx0 - 1);
                 if (rule0.start == from) {//rule begins from interval
                     idx0--;
@@ -373,7 +373,7 @@ public class Date implements BaseColumns {
                 date.setTimesRepeat(from);
                 return;
             }
-            if (idx0 > 0 && idx0 <= rules.size()) {//before interval
+            if (idx0 > 0) {//before interval
                 Rule rule0 = rules.get(idx0 - 1);
                 if (rule0.end >= from) {//end of rule is in interval
                     from = rule0.start;
@@ -390,6 +390,7 @@ public class Date implements BaseColumns {
             clearRules(idx0, idx1);
             if (from == 0 && to == date.timesRepeat) {
                 date.setTimesRepeat(0);
+                throw new IllegalStateException();// FIXME: 10/26/24 idk, this might happen one day
             } else {
                 rules.add(idx0, new Rule(from, to));
             }
@@ -414,7 +415,8 @@ public class Date implements BaseColumns {
             int index = findIndex(idx);//for faster work
             if (index > 0) {//may be in some rules
                 return rules.get(index - 1).isPresent(idx);
-            } return true;
+            }
+            return true;
         }
 
         @Override
