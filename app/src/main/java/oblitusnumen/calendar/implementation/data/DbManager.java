@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,8 +36,11 @@ public class DbManager extends SQLiteOpenHelper {
                     Date.COLUMN_NAME_DESC + " TEXT NOT NULL," +
                     Date.COLUMN_NAME_TIME_START + " BIGINT NOT NULL," +
                     Date.COLUMN_NAME_DURATION + " BIGINT NOT NULL," +
+                    Date.COLUMN_NAME_TIME_ENDS + " BIGINT NOT NULL," +
                     Date.COLUMN_NAME_TIMES_REPEATS + " INTEGER NOT NULL," +
-                    Date.COLUMN_NAME_PERIOD + " BIGINT NOT NULL);";
+                    Date.COLUMN_NAME_PERIOD + " TEXT NOT NULL," +
+                    Date.COLUMN_NAME_TIME_ZONE + " TEXT NOT NULL," +
+                    Date.COLUMN_NAME_REMOVED + " TEXT NOT NULL);";
     private static final String SQL_CREATE_NOTIFICATIONS =
             "CREATE TABLE IF NOT EXISTS " + Notification.TABLE_NAME + " (" +
                     Notification.COLUMN_NAME_ENTRY_ID + " INTEGER NOT NULL," +
@@ -50,12 +53,12 @@ public class DbManager extends SQLiteOpenHelper {
         Utils.log("DbManager created");
     }
 
-    public List<Date> getDates(LocalDateTime start, LocalDateTime end) {
-        return getDates(Utils.toEpochSecond(start), Utils.toEpochSecond(end));
+    public List<Date> getDates(ZonedDateTime start, ZonedDateTime end) {
+        return getDates(start.toEpochSecond(), end.toEpochSecond());
     }
 
     public List<Date> getDates(LocalDate start, LocalDate end) {
-        return getDates(start.atStartOfDay(), end.atStartOfDay());
+        return getDates(Utils.zonedDateTime(start), Utils.zonedDateTime(end));
     }
 
     public Entry createEntry() {
@@ -86,18 +89,20 @@ public class DbManager extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase sqLiteDatabase, int oldVersion, int newVersion) {
+        throw new IllegalStateException();
     }
 
     @Override
     public void onDowngrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        throw new IllegalStateException();
     }
 
     public List<Date> getDates(long start, long end) {
         if (end < start)
             throw new IllegalArgumentException("end must be more than start, got start=" + start + ", end=" + end);
         List<Date> dates = new ArrayList<>();
-        try (Cursor query = getReadableDatabase().rawQuery("SELECT * FROM " + Date.TABLE_NAME + " WHERE " + Date.COLUMN_NAME_TIME_START + " >= ? AND" +
-                " (" + Date.COLUMN_NAME_TIME_START + " + " + Date.COLUMN_NAME_PERIOD + " * (" + Date.COLUMN_NAME_TIMES_REPEATS + " - 1)) < ?", new String[]{String.valueOf(start), String.valueOf(end)})) {
+        try (Cursor query = getReadableDatabase().rawQuery("SELECT * FROM " + Date.TABLE_NAME + " WHERE " + Date.COLUMN_NAME_TIME_START + " < ? AND" +
+                " " + Date.COLUMN_NAME_TIME_ENDS + " >= ?", new String[]{String.valueOf(end), String.valueOf(start)})) {
             if (query != null) {
                 while (query.moveToNext()) {
                     dates.add(new Date(this, query));

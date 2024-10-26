@@ -132,12 +132,14 @@ public class Entry implements BaseColumns {
     }
 
     public void set(@NotNull String name, @NotNull List<Tag> tags, @NotNull List<Date> dates, @NotNull String contents) {
+        //setting contents
         try (FileOutputStream fos = new FileOutputStream(getContentsFile())) {
             fos.write(contents.getBytes());
         } catch (IOException e) {
             throw new RuntimeException("could not save contents file for entry " + id, e);
         }
 
+        //setting tags
         this.name = name;
         update();
         LinkedList<Tag> tags1 = new LinkedList<>(tags);
@@ -162,6 +164,7 @@ public class Entry implements BaseColumns {
             rmTag(t);
         }
 
+        //setting dates
         LinkedList<Date> dates1 = new LinkedList<>(dates);
         Map<Integer, Date> datesOld = getDates().stream().collect(Collectors.toMap(t -> t.id, t -> t));
         dates1.removeIf(date -> {
@@ -182,6 +185,8 @@ public class Entry implements BaseColumns {
         for (Date d : datesOld.values()) {
             d.delete();
         }
+
+        // TODO: 10/26/24 set notifications
     }
 
     void update() {

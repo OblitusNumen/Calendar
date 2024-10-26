@@ -15,7 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import oblitusnumen.calendar.BackButton
 import oblitusnumen.calendar.MainActivity
-import oblitusnumen.calendar.implementation.Utils.toLocalDateTime
+import oblitusnumen.calendar.implementation.Utils.zonedDateTime
 import oblitusnumen.calendar.implementation.data.Date
 import oblitusnumen.calendar.ui.model.Functional
 import oblitusnumen.calendar.ui.model.Screen
@@ -30,7 +30,7 @@ class DateScreen(var day: LocalDate, private var dates: List<Date>) : Screen, Fu
             Text("Date $day")
             for (date in dates) {
                 val entry = date.entry
-                val forDay = date.forDay(day.atStartOfDay())
+                val forDay = date.forDay(zonedDateTime(day))
                 Box(
                     Modifier.fillMaxWidth().border(width = 2.dp, color = MaterialTheme.colorScheme.primary)
                         .clickable(onClick = {
@@ -40,7 +40,7 @@ class DateScreen(var day: LocalDate, private var dates: List<Date>) : Screen, Fu
                     Column {
                         Text(date.desc)
                         Text(entry.name)
-                        Text("" + toLocalDateTime(forDay))
+                        Text("" + forDay)
                     }
                 }
             }

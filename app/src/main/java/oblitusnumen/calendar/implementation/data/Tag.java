@@ -33,7 +33,7 @@ public class Tag implements BaseColumns {
         }
     }
 
-    public Tag(DbManager dbManager, int id, String name, int color) {
+    Tag(DbManager dbManager, int id, String name, int color) {
         this.dbManager = dbManager;
         this.id = id;
         this.name = name;

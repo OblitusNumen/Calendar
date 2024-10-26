@@ -25,6 +25,7 @@ import oblitusnumen.calendar.MainActivity
 import oblitusnumen.calendar.MainActivity.Companion.LIST_CENTER
 import oblitusnumen.calendar.R
 import oblitusnumen.calendar.getWidthPartIncludePadding
+import oblitusnumen.calendar.implementation.Utils.zonedDateTime
 import oblitusnumen.calendar.implementation.data.Date
 import oblitusnumen.calendar.ui.model.Functional
 import oblitusnumen.calendar.ui.model.Tab
@@ -96,7 +97,7 @@ class CalendarTab : Tab, Functional, TopBarModifier {
             val dates = ArrayList(
                 calendarViewModel.dbManager.getDates(
                     date,
-                    date.plusMonths(1)
+                    date.plusWeeks(1)
                 ).toList()
             )
             while (date.month.value == monthValue) {
@@ -130,8 +131,8 @@ class CalendarTab : Tab, Functional, TopBarModifier {
         } else {
             col = MaterialTheme.colorScheme.primary
         }
-        val begin = then.atStartOfDay()
-        val eventDates = ArrayList(dates.filter { date -> date.forDay(begin) != (-1).toLong() }.toList())
+        val begin = zonedDateTime(then)
+        val eventDates = ArrayList(dates.filter { date -> date.forDay(begin) != null }.toList())
         eventDates.sortBy { it.forDay(begin) }
         Box(modifier.clickable(onClick = {
             calendarViewModel.open(DateScreen(then, eventDates))

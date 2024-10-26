@@ -16,13 +16,13 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import oblitusnumen.calendar.BackButton
 import oblitusnumen.calendar.MainActivity
-import oblitusnumen.calendar.implementation.Utils.toLocalDateTime
+import oblitusnumen.calendar.implementation.Utils.defaultZoneId
 import oblitusnumen.calendar.implementation.data.Date
 import oblitusnumen.calendar.implementation.data.Entry
 import oblitusnumen.calendar.implementation.data.Tag
 import oblitusnumen.calendar.ui.model.Screen
 import oblitusnumen.calendar.ui.model.TopBarModifier
-import java.time.LocalDateTime
+import java.time.ZonedDateTime
 
 class EntryEdit(private val calendarViewModel: MainActivity.CalendarViewModel, private val entry: Entry) : Screen,
     TopBarModifier {
@@ -70,7 +70,7 @@ class EntryEdit(private val calendarViewModel: MainActivity.CalendarViewModel, p
                 }) {
                     Text("一")
                 }
-                Text(toLocalDateTime(date.start).toString())
+                Text(date.getZoneDateTime(defaultZoneId(), 0).toString())// FIXME: index might be not 0
                 val desk = remember { mutableStateOf(TextFieldValue(date.desc)) }
                 TextField(desk.value, onValueChange = { value ->
                     date.desc = value.text
@@ -80,7 +80,17 @@ class EntryEdit(private val calendarViewModel: MainActivity.CalendarViewModel, p
         }
         Button(onClick = {
             // TODO:
-            dates.add(Date(calendarViewModel.dbManager, LocalDateTime.now(), entry))
+            dates.add(
+                Date(
+                    calendarViewModel.dbManager,
+                    entry,
+                    "",
+                    ZonedDateTime.now(),
+                    0,
+                    10,
+                    Date.Period(Date.Period.Modifier.WEEK, 1)
+                )
+            )
             flag = !flag
         }) {
             Text("十")
