@@ -267,4 +267,60 @@ public class DateTest extends TestCase {
         assertEquals(50, date.timesRepeat);
         assertEquals("5-27,", date.exceptionRules.toString());
     }
+
+    public void testRemoveAll() {
+        int numberOfDated = 50;
+        Date date = new Date(null, 0, 0, "", 0, 0, 0, numberOfDated,
+                new Date.Period(Date.Period.Modifier.WEEK, 1).toString(), "UTC", "");
+        date.removeEvents(0, 50);
+        assertEquals(0, date.timesRepeat);
+        assertTrue(date.isEmpty());
+        assertEquals("", date.exceptionRules.toString());
+        date.addEvents(49, 59);
+        date.addEvents(23, 30);
+        date.addEvents(69, 90);
+        assertEquals(90, date.timesRepeat);
+        assertFalse(date.isEmpty());
+        assertEquals("0-23,30-49,59-69,", date.exceptionRules.toString());
+        date.removeEvents(0, 90);
+        assertEquals(0, date.timesRepeat);
+        assertTrue(date.isEmpty());
+        assertEquals("", date.exceptionRules.toString());
+    }
+
+    public void testAddIntersecting() {
+        int numberOfDated = 50;
+        Date date = new Date(null, 0, 0, "", 0, 0, 0, numberOfDated,
+                new Date.Period(Date.Period.Modifier.WEEK, 1).toString(), "UTC", "");
+        date.removeEvents(20, 30);
+        assertEquals(50, date.timesRepeat);
+        assertEquals("20-30,", date.exceptionRules.toString());
+        date.addEvents(23, 60);
+        assertEquals(60, date.timesRepeat);
+        assertEquals("20-23,", date.exceptionRules.toString());
+    }
+
+    public void testAddNotIntersecting() {
+        int numberOfDated = 50;
+        Date date = new Date(null, 0, 0, "", 0, 0, 0, numberOfDated,
+                new Date.Period(Date.Period.Modifier.WEEK, 1).toString(), "UTC", "");
+        date.removeEvents(20, 30);
+        assertEquals(50, date.timesRepeat);
+        assertEquals("20-30,", date.exceptionRules.toString());
+        date.addEvents(39, 40);
+        assertEquals(50, date.timesRepeat);
+        assertEquals("20-30,", date.exceptionRules.toString());
+    }
+
+    public void testRmNotIntersecting() {
+        int numberOfDated = 50;
+        Date date = new Date(null, 0, 0, "", 0, 0, 0, numberOfDated,
+                new Date.Period(Date.Period.Modifier.WEEK, 1).toString(), "UTC", "");
+        date.removeEvents(5, 10);
+        assertEquals(50, date.timesRepeat);
+        assertEquals("5-10,", date.exceptionRules.toString());
+        date.removeEvents(30, 60);
+        assertEquals(30, date.timesRepeat);
+        assertEquals("5-10,", date.exceptionRules.toString());
+    }
 }

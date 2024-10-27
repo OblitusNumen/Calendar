@@ -316,7 +316,7 @@ public class Date implements BaseColumns {
         }
 
         private void addEvents(int from, int to) {//end not including
-            if (from > date.timesRepeat) {
+            if (from > date.timesRepeat) {//this does not create any cases like 5-10,10-20, as last event in date must occur
                 rules.add(new Rule(date.timesRepeat, from));
             }
             int idx0 = findIndex(from);//index after rule to be changed before interval
@@ -326,7 +326,6 @@ public class Date implements BaseColumns {
                     Rule rule = rules.get(idx0 - 1);
                     if (rule.end > from) {
                         rule.end = from;
-                        throw new IllegalStateException();// FIXME: 10/26/24 idk, this might happen one day
                     }
                 }
                 clearRules(idx0, rules.size());
@@ -366,8 +365,8 @@ public class Date implements BaseColumns {
                     Rule rule = rules.get(idx0 - 1);
                     if (rule.end >= from) {
                         from = rule.start;
+                        idx0--;
                     }
-                    idx0--;
                 }
                 clearRules(idx0, rules.size());
                 date.setTimesRepeat(from);
@@ -388,12 +387,7 @@ public class Date implements BaseColumns {
                 }
             }
             clearRules(idx0, idx1);
-            if (from == 0 && to == date.timesRepeat) {
-                date.setTimesRepeat(0);
-                throw new IllegalStateException();// FIXME: 10/26/24 idk, this might happen one day
-            } else {
-                rules.add(idx0, new Rule(from, to));
-            }
+            rules.add(idx0, new Rule(from, to));
         }
 
         private int findIndex(int beginIdx) {
