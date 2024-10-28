@@ -173,7 +173,7 @@ public class Date implements BaseColumns {
     }
 
     int getZonedDateTimeIndex(long start, long finish) {
-        if (finish < this.start) return -1;
+        if (finish <= this.start) return -1;
         int idx = Math.min(timesRepeat - 1, (int) ((finish - this.start) / period.modifier.multiplier()));
         long time = getZoneDateTime(idx).toEpochSecond();
         if (time >= start && time < finish)

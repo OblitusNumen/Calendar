@@ -483,11 +483,16 @@ public class DateTest extends TestCase {
                 new Date.Period(Date.Period.Modifier.DAY, 1).toString(), "Europe/Moscow", "");
         for (int i = -1; i < 21; i++) {
             ZonedDateTime time = date.forDay(utc.plusDays(i));
+            System.out.println(utc.plusDays(i));
             if (!test[i+1].equals("null")) {
+                System.out.println(time.withZoneSameInstant(ZoneId.of("Europe/Kiev")).toString());
                 assertNotNull(time);
                 assertEquals(test[i+1], time.withZoneSameInstant(ZoneId.of("Europe/Kiev")).toString());
 //                assertEquals(test2[i+1], date.getZonedDateTimeIndex(utc.plusDays(i).toEpochSecond(), utc.plusDays(i+1).toEpochSecond()) + "");
-            } else assertNull(time);
+            } else {
+                if (time!= null) System.out.println(time.withZoneSameInstant(ZoneId.of("Europe/Kiev")).toString());
+                assertNull(time);
+            }
         }
 //        for (int i = -1; i < 21; i++) {
 //            ZonedDateTime time = date.forDay(utc.plusDays(i));
