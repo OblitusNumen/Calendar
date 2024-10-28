@@ -33,6 +33,7 @@ import oblitusnumen.calendar.ui.model.TopBarModifier
 import oblitusnumen.calendar.ui.model.screen.DateScreen
 import oblitusnumen.calendar.ui.model.screen.EntryEdit
 import java.time.LocalDate
+import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 
 class CalendarTab : Tab, Functional, TopBarModifier {
@@ -132,10 +133,18 @@ class CalendarTab : Tab, Functional, TopBarModifier {
             col = MaterialTheme.colorScheme.primary
         }
         val begin = zonedDateTime(then)
-        val eventDates = ArrayList(dates.filter { date -> date.forDay(begin) != null }.toList())
-        eventDates.sortBy { it.forDay(begin) }
+        val forDay = HashMap<Date, ZonedDateTime>()
+        val eventDates = ArrayList(dates.filter { date ->
+            val time = date.forDay(begin)
+            if (time != null) {
+                forDay.put(date, time)
+                return@filter true
+            }
+            return@filter false
+        }.toList())
+        eventDates.sortBy { forDay[it] }
         Box(modifier.clickable(onClick = {
-            calendarViewModel.open(DateScreen(then, eventDates))
+            calendarViewModel.open(DateScreen(then, eventDates, forDay))
         })) {
             Column {
                 Box(Modifier.fillMaxWidth()) {
