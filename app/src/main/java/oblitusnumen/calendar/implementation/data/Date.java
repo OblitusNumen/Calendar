@@ -196,7 +196,7 @@ public class Date implements BaseColumns {
     }
 
 
-    private int oldGetZonedDateTimeIndex(long start, long finish) {
+    int ogetZonedDateTimeIndex(long start, long finish) {
         int begin = 0;
         int end = timesRepeat;
         while (true) {
