@@ -323,4 +323,30 @@ public class DateTest extends TestCase {
         assertEquals(30, date.timesRepeat);
         assertEquals("5-10,", date.exceptionRules.toString());
     }
+
+    public void testForDayIndexAt() {
+        ZonedDateTime time = new Date(null, 0, 0, "", 0, 0, 0, 100, Date.Period.none().toString(), "UTC", "")
+                .forDay(ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneId.of("UTC")));
+        assertNotNull(time);
+    }
+
+    public void testForDayIndexAtPeriod() {
+        ZonedDateTime utc = ZonedDateTime.of(1970, 1, 1, 14, 0, 0, 0, ZoneId.of("UTC"));
+        int time = new Date(null, 0, 0, "", 0, 0, 0, 10, new Date.Period(Date.Period.Modifier.DAY, 1).toString(), "UTC", "")
+                .getZonedDateTimeIndex(utc.toEpochSecond(), utc.toEpochSecond()+86400);
+        assertEquals(1, time);
+        time = new Date(null, 0, 0, "", 0, 0, 0, 10, new Date.Period(Date.Period.Modifier.DAY, 1).toString(), "UTC", "")
+                .getZonedDateTimeIndex(utc.plusDays(5).toEpochSecond(), utc.plusDays(6).toEpochSecond());
+        assertEquals(6, time);
+        utc = ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneId.of("UTC"));
+        time = new Date(null, 0, 0, "", 0, 0, 0, 10, new Date.Period(Date.Period.Modifier.MONTH, 1).toString(), "UTC", "")
+                .getZonedDateTimeIndex(utc.toEpochSecond(), utc.plusDays(1).toEpochSecond());
+        assertEquals(0, time);
+        time = new Date(null, 0, 0, "", 0, 0, 0, 10, new Date.Period(Date.Period.Modifier.MONTH, 1).toString(), "UTC", "")
+                .getZonedDateTimeIndex(utc.plusMonths(5).toEpochSecond(), utc.plusMonths(5).plusDays(1).toEpochSecond());
+        assertEquals(5, time);
+        time = new Date(null, 0, 0, "", 0, 0, 0, 10, new Date.Period(Date.Period.Modifier.MONTH, 1).toString(), "UTC", "")
+                .getZonedDateTimeIndex(utc.plusMonths(9).toEpochSecond(), utc.plusMonths(9).plusDays(1).toEpochSecond());
+        assertEquals(9, time);
+    }
 }
