@@ -172,7 +172,7 @@ public class Date implements BaseColumns {
         this.end = getTime(timesRepeat - 1);
     }
 
-    private int getZonedDateTimeIndex(long start, long finish) {
+    int getZonedDateTimeIndex(long start, long finish) {
         int begin = 0;
         int end = timesRepeat;
         while (true) {
