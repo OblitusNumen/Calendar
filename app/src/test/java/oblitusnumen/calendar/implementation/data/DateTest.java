@@ -407,8 +407,62 @@ public class DateTest extends TestCase {
             ZonedDateTime time = date.forDay(utc.plusDays(i));
             System.out.println(utc.plusDays(i));
             if (!test[i+1].equals("null")) {
-                System.out.println(time.withZoneSameInstant(ZoneId.of("Europe/Moscow")).toString());
                 assertNotNull(time);
+                System.out.println(time.withZoneSameInstant(ZoneId.of("Europe/Moscow")).toString());
+                assertEquals(test[i+1], time.withZoneSameInstant(ZoneId.of("Europe/Moscow")).toString());
+//                assertEquals(test2[i+1], date.getZonedDateTimeIndex(utc.plusDays(i).toEpochSecond(), utc.plusDays(i+1).toEpochSecond()) + "");
+            } else {
+                if (time!= null) System.out.println(time.withZoneSameInstant(ZoneId.of("Europe/Moscow")).toString());
+                assertNull(time);
+            }
+        }
+//        for (int i = -1; i < 21; i++) {
+//            ZonedDateTime time = date.forDay(utc.plusDays(i));
+//            if (time == null) {
+//                System.out.println("null");
+//                continue;
+//            }
+//            System.out.println(time.withZoneSameInstant(ZoneId.of("Europe/Moscow")).toString());
+//        }
+//        for (int i = -1; i < 21; i++) {
+//            System.out.println(date.getZonedDateTimeIndex(utc.plusDays(i).toEpochSecond(), utc.plusDays(i+1).toEpochSecond()));
+//        }
+    }
+
+    public void testTZKievFromMoscowDayCount3() {
+        String[] test = """
+                null
+                2024-10-20T22:59:59+03:00[Europe/Moscow]
+                null
+                null
+                2024-10-23T22:59:59+03:00[Europe/Moscow]
+                null
+                null
+                2024-10-26T22:59:59+03:00[Europe/Moscow]
+                null
+                null
+                2024-10-29T23:59:59+03:00[Europe/Moscow]
+                null
+                null
+                2024-11-01T23:59:59+03:00[Europe/Moscow]
+                null
+                null
+                2024-11-04T23:59:59+03:00[Europe/Moscow]
+                null
+                null
+                2024-11-07T23:59:59+03:00[Europe/Moscow]
+                null
+                null
+                """.split("\n");
+        ZonedDateTime utc = ZonedDateTime.ofInstant(Instant.ofEpochSecond(1729458000-86400), ZoneId.of("Europe/Moscow"));
+        Date date = new Date(null, 0, 0, "", 972071999, 0, 0, 10950,
+                new Date.Period(Date.Period.Modifier.DAY, 3).toString(), "Europe/Kiev", "");
+        for (int i = -1; i < 21; i++) {
+            ZonedDateTime time = date.forDay(utc.plusDays(i));
+            System.out.println(utc.plusDays(i));
+            if (!test[i+1].equals("null")) {
+                assertNotNull(time);
+                System.out.println(time.withZoneSameInstant(ZoneId.of("Europe/Moscow")).toString());
                 assertEquals(test[i+1], time.withZoneSameInstant(ZoneId.of("Europe/Moscow")).toString());
 //                assertEquals(test2[i+1], date.getZonedDateTimeIndex(utc.plusDays(i).toEpochSecond(), utc.plusDays(i+1).toEpochSecond()) + "");
             } else {
@@ -485,8 +539,8 @@ public class DateTest extends TestCase {
             ZonedDateTime time = date.forDay(utc.plusDays(i));
             System.out.println(utc.plusDays(i));
             if (!test[i+1].equals("null")) {
-                System.out.println(time.withZoneSameInstant(ZoneId.of("Europe/Kiev")).toString());
                 assertNotNull(time);
+                System.out.println(time.withZoneSameInstant(ZoneId.of("Europe/Kiev")).toString());
                 assertEquals(test[i+1], time.withZoneSameInstant(ZoneId.of("Europe/Kiev")).toString());
 //                assertEquals(test2[i+1], date.getZonedDateTimeIndex(utc.plusDays(i).toEpochSecond(), utc.plusDays(i+1).toEpochSecond()) + "");
             } else {
