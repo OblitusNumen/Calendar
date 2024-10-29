@@ -123,9 +123,8 @@ public class Date implements BaseColumns {
         long start = startOfDay.toEpochSecond();
         long end = startOfDay.plusDays(1).toEpochSecond();
         int zonedDateTimeIndex = getZonedDateTimeIndex(start, end);
-        if (!exceptionRules.isEventPresent(zonedDateTimeIndex)) return null;
-        ZonedDateTime time = getZoneDateTime(zonedDateTimeIndex);
-        return start <= time.toEpochSecond() && time.toEpochSecond() < end ? time : null;
+        if (zonedDateTimeIndex == -1 || !exceptionRules.isEventPresent(zonedDateTimeIndex)) return null;
+        return getZoneDateTime(zonedDateTimeIndex);
     }
 
     public ZonedDateTime getZoneDateTime(ZoneId zoneId, int idx) {
@@ -174,7 +173,7 @@ public class Date implements BaseColumns {
 
     int getZonedDateTimeIndex(long start, long finish) {
         if (finish <= this.start) return -1;
-        if (this.end == this.start) return 0;
+        if (this.end == this.start) return this.start >= start ? 0 : -1;
         long period = (this.end - this.start) / timesRepeat;
         int idx = Math.min(timesRepeat - 1, (int) ((finish - this.start) / period));
         long time = getZoneDateTime(idx).toEpochSecond();
