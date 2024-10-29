@@ -174,7 +174,9 @@ public class Date implements BaseColumns {
 
     int getZonedDateTimeIndex(long start, long finish) {
         if (finish <= this.start) return -1;
-        int idx = Math.min(timesRepeat - 1, (int) ((finish - this.start) / period.modifier.multiplier()));
+        if (this.end == this.start) return 0;
+        long period = (this.end - this.start) / timesRepeat;
+        int idx = Math.min(timesRepeat - 1, (int) ((finish - this.start) / period));
         long time = getZoneDateTime(idx).toEpochSecond();
         if (time >= start && time < finish)
             return idx;
@@ -275,20 +277,11 @@ public class Date implements BaseColumns {
                 public ZonedDateTime plus(ZonedDateTime time, int count) {
                     return time;
                 }
-
-                @Override
-                public long multiplier() {
-                    return 1;
-                }
             },
             DAY('D') {
                 @Override
                 public ZonedDateTime plus(ZonedDateTime time, int count) {
                     return time.plusDays(count);
-                }
-                @Override
-                public long multiplier() {
-                    return 86400;
                 }
             },
             WEEK('W') {
@@ -296,29 +289,17 @@ public class Date implements BaseColumns {
                 public ZonedDateTime plus(ZonedDateTime time, int count) {
                     return time.plusWeeks(count);
                 }
-                @Override
-                public long multiplier() {
-                    return 86400 * 7;
-                }
             },
             MONTH('M') {
                 @Override
                 public ZonedDateTime plus(ZonedDateTime time, int count) {
                     return time.plusMonths(count);
                 }
-                @Override
-                public long multiplier() {
-                    return 86400 * 30;
-                }
             },
             YEAR('Y') {
                 @Override
                 public ZonedDateTime plus(ZonedDateTime time, int count) {
                     return time.plusYears(count);
-                }
-                @Override
-                public long multiplier() {
-                    return 86400 * 365;
                 }
             };
 
@@ -337,7 +318,6 @@ public class Date implements BaseColumns {
             }
 
             public abstract ZonedDateTime plus(ZonedDateTime time, int count);
-            public abstract long multiplier();
         }
     }
 
