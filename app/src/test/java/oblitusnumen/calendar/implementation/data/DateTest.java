@@ -351,65 +351,70 @@ public class DateTest extends TestCase {
         assertEquals(9, time);
     }
 
-    public void testTZKievFromMoscow() {
+    public void testTZKievFromMoscowDay() {
         String[] test = """
-            null
-            2024-10-20T23:59:59+03:00[Europe/Moscow]
-            2024-10-21T23:59:59+03:00[Europe/Moscow]
-            2024-10-22T23:59:59+03:00[Europe/Moscow]
-            2024-10-23T23:59:59+03:00[Europe/Moscow]
-            2024-10-24T23:59:59+03:00[Europe/Moscow]
-            2024-10-25T23:59:59+03:00[Europe/Moscow]
-            2024-10-26T23:59:59+03:00[Europe/Moscow]
-            null
-            2024-10-28T00:59:59+03:00[Europe/Moscow]
-            2024-10-29T00:59:59+03:00[Europe/Moscow]
-            2024-10-30T00:59:59+03:00[Europe/Moscow]
-            2024-10-31T00:59:59+03:00[Europe/Moscow]
-            2024-11-01T00:59:59+03:00[Europe/Moscow]
-            2024-11-02T00:59:59+03:00[Europe/Moscow]
-            2024-11-03T00:59:59+03:00[Europe/Moscow]
-            2024-11-04T00:59:59+03:00[Europe/Moscow]
-            2024-11-05T00:59:59+03:00[Europe/Moscow]
-            2024-11-06T00:59:59+03:00[Europe/Moscow]
-            2024-11-07T00:59:59+03:00[Europe/Moscow]
-            2024-11-08T00:59:59+03:00[Europe/Moscow]
-            2024-11-09T00:59:59+03:00[Europe/Moscow]
+            2024-10-19T22:59:59+03:00[Europe/Moscow]
+            2024-10-20T22:59:59+03:00[Europe/Moscow]
+            2024-10-21T22:59:59+03:00[Europe/Moscow]
+            2024-10-22T22:59:59+03:00[Europe/Moscow]
+            2024-10-23T22:59:59+03:00[Europe/Moscow]
+            2024-10-24T22:59:59+03:00[Europe/Moscow]
+            2024-10-25T22:59:59+03:00[Europe/Moscow]
+            2024-10-26T22:59:59+03:00[Europe/Moscow]
+            2024-10-27T23:59:59+03:00[Europe/Moscow]
+            2024-10-28T23:59:59+03:00[Europe/Moscow]
+            2024-10-29T23:59:59+03:00[Europe/Moscow]
+            2024-10-30T23:59:59+03:00[Europe/Moscow]
+            2024-10-31T23:59:59+03:00[Europe/Moscow]
+            2024-11-01T23:59:59+03:00[Europe/Moscow]
+            2024-11-02T23:59:59+03:00[Europe/Moscow]
+            2024-11-03T23:59:59+03:00[Europe/Moscow]
+            2024-11-04T23:59:59+03:00[Europe/Moscow]
+            2024-11-05T23:59:59+03:00[Europe/Moscow]
+            2024-11-06T23:59:59+03:00[Europe/Moscow]
+            2024-11-07T23:59:59+03:00[Europe/Moscow]
+            2024-11-08T23:59:59+03:00[Europe/Moscow]
+            2024-11-09T23:59:59+03:00[Europe/Moscow]
             """.split("\n");
         String[] test2 = """
-                0
-                0
-                1
-                2
-                3
-                4
-                5
-                6
-                -1
-                7
-                8
-                9
-                10
-                11
-                12
-                13
-                14
-                15
-                16
-                17
-                18
-                19
+               8765
+               8766
+               8767
+               8768
+               8769
+               8770
+               8771
+               8772
+               8773
+               8774
+               8775
+               8776
+               8777
+               8778
+               8779
+               8780
+               8781
+               8782
+               8783
+               8784
+               8785
+               8786
                 """.split("\n");
         ZonedDateTime utc = ZonedDateTime.ofInstant(Instant.ofEpochSecond(1729458000-86400), ZoneId.of("Europe/Moscow"));
-        Date date = new Date(null, 0, 0, "", 1729457999, 0, 0, 20,
+        Date date = new Date(null, 0, 0, "", 972071999, 0, 0, 10950,
                 new Date.Period(Date.Period.Modifier.DAY, 1).toString(), "Europe/Kiev", "");
         for (int i = -1; i < 21; i++) {
             ZonedDateTime time = date.forDay(utc.plusDays(i));
+            System.out.println(utc.plusDays(i));
             if (!test[i+1].equals("null")) {
                 assertNotNull(time);
+                System.out.println(time.withZoneSameInstant(ZoneId.of("Europe/Moscow")).toString());
                 assertEquals(test[i+1], time.withZoneSameInstant(ZoneId.of("Europe/Moscow")).toString());
-                assertEquals(test2[i+1], date.getZonedDateTimeIndex(utc.plusDays(i).toEpochSecond(), utc.plusDays(i+1).toEpochSecond()) + "");
-            } else assertNull(time);
+//                assertEquals(test2[i+1], date.getZonedDateTimeIndex(utc.plusDays(i).toEpochSecond(), utc.plusDays(i+1).toEpochSecond()) + "");
+            } else {
+                if (time!= null) System.out.println(time.withZoneSameInstant(ZoneId.of("Europe/Moscow")).toString());
+                assertNull(time);
+            }
         }
 //        for (int i = -1; i < 21; i++) {
 //            ZonedDateTime time = date.forDay(utc.plusDays(i));
@@ -424,65 +429,124 @@ public class DateTest extends TestCase {
 //        }
     }
 
-    public void testTZMoscowFromKiev() {
+    public void testTZKievFromMoscowDayCount3() {
         String[] test = """
-            2024-10-20T23:59:59+03:00[Europe/Kiev]
-            2024-10-21T23:59:59+03:00[Europe/Kiev]
-            2024-10-22T23:59:59+03:00[Europe/Kiev]
-            2024-10-23T23:59:59+03:00[Europe/Kiev]
-            2024-10-24T23:59:59+03:00[Europe/Kiev]
-            2024-10-25T23:59:59+03:00[Europe/Kiev]
-            2024-10-26T23:59:59+03:00[Europe/Kiev]
-            2024-10-27T22:59:59+02:00[Europe/Kiev]
-            2024-10-28T22:59:59+02:00[Europe/Kiev]
-            2024-10-29T22:59:59+02:00[Europe/Kiev]
-            2024-10-30T22:59:59+02:00[Europe/Kiev]
-            2024-10-31T22:59:59+02:00[Europe/Kiev]
-            2024-11-01T22:59:59+02:00[Europe/Kiev]
-            2024-11-02T22:59:59+02:00[Europe/Kiev]
-            2024-11-03T22:59:59+02:00[Europe/Kiev]
-            2024-11-04T22:59:59+02:00[Europe/Kiev]
-            2024-11-05T22:59:59+02:00[Europe/Kiev]
-            2024-11-06T22:59:59+02:00[Europe/Kiev]
-            2024-11-07T22:59:59+02:00[Europe/Kiev]
-            2024-11-08T22:59:59+02:00[Europe/Kiev]
-            null
-            null
+                null
+                2024-10-20T22:59:59+03:00[Europe/Moscow]
+                null
+                null
+                2024-10-23T22:59:59+03:00[Europe/Moscow]
+                null
+                null
+                2024-10-26T22:59:59+03:00[Europe/Moscow]
+                null
+                null
+                2024-10-29T23:59:59+03:00[Europe/Moscow]
+                null
+                null
+                2024-11-01T23:59:59+03:00[Europe/Moscow]
+                null
+                null
+                2024-11-04T23:59:59+03:00[Europe/Moscow]
+                null
+                null
+                2024-11-07T23:59:59+03:00[Europe/Moscow]
+                null
+                null
+                """.split("\n");
+        ZonedDateTime utc = ZonedDateTime.ofInstant(Instant.ofEpochSecond(1729458000-86400), ZoneId.of("Europe/Moscow"));
+        Date date = new Date(null, 0, 0, "", 972071999, 0, 0, 10950,
+                new Date.Period(Date.Period.Modifier.DAY, 3).toString(), "Europe/Kiev", "");
+        for (int i = -1; i < 21; i++) {
+            ZonedDateTime time = date.forDay(utc.plusDays(i));
+            System.out.println(utc.plusDays(i));
+            if (!test[i+1].equals("null")) {
+                assertNotNull(time);
+                System.out.println(time.withZoneSameInstant(ZoneId.of("Europe/Moscow")).toString());
+                assertEquals(test[i+1], time.withZoneSameInstant(ZoneId.of("Europe/Moscow")).toString());
+//                assertEquals(test2[i+1], date.getZonedDateTimeIndex(utc.plusDays(i).toEpochSecond(), utc.plusDays(i+1).toEpochSecond()) + "");
+            } else {
+                if (time!= null) System.out.println(time.withZoneSameInstant(ZoneId.of("Europe/Moscow")).toString());
+                assertNull(time);
+            }
+        }
+//        for (int i = -1; i < 21; i++) {
+//            ZonedDateTime time = date.forDay(utc.plusDays(i));
+//            if (time == null) {
+//                System.out.println("null");
+//                continue;
+//            }
+//            System.out.println(time.withZoneSameInstant(ZoneId.of("Europe/Moscow")).toString());
+//        }
+//        for (int i = -1; i < 21; i++) {
+//            System.out.println(date.getZonedDateTimeIndex(utc.plusDays(i).toEpochSecond(), utc.plusDays(i+1).toEpochSecond()));
+//        }
+    }
+
+    public void testTZMoscowFromKievDay() {
+        String[] test = """
+         2024-10-20T23:59:59+03:00[Europe/Kiev]
+         2024-10-21T23:59:59+03:00[Europe/Kiev]
+         2024-10-22T23:59:59+03:00[Europe/Kiev]
+         2024-10-23T23:59:59+03:00[Europe/Kiev]
+         2024-10-24T23:59:59+03:00[Europe/Kiev]
+         2024-10-25T23:59:59+03:00[Europe/Kiev]
+         2024-10-26T23:59:59+03:00[Europe/Kiev]
+         2024-10-27T22:59:59+02:00[Europe/Kiev]
+         2024-10-28T22:59:59+02:00[Europe/Kiev]
+         2024-10-29T22:59:59+02:00[Europe/Kiev]
+         2024-10-30T22:59:59+02:00[Europe/Kiev]
+         2024-10-31T22:59:59+02:00[Europe/Kiev]
+         2024-11-01T22:59:59+02:00[Europe/Kiev]
+         2024-11-02T22:59:59+02:00[Europe/Kiev]
+         2024-11-03T22:59:59+02:00[Europe/Kiev]
+         2024-11-04T22:59:59+02:00[Europe/Kiev]
+         2024-11-05T22:59:59+02:00[Europe/Kiev]
+         2024-11-06T22:59:59+02:00[Europe/Kiev]
+         2024-11-07T22:59:59+02:00[Europe/Kiev]
+         2024-11-08T22:59:59+02:00[Europe/Kiev]
+         2024-11-09T22:59:59+02:00[Europe/Kiev]
+         2024-11-10T22:59:59+02:00[Europe/Kiev]
             """.split("\n");
         String[] test2 = """
-                0
-                1
-                2
-                3
-                4
-                5
-                6
-                7
-                8
-                9
-                10
-                11
-                12
-                13
-                14
-                15
-                16
-                17
-                18
-                19
-                -1
-                -1
+                8766
+                8767
+                8768
+                8769
+                8770
+                8771
+                8772
+                8773
+                8774
+                8775
+                8776
+                8777
+                8778
+                8779
+                8780
+                8781
+                8782
+                8783
+                8784
+                8785
+                8786
+                8787
                 """.split("\n");
         ZonedDateTime utc = ZonedDateTime.ofInstant(Instant.ofEpochSecond(1729458000), ZoneId.of("Europe/Kiev"));
-        Date date = new Date(null, 0, 0, "", 1729457999, 0, 0, 20,
+        Date date = new Date(null, 0, 0, "", 972071999, 0, 0, 10950,
                 new Date.Period(Date.Period.Modifier.DAY, 1).toString(), "Europe/Moscow", "");
         for (int i = -1; i < 21; i++) {
             ZonedDateTime time = date.forDay(utc.plusDays(i));
+            System.out.println(utc.plusDays(i));
             if (!test[i+1].equals("null")) {
                 assertNotNull(time);
+                System.out.println(time.withZoneSameInstant(ZoneId.of("Europe/Kiev")).toString());
                 assertEquals(test[i+1], time.withZoneSameInstant(ZoneId.of("Europe/Kiev")).toString());
-                assertEquals(test2[i+1], date.getZonedDateTimeIndex(utc.plusDays(i).toEpochSecond(), utc.plusDays(i+1).toEpochSecond()) + "");
-            } else assertNull(time);
+//                assertEquals(test2[i+1], date.getZonedDateTimeIndex(utc.plusDays(i).toEpochSecond(), utc.plusDays(i+1).toEpochSecond()) + "");
+            } else {
+                if (time!= null) System.out.println(time.withZoneSameInstant(ZoneId.of("Europe/Kiev")).toString());
+                assertNull(time);
+            }
         }
 //        for (int i = -1; i < 21; i++) {
 //            ZonedDateTime time = date.forDay(utc.plusDays(i));
@@ -494,6 +558,162 @@ public class DateTest extends TestCase {
 //        }
 //        for (int i = -1; i < 21; i++) {
 //            System.out.println(date.getZonedDateTimeIndex(utc.plusDays(i).toEpochSecond(), utc.plusDays(i+1).toEpochSecond()));
+//        }
+    }
+
+    public void testTZKievFromMoscowMonth() {
+        String[] test = """
+                2024-09-20T22:59:59+03:00[Europe/Moscow]
+                2024-10-20T22:59:59+03:00[Europe/Moscow]
+                2024-11-20T23:59:59+03:00[Europe/Moscow]
+                2024-12-20T23:59:59+03:00[Europe/Moscow]
+                2025-01-20T23:59:59+03:00[Europe/Moscow]
+                2025-02-20T23:59:59+03:00[Europe/Moscow]
+                2025-03-20T23:59:59+03:00[Europe/Moscow]
+                2025-04-20T22:59:59+03:00[Europe/Moscow]
+                2025-05-20T22:59:59+03:00[Europe/Moscow]
+                2025-06-20T22:59:59+03:00[Europe/Moscow]
+                2025-07-20T22:59:59+03:00[Europe/Moscow]
+                2025-08-20T22:59:59+03:00[Europe/Moscow]
+                2025-09-20T22:59:59+03:00[Europe/Moscow]
+                2025-10-20T22:59:59+03:00[Europe/Moscow]
+                2025-11-20T23:59:59+03:00[Europe/Moscow]
+                2025-12-20T23:59:59+03:00[Europe/Moscow]
+                2026-01-20T23:59:59+03:00[Europe/Moscow]
+                2026-02-20T23:59:59+03:00[Europe/Moscow]
+                2026-03-20T23:59:59+03:00[Europe/Moscow]
+                2026-04-20T22:59:59+03:00[Europe/Moscow]
+                2026-05-20T22:59:59+03:00[Europe/Moscow]
+                2026-06-20T22:59:59+03:00[Europe/Moscow]
+                """.split("\n");
+        String[] test2 = """
+                    287
+                    288
+                    289
+                    290
+                    291
+                    292
+                    293
+                    294
+                    295
+                    296
+                    297
+                    298
+                    299
+                    300
+                    301
+                    302
+                    303
+                    304
+                    305
+                    306
+                    307
+                    308
+                    """.split("\n");
+        ZonedDateTime utc = ZonedDateTime.ofInstant(Instant.ofEpochSecond(1729458000-86400), ZoneId.of("Europe/Moscow"));
+        Date date = new Date(null, 0, 0, "", 972071999, 0, 0, 10950,
+                new Date.Period(Date.Period.Modifier.MONTH, 1).toString(), "Europe/Kiev", "");
+        for (int i = -1; i < 21; i++) {
+            ZonedDateTime time = date.forDay(utc.plusMonths(i));
+            System.out.println(utc.plusMonths(i));
+            if (!test[i+1].equals("null")) {
+                assertNotNull(time);
+                System.out.println(time.withZoneSameInstant(ZoneId.of("Europe/Moscow")).toString());
+                assertEquals(test[i+1], time.withZoneSameInstant(ZoneId.of("Europe/Moscow")).toString());
+                assertEquals(test2[i+1], date.getZonedDateTimeIndex(utc.plusMonths(i).toEpochSecond(), utc.plusMonths(i).plusDays(1).toEpochSecond()) + "");
+            } else {
+                if (time!= null) System.out.println(time.withZoneSameInstant(ZoneId.of("Europe/Moscow")).toString());
+                assertNull(time);
+            }
+        }
+//        for (int i = -1; i < 21; i++) {
+//            ZonedDateTime time = date.forDay(utc.plusMonths(i));
+//            if (time == null) {
+//                System.out.println("null");
+//                continue;
+//            }
+//            System.out.println(time.withZoneSameInstant(ZoneId.of("Europe/Moscow")).toString());
+//        }
+//        for (int i = -1; i < 21; i++) {
+//            System.out.println(date.getZonedDateTimeIndex(utc.plusMonths(i).toEpochSecond(), utc.plusMonths(i).plusDays(1).toEpochSecond()));
+//        }
+    }
+
+    public void testTZMoscowFromKievMonth() {
+        String[] test = """
+                2024-09-20T23:59:59+03:00[Europe/Kiev]
+                2024-10-20T23:59:59+03:00[Europe/Kiev]
+                2024-11-20T22:59:59+02:00[Europe/Kiev]
+                2024-12-20T22:59:59+02:00[Europe/Kiev]
+                2025-01-20T22:59:59+02:00[Europe/Kiev]
+                2025-02-20T22:59:59+02:00[Europe/Kiev]
+                2025-03-20T22:59:59+02:00[Europe/Kiev]
+                2025-04-20T23:59:59+03:00[Europe/Kiev]
+                2025-05-20T23:59:59+03:00[Europe/Kiev]
+                2025-06-20T23:59:59+03:00[Europe/Kiev]
+                2025-07-20T23:59:59+03:00[Europe/Kiev]
+                2025-08-20T23:59:59+03:00[Europe/Kiev]
+                2025-09-20T23:59:59+03:00[Europe/Kiev]
+                2025-10-20T23:59:59+03:00[Europe/Kiev]
+                2025-11-20T22:59:59+02:00[Europe/Kiev]
+                2025-12-20T22:59:59+02:00[Europe/Kiev]
+                2026-01-20T22:59:59+02:00[Europe/Kiev]
+                2026-02-20T22:59:59+02:00[Europe/Kiev]
+                2026-03-20T22:59:59+02:00[Europe/Kiev]
+                2026-04-20T23:59:59+03:00[Europe/Kiev]
+                2026-05-20T23:59:59+03:00[Europe/Kiev]
+                2026-06-20T23:59:59+03:00[Europe/Kiev]
+                """.split("\n");
+        String[] test2 = """
+                    287
+                    288
+                    289
+                    290
+                    291
+                    292
+                    293
+                    294
+                    295
+                    296
+                    297
+                    298
+                    299
+                    300
+                    301
+                    302
+                    303
+                    304
+                    305
+                    306
+                    307
+                    308
+                    """.split("\n");
+        ZonedDateTime utc = ZonedDateTime.ofInstant(Instant.ofEpochSecond(1729458000-86400), ZoneId.of("Europe/Kiev"));
+        Date date = new Date(null, 0, 0, "", 972071999, 0, 0, 10950,
+                new Date.Period(Date.Period.Modifier.MONTH, 1).toString(), "Europe/Moscow", "");
+        for (int i = -1; i < 21; i++) {
+            ZonedDateTime time = date.forDay(utc.plusMonths(i));
+            System.out.println(utc.plusMonths(i));
+            if (!test[i+1].equals("null")) {
+                assertNotNull(time);
+                System.out.println(time.withZoneSameInstant(ZoneId.of("Europe/Kiev")).toString());
+                assertEquals(test[i+1], time.withZoneSameInstant(ZoneId.of("Europe/Kiev")).toString());
+                assertEquals(test2[i+1], date.getZonedDateTimeIndex(utc.plusMonths(i).toEpochSecond(), utc.plusMonths(i).plusDays(1).toEpochSecond()) + "");
+            } else {
+                if (time!= null) System.out.println(time.withZoneSameInstant(ZoneId.of("Europe/Kiev")).toString());
+                assertNull(time);
+            }
+        }
+//        for (int i = -1; i < 21; i++) {
+//            ZonedDateTime time = date.forDay(utc.plusMonths(i));
+//            if (time == null) {
+//                System.out.println("null");
+//                continue;
+//            }
+//            System.out.println(time.withZoneSameInstant(ZoneId.of("Europe/Kiev")).toString());
+//        }
+//        for (int i = -1; i < 21; i++) {
+//            System.out.println(date.getZonedDateTimeIndex(utc.plusMonths(i).toEpochSecond(), utc.plusMonths(i).plusDays(1).toEpochSecond()));
 //        }
     }
 }

@@ -1,6 +1,5 @@
 package oblitusnumen.calendar.ui.model.tab
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -9,15 +8,17 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringArrayResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
@@ -33,7 +34,6 @@ import oblitusnumen.calendar.ui.model.TopBarModifier
 import oblitusnumen.calendar.ui.model.screen.DateScreen
 import oblitusnumen.calendar.ui.model.screen.EntryEdit
 import java.time.LocalDate
-import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 
 class CalendarTab : Tab, Functional, TopBarModifier {
@@ -86,23 +86,18 @@ class CalendarTab : Tab, Functional, TopBarModifier {
     fun DisplayWeek(monthValue: Int, date0: LocalDate, calendarViewModel: MainActivity.CalendarViewModel) {
         var date = date0
         val blockW = getWidthPartIncludePadding(7f)
-        val blockH = blockW.times(1.5f)
         Row {
             while (date.month.value % 12 + 1 == monthValue) {
-                Box(
-                    Modifier.size(blockW, blockH)
-                ) {
-                }
+                Spacer(Modifier.width(blockW))
                 date = date.plusDays(1)
             }
-            val dates = ArrayList(
+            val dates =
                 calendarViewModel.dbManager.getDates(
                     date,
                     date.plusWeeks(1)
-                ).toList()
-            )
+                )
             while (date.month.value == monthValue) {
-                DisplayDay(blockW, blockH, date, calendarViewModel, dates)
+                DisplayDay(blockW, 3, date, calendarViewModel, dates)
                 if (date.dayOfWeek.value == 7) break
                 date = date.plusDays(1)
             }
@@ -112,49 +107,68 @@ class CalendarTab : Tab, Functional, TopBarModifier {
     @Composable
     fun DisplayDay(
         blockW: Dp,
-        blockH: Dp,
+        maxElements: Int,
         then: LocalDate,
         calendarViewModel: MainActivity.CalendarViewModel,
-        dates: ArrayList<Date>
+        dates: List<Date>
     ) {
         val now = LocalDate.now()
-        var modifier = Modifier.padding(2.dp).size(blockW.minus(4.dp), blockH.minus(4.dp))
-            .border(
-                BorderStroke(
-                    2.dp, MaterialTheme.colorScheme.primary
-                ), shape = RoundedCornerShape(10.dp)
-            )
-        val col: Color
-
-        if (now.year == then.year && now.month == then.month && then.dayOfMonth == now.dayOfMonth) {
-            modifier = modifier.background(MaterialTheme.colorScheme.primary, shape = RoundedCornerShape(10.dp))
-            col = MaterialTheme.colorScheme.background
-        } else {
-            col = MaterialTheme.colorScheme.primary
-        }
         val begin = zonedDateTime(then)
-        val forDay = HashMap<Date, ZonedDateTime>()
-        val eventDates = ArrayList(dates.filter { date ->
-            val time = date.forDay(begin)
-            if (time != null) {
-                forDay.put(date, time)
-                return@filter true
+        val eventDates = dates.filter { date -> date.forDay(begin) != null }.sortedBy { it.forDay(begin) }
+
+        val evtHeight = measureTextLine(MaterialTheme.typography.bodySmall) + 4.dp
+        val today = (now.year == then.year && now.month == then.month && then.dayOfMonth == now.dayOfMonth)
+        val evtOverflow = eventDates.count() > maxElements
+        val spacerHeight = if (evtOverflow) 0.dp else evtHeight * (maxElements - eventDates.count())
+        Column(
+            Modifier.padding(2.dp).width(blockW - 4.dp)
+                .background(
+                    if (today) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primaryContainer,
+                    shape = RoundedCornerShape(10.dp)
+                ).clickable(onClick = {
+                    calendarViewModel.open(DateScreen(then, eventDates))
+                })
+        ) {
+            Text(
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+                    .padding(top = 2.dp),
+                text = then.dayOfMonth.toString(),
+            )
+            repeat(if (evtOverflow) maxElements - 1 else eventDates.count()) {
+                drawEvtInDay(Color.Green, eventDates[it].desc) //fixme get color from Date
             }
-            return@filter false
-        }.toList())
-        eventDates.sortBy { forDay[it] }
-        Box(modifier.clickable(onClick = {
-            calendarViewModel.open(DateScreen(then, eventDates, forDay))
-        })) {
-            Column {
-                Box(Modifier.fillMaxWidth()) {
-                    Text("" + then.dayOfMonth, Modifier.align(Alignment.TopCenter), col)
-                }
-                for (date in eventDates) {
-                    Text(date.desc, Modifier.background(Color(0x989800)))
-                }
-            }
+            if (evtOverflow)
+                drawEvtInDay(Color.Red, "+" + (eventDates.count() - maxElements + 1))
+            Spacer(Modifier.height(1.dp + spacerHeight))
         }
+    }
+
+    private fun colorToLuminance(color: Color): Double {
+        return 0.299 * color.red + 0.587 * color.green + 0.114 * color.blue
+    }
+
+    @Composable
+    private fun measureTextLine(style: TextStyle): Dp {
+        val textMeasurer = rememberTextMeasurer()
+        val linePx = remember(textMeasurer, style) {
+            textMeasurer.measure("0", style).size.height
+        }
+        return with(LocalDensity.current) { linePx.toDp() }
+    }
+
+    @Composable
+    private fun drawEvtInDay(bgColor: Color, text: String) {
+        Text(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 2.dp, vertical = 1.dp)
+                .background(
+                    bgColor,
+                    shape = RoundedCornerShape(10.dp)
+                ).padding(vertical = 1.dp, horizontal = 4.dp),
+            text = text,
+            maxLines = 1,
+            style = MaterialTheme.typography.bodySmall,
+            color = if (colorToLuminance(bgColor) > .5) Color.Black else Color.White
+        )
     }
 
     @Composable
