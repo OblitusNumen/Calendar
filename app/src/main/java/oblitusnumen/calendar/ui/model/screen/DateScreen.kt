@@ -21,9 +21,8 @@ import oblitusnumen.calendar.ui.model.Functional
 import oblitusnumen.calendar.ui.model.Screen
 import oblitusnumen.calendar.ui.model.TopBarModifier
 import java.time.LocalDate
-import java.time.ZonedDateTime
 
-class DateScreen(private var day: LocalDate, private var dates: List<Date>, private var forDay: HashMap<Date, ZonedDateTime>) : Screen, Functional, TopBarModifier {
+class DateScreen(var day: LocalDate, private var dates: List<Date>) : Screen, Functional, TopBarModifier {
     // TODO:
     @Composable
     override fun compose(calendarViewModel: MainActivity.CalendarViewModel) {
@@ -31,7 +30,7 @@ class DateScreen(private var day: LocalDate, private var dates: List<Date>, priv
             Text("Date $day")
             for (date in dates) {
                 val entry = date.entry
-                val time = forDay[date]
+                val forDay = date.forDay(zonedDateTime(day))
                 Box(
                     Modifier.fillMaxWidth().border(width = 2.dp, color = MaterialTheme.colorScheme.primary)
                         .clickable(onClick = {
@@ -41,7 +40,7 @@ class DateScreen(private var day: LocalDate, private var dates: List<Date>, priv
                     Column {
                         Text(date.desc)
                         Text(entry.name)
-                        Text("" + time)
+                        Text("" + forDay)
                     }
                 }
             }
