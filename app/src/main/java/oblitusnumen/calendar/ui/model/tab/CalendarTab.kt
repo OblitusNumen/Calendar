@@ -8,9 +8,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -21,6 +21,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
@@ -45,22 +46,19 @@ class CalendarTab : Tab, Functional, TopBarModifier {
     override fun compose(calendarViewModel: MainActivity.CalendarViewModel) {
         Column {
             Row {
-                var i = 1
-                while (i <= 7) {
-                    Box(
-                        Modifier.width(getWidthPartIncludePadding(7f)).height(25.dp)
-                            .border(2.dp, MaterialTheme.colorScheme.primary)
-                    ) {
-                        Text(stringArrayResource(R.array.weekdayNames)[i - 1], Modifier.align(Alignment.Center))
-                    }
-                    i++
+                repeat (7) {
+                    Text(
+                        stringArrayResource(R.array.weekdayNames)[it],
+                        modifier = Modifier.width(getWidthPartIncludePadding(7f)).height(25.dp)
+                            .border(2.dp, MaterialTheme.colorScheme.primary),
+                        textAlign = TextAlign.Center,
+                    )
                 }
             }
             val now = LocalDate.now()
             if (calendarLazyListState == null) calendarLazyListState = rememberLazyListState(getNowItemIndex(now))
             LazyColumn(
-                state = calendarLazyListState!!,
-                modifier = Modifier
+                state = calendarLazyListState!!
             ) {
                 items(Int.MAX_VALUE, itemContent = {
                     val offset = it - Int.MAX_VALUE / 2
@@ -70,7 +68,7 @@ class CalendarTab : Tab, Functional, TopBarModifier {
                     if (monthItemIndex == 0) {
                         Text(stringArrayResource(R.array.monthNames)[mon.month.value - 1] + " " + mon.year)
                     } else {
-                        DisplayWeek(
+                        displayWeek(
                             mon.monthValue,
                             mon.plusDays(7 * (monthItemIndex - 1) - (mon.dayOfWeek.value - 1).toLong()),
                             calendarViewModel
@@ -85,7 +83,7 @@ class CalendarTab : Tab, Functional, TopBarModifier {
         (Int.MAX_VALUE / 2 + ChronoUnit.MONTHS.between(LIST_CENTER, now) * 7).toInt()
 
     @Composable
-    fun DisplayWeek(monthValue: Int, date0: LocalDate, calendarViewModel: MainActivity.CalendarViewModel) {
+    fun displayWeek(monthValue: Int, date0: LocalDate, calendarViewModel: MainActivity.CalendarViewModel) {
         var date = date0
         val blockW = getWidthPartIncludePadding(7f)
         Row {
@@ -99,7 +97,7 @@ class CalendarTab : Tab, Functional, TopBarModifier {
                     date.plusWeeks(1)
                 )
             while (date.month.value == monthValue) {
-                DisplayDay(blockW, 3, date, calendarViewModel, dates)
+                displayDay(blockW, 3, date, calendarViewModel, dates)
                 if (date.dayOfWeek.value == 7) break
                 date = date.plusDays(1)
             }
@@ -107,7 +105,7 @@ class CalendarTab : Tab, Functional, TopBarModifier {
     }
 
     @Composable
-    fun DisplayDay(
+    fun displayDay(
         blockW: Dp,
         maxElements: Int,
         then: LocalDate,
@@ -120,12 +118,13 @@ class CalendarTab : Tab, Functional, TopBarModifier {
 
         val evtHeight = measureTextLine(MaterialTheme.typography.bodySmall) + 4.dp
         val today = (now.year == then.year && now.month == then.month && then.dayOfMonth == now.dayOfMonth)
+        val bgColor = if (today) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primaryContainer
         val evtOverflow = eventDates.count() > maxElements
         val spacerHeight = if (evtOverflow) 0.dp else evtHeight * (maxElements - eventDates.count())
         Column(
             Modifier.padding(2.dp).width(blockW - 4.dp)
                 .background(
-                    if (today) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primaryContainer,
+                    bgColor,
                     shape = RoundedCornerShape(10.dp)
                 ).clickable(onClick = {
                     calendarViewModel.open(DateScreen(then, eventDates))
@@ -135,6 +134,7 @@ class CalendarTab : Tab, Functional, TopBarModifier {
                 modifier = Modifier.align(Alignment.CenterHorizontally)
                     .padding(top = 2.dp),
                 text = then.dayOfMonth.toString(),
+                color = if (colorToLuminance(bgColor) > .5) Color.Black else Color.White
             )
             repeat(if (evtOverflow) maxElements - 1 else eventDates.count()) {
                 drawEvtInDay(Color.Green, eventDates[it].desc) //fixme get color from Date
@@ -175,12 +175,11 @@ class CalendarTab : Tab, Functional, TopBarModifier {
 
     @Composable
     override fun functionButton(calendarViewModel: MainActivity.CalendarViewModel) {
-        Button(onClick = {
+        FloatingActionButton(onClick = {
             val entry = calendarViewModel.dbManager.createEntry()
             calendarViewModel.open(EntryEdit(calendarViewModel, entry))
         }) {
-            Text("十")
-//            Text("+")
+            Icon(Icons.Filled.Add, "add event")
         }
     }
 
