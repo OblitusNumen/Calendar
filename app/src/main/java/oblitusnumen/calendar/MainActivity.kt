@@ -1,12 +1,12 @@
 package oblitusnumen.calendar
 
 import android.os.Bundle
-import android.view.KeyEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -19,23 +19,26 @@ import androidx.compose.ui.unit.dp
 import androidx.core.util.Supplier
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
 import oblitusnumen.calendar.MainActivity.CalendarViewModel
 import oblitusnumen.calendar.MainActivity.Companion.PADDING
 import oblitusnumen.calendar.implementation.data.DbManager
-import oblitusnumen.calendar.ui.model.Functional
 import oblitusnumen.calendar.ui.model.Screen
 import oblitusnumen.calendar.ui.model.Tab
-import oblitusnumen.calendar.ui.model.TopBarModifier
+import oblitusnumen.calendar.ui.model.navigation.NavRoutes
 import oblitusnumen.calendar.ui.model.tab.CalendarTab
-import oblitusnumen.calendar.ui.model.tab.EntriesTab
-import oblitusnumen.calendar.ui.model.tab.TagsTab
 import oblitusnumen.calendar.ui.theme.CalendarTheme
 import java.time.LocalDate
 import java.util.*
 
-class MainActivity : ComponentActivity(), TopBarModifier {
+class MainActivity : ComponentActivity() {
     private val dbManager = DbManager(this)
-    private var calendarViewModel: CalendarViewModel? = null
 
     companion object {
         val PADDING: Dp = 5.dp
@@ -48,45 +51,72 @@ class MainActivity : ComponentActivity(), TopBarModifier {
         setContent {
             CalendarTheme {
                 val calendarViewModel = viewModel { CalendarViewModel(dbManager) }
-                this.calendarViewModel = calendarViewModel
-                // A surface container using the 'background' color from the theme
-                Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.primary) {
-                    Scaffold(
-                        topBar = {// FIXME:
-//                            TopAppBar()
-                            Row {
-                                var width = getWidthPart(1f)
-                                if (calendarViewModel.screen is Tab) {
-                                    Button(onClick = {
-                                        // FIXME:
-//                                openOptionsMenu()
-                                    }) {
-                                        Text("三")
-                                    }
-                                    width = width.minus(50.dp)
-                                }
-                                Box(Modifier.width(width).height(50.dp)) {
-                                    (if (calendarViewModel.screen is TopBarModifier) (calendarViewModel.screen as TopBarModifier) else this@MainActivity).topBar(
-                                        calendarViewModel
-                                    )
-                                }
-                            }
-                        },
-                        bottomBar = { BottomBar(calendarViewModel) },
-                        floatingActionButton = {
-                            if (calendarViewModel.screen is Functional) (calendarViewModel.screen as Functional).functionButton(
-                                calendarViewModel
-                            )
-                        }) {
-                        Box(
-                            Modifier.absolutePadding(
-                                PADDING, 50.dp,
-                                PADDING, 50.dp
-                            )
-                        ) {
-                            calendarViewModel.screen.compose(calendarViewModel)
-                        }
+                calendarViewModel.navController = rememberNavController()
+                navGraph(calendarViewModel.navController!!, calendarViewModel)
+            }
+        }
+    }
+
+    @Composable
+    fun navGraph(navController: NavHostController, calendarViewModel: CalendarViewModel) {
+        NavHost(
+            navController = navController,
+            startDestination = NavRoutes.Calendar.route
+        ) {
+            composable(route = NavRoutes.Calendar.route) {
+                val ct = CalendarTab()
+                Scaffold(
+                    bottomBar = { tryDrawBottomBar(navController) },
+                    floatingActionButton = { ct.functionButton(calendarViewModel) }) {
+                    ct.compose(calendarViewModel)
+                }
+            }
+
+            composable(route = NavRoutes.ThatDayDetails.route) { navBackStackEntry ->
+                val thatDay = navBackStackEntry.arguments?.getString(NavRoutes.ThatDayDetails.date)
+                Button({ navController.navigateUp() }) {
+                    Text(thatDay!!)
+                }
+            }
+
+            composable(route = NavRoutes.Tags.route) {
+                Scaffold(
+                    bottomBar = { tryDrawBottomBar(navController) }) {
+                    Button({ navController.navigateUp() }) {
+                        Text("hii")
                     }
+                }
+            }
+        }
+    }
+
+    @Composable
+    fun tryDrawBottomBar(navController: NavController) {
+        if (NavRoutes.isTopLevel(navController.currentBackStackEntryAsState().value?.destination?.route)) {
+            NavigationBar {
+                val navBackStackEntry by navController.currentBackStackEntryAsState()
+                val currentDestination = navBackStackEntry?.destination
+                NavRoutes.getTopLevelRoutes().forEach { topLevelRoute ->
+                    NavigationBarItem(
+                        icon = { Icon(topLevelRoute.icon, contentDescription = topLevelRoute.name) },
+                        label = { Text(topLevelRoute.name) },
+                        selected = currentDestination?.route == topLevelRoute.route.route,
+                        onClick = {
+                            navController.navigate(topLevelRoute.route.route) {
+                                // Pop up to the start destination of the graph to
+                                // avoid building up a large stack of destinations
+                                // on the back stack as users select items
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                // Avoid multiple copies of the same destination when
+                                // reselecting the same item
+                                launchSingleTop = true
+                                // Restore state when reselecting a previously selected item
+                                restoreState = true
+                            }
+                        }
+                    )
                 }
             }
         }
@@ -97,36 +127,10 @@ class MainActivity : ComponentActivity(), TopBarModifier {
         super.onDestroy()
     }
 
-    @Composable
-    fun BottomBar(calendarViewModel: CalendarViewModel) {
-        Box(Modifier.width(getWidthPart(1f)).height(50.dp)) {
-            Row {
-                Box(getTabBoxModifier({ CalendarTab() }, calendarViewModel = calendarViewModel)) {
-                    Text("calendar")
-                }
-                Box(getTabBoxModifier({ TagsTab() }, calendarViewModel = calendarViewModel)) {
-                    Text("tags")
-                }
-                Box(getTabBoxModifier({ EntriesTab() }, calendarViewModel = calendarViewModel)) {
-                    Text("entries")
-                }
-            }
-        }
-    }
-
-    override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
-        if ((keyCode == KeyEvent.KEYCODE_BACK && event.isTracking
-                    && !event.isCanceled)
-        ) {//fixme back press from main screen does not close app
-            if (calendarViewModel != null && calendarViewModel!!.back()) return true
-            else return super.onKeyUp(keyCode, event)
-        }
-        return super.onKeyUp(keyCode, event)
-    }
-
     class CalendarViewModel(val dbManager: DbManager) : ViewModel() {
         // FIXME: add stack for each tab
         var screen: Screen by mutableStateOf(CalendarTab())
+        var navController: NavHostController? = null
         private val stateStack = LinkedList<Screen>()
 
         fun back(): Boolean {
@@ -149,11 +153,6 @@ class MainActivity : ComponentActivity(), TopBarModifier {
         fun changeTab(searchTab: Screen) {
             open(searchTab)
         }
-    }
-
-    @Composable
-    override fun topBar(calendarViewModel: CalendarViewModel) {
-        // TODO:
     }
 }
 

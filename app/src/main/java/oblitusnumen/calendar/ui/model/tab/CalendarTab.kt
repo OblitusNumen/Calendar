@@ -34,7 +34,7 @@ import oblitusnumen.calendar.implementation.data.Date
 import oblitusnumen.calendar.ui.model.Functional
 import oblitusnumen.calendar.ui.model.Tab
 import oblitusnumen.calendar.ui.model.TopBarModifier
-import oblitusnumen.calendar.ui.model.screen.DateScreen
+import oblitusnumen.calendar.ui.model.navigation.NavRoutes
 import oblitusnumen.calendar.ui.model.screen.EntryEdit
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
@@ -127,7 +127,7 @@ class CalendarTab : Tab, Functional, TopBarModifier {
                     bgColor,
                     shape = RoundedCornerShape(10.dp)
                 ).clickable(onClick = {
-                    calendarViewModel.open(DateScreen(then, eventDates))
+                    calendarViewModel.navController!!.navigate(NavRoutes.ThatDayDetails.withArgs(then.dayOfMonth.toString())) //fixme proper args
                 })
         ) {
             Text(
