@@ -13,20 +13,23 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
 import oblitusnumen.calendar.BackButton
-import oblitusnumen.calendar.MainActivity
 import oblitusnumen.calendar.implementation.Utils.zonedDateTime
 import oblitusnumen.calendar.implementation.data.Date
-import oblitusnumen.calendar.ui.model.Functional
-import oblitusnumen.calendar.ui.model.Screen
-import oblitusnumen.calendar.ui.model.TopBarModifier
+import oblitusnumen.calendar.implementation.data.DbManager
+import oblitusnumen.calendar.implementation.data.Entry
 import java.time.LocalDate
 
-class DateScreen(var day: LocalDate, private var dates: List<Date>) : Screen, Functional, TopBarModifier {
+class DateScreen(private val day: LocalDate,
+                 private val dates: List<Date>,
+                 private val dbManager: DbManager,
+                 private val editEntry: (Entry) -> Unit,
+                 private val backPress: () -> Unit) : ViewModel() {
     // TODO:
     @Composable
-    override fun compose(calendarViewModel: MainActivity.CalendarViewModel) {
-        Column(Modifier.verticalScroll(ScrollState(0))) {// TODO: update state 
+    fun compose(modifier: Modifier = Modifier) {
+        Column(modifier.verticalScroll(ScrollState(0))) {// TODO: update state
             Text("Date $day")
             for (date in dates) {
                 val entry = date.entry
@@ -34,7 +37,7 @@ class DateScreen(var day: LocalDate, private var dates: List<Date>) : Screen, Fu
                 Box(
                     Modifier.fillMaxWidth().border(width = 2.dp, color = MaterialTheme.colorScheme.primary)
                         .clickable(onClick = {
-                            calendarViewModel.open(EntryEdit(calendarViewModel, entry))
+                            editEntry(entry)
                         })
                 ) {
                     Column {
@@ -49,10 +52,9 @@ class DateScreen(var day: LocalDate, private var dates: List<Date>) : Screen, Fu
     // TODO: fix orientation
 
     @Composable
-    override fun functionButton(calendarViewModel: MainActivity.CalendarViewModel) {
+    fun functionButton() {
         Button(onClick = {
-            val entry = calendarViewModel.dbManager.createEntry()
-            calendarViewModel.open(EntryEdit(calendarViewModel, entry))
+            editEntry(dbManager.createEntry())
         }) {
             Text("十")
 //            Text("+")
@@ -60,7 +62,7 @@ class DateScreen(var day: LocalDate, private var dates: List<Date>) : Screen, Fu
     }
 
     @Composable
-    override fun topBar(calendarViewModel: MainActivity.CalendarViewModel) {
-        BackButton(calendarViewModel)
+    fun topBar() {
+        BackButton(backPress)
     }
 }

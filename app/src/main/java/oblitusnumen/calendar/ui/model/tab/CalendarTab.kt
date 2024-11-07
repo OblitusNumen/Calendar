@@ -32,13 +32,14 @@ import oblitusnumen.calendar.getWidthPartIncludePadding
 import oblitusnumen.calendar.implementation.Utils.zonedDateTime
 import oblitusnumen.calendar.implementation.data.Date
 import oblitusnumen.calendar.implementation.data.DbManager
+import oblitusnumen.calendar.implementation.data.Entry
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
 class CalendarTab(
     private val dbManager: DbManager,
-    private val toThatDayInfo: (LocalDate) -> Unit,
-    private val newEntry: () -> Unit
+    private val toThatDayInfo: (LocalDate, List<Date>) -> Unit,
+    private val newEntry: (Entry) -> Unit
 ) : ViewModel() {
     private var calendarLazyListState: LazyListState? = null
 
@@ -124,7 +125,7 @@ class CalendarTab(
                 .background(
                     bgColor,
                     shape = RoundedCornerShape(10.dp)
-                ).clickable(onClick = { toThatDayInfo(then) })
+                ).clickable(onClick = { toThatDayInfo(then, eventDates) })
         ) {
             Text(
                 modifier = Modifier.align(Alignment.CenterHorizontally)
@@ -171,7 +172,7 @@ class CalendarTab(
 
     @Composable
     fun functionButton() {
-        FloatingActionButton(onClick = newEntry) {
+        FloatingActionButton(onClick = { newEntry(dbManager.createEntry()) }) {
             Icon(Icons.Filled.Add, "add event")
         }
     }

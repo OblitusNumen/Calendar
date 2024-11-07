@@ -65,9 +65,11 @@ class MainActivity : ComponentActivity() {
         ) {
             composable(route = NavRoutes.Calendar.route) {
                 val calendarTab = viewModel {
-                    CalendarTab(calendarViewModel.dbManager, {
-                        navController.navigate(NavRoutes.ThatDayDetails.withArgs(it.toString())) //fixme proper args
+                    CalendarTab(calendarViewModel.dbManager, {date, evtDates ->
+                        calendarViewModel.workaroundArgList = listOf(date, evtDates)
+                        navController.navigate(NavRoutes.ThatDayDetails.withArgs("date arg")) //fixme proper args
                     }, {
+                        calendarViewModel.workaroundArgList = listOf(it)
                         navController.navigate(NavRoutes.EntryDetails.withArgs("new entry")) //fixme proper args
                     })
                 }
@@ -84,10 +86,28 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            composable(route = NavRoutes.ThatDayDetails.route) { navBackStackEntry ->
-                val thatDay = navBackStackEntry.arguments?.getString(NavRoutes.ThatDayDetails.date)
-                Button({ navController.navigateUp() }) {
-                    Text(thatDay!!)
+            composable(route = NavRoutes.ThatDayDetails.route) { //navBackStackEntry ->
+                //val thatDay = navBackStackEntry.arguments?.getString(NavRoutes.ThatDayDetails.date)
+                val dateScreen = viewModel {
+                    DateScreen(
+                        calendarViewModel.workaroundArgList!![0] as LocalDate,
+                        calendarViewModel.workaroundArgList!![1] as List<oblitusnumen.calendar.implementation.data.Date>,
+                        dbManager,
+                        {
+                            calendarViewModel.workaroundArgList = listOf(it)
+                            navController.navigate(NavRoutes.EntryDetails.withArgs("new entry")) //fixme proper args
+                        },
+                        { navController.navigateUp() })
+                }
+                Scaffold(
+                    topBar = { dateScreen.topBar() },
+                    floatingActionButton = { dateScreen.functionButton() }) {
+                    dateScreen.compose(
+                        Modifier.absolutePadding(//seems like a hack
+                            PADDING, 50.dp,
+                            PADDING, 50.dp
+                        )
+                    )
                 }
             }
 
@@ -148,36 +168,16 @@ class MainActivity : ComponentActivity() {
 
     class CalendarViewModel(val dbManager: DbManager) : ViewModel() {
         // FIXME: add stack for each tab
-        var screen: Screen by mutableStateOf(CalendarTab())
+        var workaroundArgList: List<Any>? = null
         var navController: NavHostController? = null
-        private val stateStack = LinkedList<Screen>()
 
         fun back(): Boolean {
-            if (!stateStack.isEmpty()) {
-                screen = stateStack.pop()
-                return true
-            } else return false
+            return false
         }
 
         fun open(screen: Screen) {
-            var nextScreen = screen
-            if (screen !is Tab) {
-                stateStack.push(this.screen)
-            } else {
-                nextScreen = stateStack.firstOrNull { s -> s::class == screen::class } ?: screen
-            }
-            this.screen = nextScreen
-        }
-
-        fun changeTab(searchTab: Screen) {
-            open(searchTab)
         }
     }
-}
-
-@Composable
-fun getWidthPart(divisor: Float): Dp {
-    return LocalConfiguration.current.screenWidthDp.dp.div(divisor)
 }
 
 @Composable
@@ -211,6 +211,14 @@ fun BackButton(calendarViewModel: CalendarViewModel) {
     Button(onClick = {
         calendarViewModel.back()
     }) {
+        Text("く")
+//        Text("←")
+    }
+}
+
+@Composable
+fun BackButton(backPress: () -> Unit) {
+    Button(onClick = backPress) {
         Text("く")
 //        Text("←")
     }
