@@ -3,20 +3,14 @@ package oblitusnumen.calendar
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.absolutePadding
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.core.util.Supplier
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -26,16 +20,16 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import oblitusnumen.calendar.MainActivity.CalendarViewModel
 import oblitusnumen.calendar.MainActivity.Companion.PADDING
 import oblitusnumen.calendar.implementation.data.DbManager
-import oblitusnumen.calendar.ui.model.Screen
-import oblitusnumen.calendar.ui.model.Tab
+import oblitusnumen.calendar.implementation.data.Entry
 import oblitusnumen.calendar.ui.model.navigation.NavRoutes
+import oblitusnumen.calendar.ui.model.screen.DateScreen
+import oblitusnumen.calendar.ui.model.screen.EntryEdit
 import oblitusnumen.calendar.ui.model.tab.CalendarTab
+import oblitusnumen.calendar.ui.model.tab.EntriesTab
 import oblitusnumen.calendar.ui.theme.CalendarTheme
 import java.time.LocalDate
-import java.util.*
 
 class MainActivity : ComponentActivity() {
     private val dbManager = DbManager(this)
@@ -129,6 +123,19 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
+            composable(route = NavRoutes.Entries.route) {
+                val entriesTab = viewModel {
+                    EntriesTab(calendarViewModel.dbManager) {
+                        calendarViewModel.workaroundArgList = listOf(it)
+                        navController.navigate(NavRoutes.EntryDetails.withArgs("new entry")) //fixme proper args
+                    }
+                }
+                Scaffold(
+                    bottomBar = { tryDrawBottomBar(navController) }) {
+                    entriesTab.compose()
+                }
+            }
+
             composable(route = NavRoutes.Tags.route) {
                 Scaffold(
                     bottomBar = { tryDrawBottomBar(navController) }) {
@@ -178,16 +185,8 @@ class MainActivity : ComponentActivity() {
     }
 
     class CalendarViewModel(val dbManager: DbManager) : ViewModel() {
-        // FIXME: add stack for each tab
         var workaroundArgList: List<Any>? = null
         var navController: NavHostController? = null
-
-        fun back(): Boolean {
-            return false
-        }
-
-        fun open(screen: Screen) {
-        }
     }
 }
 
@@ -197,40 +196,8 @@ fun getWidthPartIncludePadding(divisor: Float): Dp {
 }
 
 @Composable
-fun getHeightPart(divisor: Float): Dp {
-    return LocalConfiguration.current.screenHeightDp.dp.div(divisor)
-}
-
-@Composable
-inline fun <reified T : Screen> getTabBoxModifier(
-    classSupplier: Supplier<T>,
-    calendarViewModel: CalendarViewModel
-): Modifier {
-    var modifier = Modifier.width(getWidthPart(3f)).height(50.dp)
-    modifier = modifier.clickable(
-        onClick = {
-            calendarViewModel.changeTab(classSupplier.get())
-        }
-    )
-    if (calendarViewModel.screen::class == T::class) modifier =
-        modifier.border(2.dp, MaterialTheme.colorScheme.primary)
-    return modifier
-}
-
-@Composable
-fun BackButton(calendarViewModel: CalendarViewModel) {
-    Button(onClick = {
-        calendarViewModel.back()
-    }) {
-        Text("く")
-//        Text("←")
-    }
-}
-
-@Composable
 fun BackButton(backPress: () -> Unit) {
     Button(onClick = backPress) {
         Text("く")
-//        Text("←")
     }
 }

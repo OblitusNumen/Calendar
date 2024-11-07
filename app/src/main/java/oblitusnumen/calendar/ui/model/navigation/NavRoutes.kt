@@ -3,6 +3,7 @@ package oblitusnumen.calendar.ui.model.navigation
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Call
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.ThumbUp
 import androidx.compose.ui.graphics.vector.ImageVector
 
 sealed class NavRoutes(private val path: String, val route: String = path) {
@@ -40,7 +41,8 @@ sealed class NavRoutes(private val path: String, val route: String = path) {
     companion object {
         fun getTopLevelRoutes() = listOf(
             TopLevelRoute("Calendar", Calendar, Icons.Outlined.Call),
-            TopLevelRoute("Tags", Tags, Icons.Outlined.Search)
+            TopLevelRoute("Tags", Tags, Icons.Outlined.Search),
+            TopLevelRoute("Entries", Entries, Icons.Outlined.ThumbUp)
         )
 
         fun isTopLevel(route: String?): Boolean {

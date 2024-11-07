@@ -13,22 +13,23 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import oblitusnumen.calendar.MainActivity
-import oblitusnumen.calendar.ui.model.Tab
-import oblitusnumen.calendar.ui.model.screen.EntryEdit
+import androidx.lifecycle.ViewModel
+import oblitusnumen.calendar.implementation.data.DbManager
+import oblitusnumen.calendar.implementation.data.Entry
 
-class EntriesTab : Tab {
+class EntriesTab(private val dbManager: DbManager,
+                 private val editEntry: (Entry) -> Unit) : ViewModel() {
     // TODO:
     @Composable
-    override fun compose(calendarViewModel: MainActivity.CalendarViewModel) {
-        Column(Modifier.verticalScroll(ScrollState(0)).fillMaxWidth()) {// TODO: update state
+    fun compose() {
+        Column(Modifier.verticalScroll(ScrollState(0)).fillMaxWidth()) {// TODO: state is not saved
             Text("Entries")
-            for (entry in calendarViewModel.dbManager.getEntries()) {
+            for (entry in dbManager.getEntries()) {
                 Box(
                     Modifier.height(50.dp).fillMaxWidth()
                         .border(width = 2.dp, color = MaterialTheme.colorScheme.primary)
                         .clickable(onClick = {
-                            calendarViewModel.open(EntryEdit(calendarViewModel, entry))
+                            editEntry(entry)
                         })
                 ) {
                     Text(entry.name)
