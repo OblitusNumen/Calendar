@@ -13,8 +13,8 @@ sealed class NavRoutes(private val path: String, val route: String = path) {
         val date = "date"
     }
 
-    data object EventDetails : NavRoutes("eventDetails", route = "eventDetails/{event}") {
-        val event = "event"
+    data object EntryDetails : NavRoutes("entryDetails", route = "entryDetails/{entry}") {
+        val entry = "entry"
     }
 
     // build navigation path (for screen navigation)

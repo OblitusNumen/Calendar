@@ -24,29 +24,29 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.launch
-import oblitusnumen.calendar.MainActivity
 import oblitusnumen.calendar.MainActivity.Companion.LIST_CENTER
 import oblitusnumen.calendar.R
 import oblitusnumen.calendar.getWidthPartIncludePadding
 import oblitusnumen.calendar.implementation.Utils.zonedDateTime
 import oblitusnumen.calendar.implementation.data.Date
-import oblitusnumen.calendar.ui.model.Functional
-import oblitusnumen.calendar.ui.model.Tab
-import oblitusnumen.calendar.ui.model.TopBarModifier
-import oblitusnumen.calendar.ui.model.navigation.NavRoutes
-import oblitusnumen.calendar.ui.model.screen.EntryEdit
+import oblitusnumen.calendar.implementation.data.DbManager
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
-class CalendarTab : Tab, Functional, TopBarModifier {
+class CalendarTab(
+    private val dbManager: DbManager,
+    private val toThatDayInfo: (LocalDate) -> Unit,
+    private val newEntry: () -> Unit
+) : ViewModel() {
     private var calendarLazyListState: LazyListState? = null
 
     @Composable
-    override fun compose(calendarViewModel: MainActivity.CalendarViewModel) {
-        Column {
+    fun compose(modifier: Modifier = Modifier) {
+        Column(modifier) {
             Row {
-                repeat (7) {
+                repeat(7) {
                     Text(
                         stringArrayResource(R.array.weekdayNames)[it],
                         modifier = Modifier.width(getWidthPartIncludePadding(7f)).height(25.dp)
@@ -70,8 +70,7 @@ class CalendarTab : Tab, Functional, TopBarModifier {
                     } else {
                         displayWeek(
                             mon.monthValue,
-                            mon.plusDays(7 * (monthItemIndex - 1) - (mon.dayOfWeek.value - 1).toLong()),
-                            calendarViewModel
+                            mon.plusDays(7 * (monthItemIndex - 1) - (mon.dayOfWeek.value - 1).toLong())
                         )
                     }
                 })
@@ -83,7 +82,7 @@ class CalendarTab : Tab, Functional, TopBarModifier {
         (Int.MAX_VALUE / 2 + ChronoUnit.MONTHS.between(LIST_CENTER, now) * 7).toInt()
 
     @Composable
-    fun displayWeek(monthValue: Int, date0: LocalDate, calendarViewModel: MainActivity.CalendarViewModel) {
+    fun displayWeek(monthValue: Int, date0: LocalDate) {
         var date = date0
         val blockW = getWidthPartIncludePadding(7f)
         Row {
@@ -92,12 +91,12 @@ class CalendarTab : Tab, Functional, TopBarModifier {
                 date = date.plusDays(1)
             }
             val dates =
-                calendarViewModel.dbManager.getDates(
+                dbManager.getDates(
                     date,
                     date.plusWeeks(1)
                 )
             while (date.month.value == monthValue) {
-                displayDay(blockW, 3, date, calendarViewModel, dates)
+                displayDay(blockW, 3, date, dates)
                 if (date.dayOfWeek.value == 7) break
                 date = date.plusDays(1)
             }
@@ -109,7 +108,6 @@ class CalendarTab : Tab, Functional, TopBarModifier {
         blockW: Dp,
         maxElements: Int,
         then: LocalDate,
-        calendarViewModel: MainActivity.CalendarViewModel,
         dates: List<Date>
     ) {
         val now = LocalDate.now()
@@ -126,9 +124,7 @@ class CalendarTab : Tab, Functional, TopBarModifier {
                 .background(
                     bgColor,
                     shape = RoundedCornerShape(10.dp)
-                ).clickable(onClick = {
-                    calendarViewModel.navController!!.navigate(NavRoutes.ThatDayDetails.withArgs(then.dayOfMonth.toString())) //fixme proper args
-                })
+                ).clickable(onClick = { toThatDayInfo(then) })
         ) {
             Text(
                 modifier = Modifier.align(Alignment.CenterHorizontally)
@@ -174,18 +170,15 @@ class CalendarTab : Tab, Functional, TopBarModifier {
     }
 
     @Composable
-    override fun functionButton(calendarViewModel: MainActivity.CalendarViewModel) {
-        FloatingActionButton(onClick = {
-            val entry = calendarViewModel.dbManager.createEntry()
-            calendarViewModel.open(EntryEdit(calendarViewModel, entry))
-        }) {
+    fun functionButton() {
+        FloatingActionButton(onClick = newEntry) {
             Icon(Icons.Filled.Add, "add event")
         }
     }
 
     // TODO:
     @Composable
-    override fun topBar(calendarViewModel: MainActivity.CalendarViewModel) {
+    fun topBar() {
         val coroutineScope = rememberCoroutineScope()
         Button(onClick = {
             coroutineScope.launch {

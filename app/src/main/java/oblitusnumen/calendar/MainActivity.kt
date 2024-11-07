@@ -64,11 +64,23 @@ class MainActivity : ComponentActivity() {
             startDestination = NavRoutes.Calendar.route
         ) {
             composable(route = NavRoutes.Calendar.route) {
-                val ct = CalendarTab()
+                val calendarTab = viewModel {
+                    CalendarTab(calendarViewModel.dbManager, {
+                        navController.navigate(NavRoutes.ThatDayDetails.withArgs(it.toString())) //fixme proper args
+                    }, {
+                        navController.navigate(NavRoutes.EntryDetails.withArgs("new entry")) //fixme proper args
+                    })
+                }
                 Scaffold(
+                    topBar = { calendarTab.topBar() },
                     bottomBar = { tryDrawBottomBar(navController) },
-                    floatingActionButton = { ct.functionButton(calendarViewModel) }) {
-                    ct.compose(calendarViewModel)
+                    floatingActionButton = { calendarTab.functionButton() }) {
+                    calendarTab.compose(
+                        Modifier.absolutePadding(//seems like a hack
+                            PADDING, 50.dp,
+                            PADDING, 50.dp
+                        )
+                    )
                 }
             }
 
@@ -76,6 +88,13 @@ class MainActivity : ComponentActivity() {
                 val thatDay = navBackStackEntry.arguments?.getString(NavRoutes.ThatDayDetails.date)
                 Button({ navController.navigateUp() }) {
                     Text(thatDay!!)
+                }
+            }
+
+            composable(route = NavRoutes.EntryDetails.route) { navBackStackEntry ->
+                val entry = navBackStackEntry.arguments?.getString(NavRoutes.EntryDetails.entry)
+                Button({ navController.navigateUp() }) {
+                    Text("entry: " + entry!!)
                 }
             }
 
