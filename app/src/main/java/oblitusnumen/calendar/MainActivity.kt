@@ -111,10 +111,21 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            composable(route = NavRoutes.EntryDetails.route) { navBackStackEntry ->
-                val entry = navBackStackEntry.arguments?.getString(NavRoutes.EntryDetails.entry)
-                Button({ navController.navigateUp() }) {
-                    Text("entry: " + entry!!)
+            composable(route = NavRoutes.EntryDetails.route) { //navBackStackEntry ->
+                //val entry = navBackStackEntry.arguments?.getString(NavRoutes.EntryDetails.entry)
+                val entryEdit = viewModel {
+                    EntryEdit(
+                        calendarViewModel.dbManager,
+                        calendarViewModel.workaroundArgList!![0] as Entry
+                    ) { navController.navigateUp() }
+                }
+                Scaffold(topBar = { entryEdit.topBar() }) {
+                    entryEdit.compose(
+                        Modifier.absolutePadding(//seems like a hack
+                            PADDING, 50.dp,
+                            PADDING, 50.dp
+                        )
+                    )
                 }
             }
 

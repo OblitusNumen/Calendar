@@ -14,40 +14,39 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
 import oblitusnumen.calendar.BackButton
-import oblitusnumen.calendar.MainActivity
 import oblitusnumen.calendar.implementation.Utils.defaultZoneId
 import oblitusnumen.calendar.implementation.data.Date
+import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.Entry
 import oblitusnumen.calendar.implementation.data.Tag
-import oblitusnumen.calendar.ui.model.Screen
-import oblitusnumen.calendar.ui.model.TopBarModifier
 import java.time.ZonedDateTime
 
-class EntryEdit(private val calendarViewModel: MainActivity.CalendarViewModel, private val entry: Entry) : Screen,
-    TopBarModifier {
+class EntryEdit(private val dbManager: DbManager,
+                private val entry: Entry,
+                private val backPress: () -> Unit) : ViewModel() {
     private var newName: MutableState<TextFieldValue>? = null
-    var tags: MutableList<Tag> = entry.tags
+    private var tags: MutableList<Tag> = entry.tags
     private var dates: MutableList<Date>
     private var contents: String   // FIXME: this should be List<Content>
 
     // TODO:
     @Composable
-    override fun compose(calendarViewModel: MainActivity.CalendarViewModel) {
-        Column(Modifier.verticalScroll(ScrollState(0))) {
-            val entry = (calendarViewModel.screen as EntryEdit).entry
+    fun compose(modifier: Modifier = Modifier) {
+        Column(modifier.verticalScroll(ScrollState(0))) {
             if (newName == null) newName = remember { mutableStateOf(TextFieldValue(entry.name)) }
             TextField(value = newName!!.value, onValueChange = { t ->
                 newName!!.value = t
             }, placeholder = { Text("name") })
-            Dates()
-            Tags()
-            Contents()
+            dates()
+            tags()
+            contents()
         }
     }
 
     @Composable
-    fun Contents() {
+    fun contents() {
         Box(Modifier.fillMaxWidth().wrapContentHeight().border(2.dp, MaterialTheme.colorScheme.primary)) {
             var textFieldValue by remember { mutableStateOf(TextFieldValue(contents)) }
             TextField(textFieldValue, modifier = Modifier.fillMaxWidth(), onValueChange = { value ->
@@ -58,7 +57,7 @@ class EntryEdit(private val calendarViewModel: MainActivity.CalendarViewModel, p
     }
 
     @Composable
-    fun Dates() {
+    fun dates() {
         Text("dates")
         var flag by remember { mutableStateOf(false) }
         flag
@@ -82,7 +81,7 @@ class EntryEdit(private val calendarViewModel: MainActivity.CalendarViewModel, p
             // TODO:
             dates.add(
                 Date(
-                    calendarViewModel.dbManager,
+                    dbManager,
                     entry,
                     "",
                     ZonedDateTime.now(),
@@ -98,28 +97,28 @@ class EntryEdit(private val calendarViewModel: MainActivity.CalendarViewModel, p
     }
 
     @Composable
-    fun Tags() {
+    fun tags() {
         val addingTag = remember {
             mutableStateOf(false)
         }
         if (addingTag.value) {
             Text("addTag")
-            val allTags = calendarViewModel.dbManager.tags
+            val allTags = dbManager.tags
             val textFieldValue = remember { mutableStateOf(TextFieldValue("")) }
-            val tag = Tag(calendarViewModel.dbManager, textFieldValue.value.text)
+            val newTag = Tag(dbManager, textFieldValue.value.text)
             val addTag = { tag: Tag ->
                 tags.add(tag)
                 addingTag.value = false
             }
             TextField(value = textFieldValue.value, onValueChange = { value ->
                 if (value.text.contains("\n")) {// FIXME:
-                    addTag.invoke(tag)
+                    addTag.invoke(newTag)
                 }
                 textFieldValue.value = value
             })
             val filteredTags = allTags.filter { t ->
                 t.name.contains(textFieldValue.value.text, false) && !tags.contains(t)
-            }.plus(tag)// FIXME: adding existing tag
+            }.plus(newTag)// FIXME: adding existing tag
             for (tag in filteredTags) {
                 Text(tag.name, Modifier.clickable(onClick = {
                     tags.add(tag)
@@ -151,9 +150,9 @@ class EntryEdit(private val calendarViewModel: MainActivity.CalendarViewModel, p
     }
 
     @Composable
-    override fun topBar(calendarViewModel: MainActivity.CalendarViewModel) {// TODO: confirm
+    fun topBar() {// TODO: confirm
         Row {
-            BackButton(calendarViewModel)
+            BackButton(backPress)
             Button(onClick = {
                 entry.set(newName!!.value.text, tags, dates, contents)
             }, modifier = Modifier.align(Alignment.Top)) {
@@ -161,7 +160,7 @@ class EntryEdit(private val calendarViewModel: MainActivity.CalendarViewModel, p
             }
             Button(onClick = {
                 entry.delete()
-                calendarViewModel.back()
+                backPress()
             }, modifier = Modifier.align(Alignment.Top)) {
                 Text("delete")
             }
