@@ -28,6 +28,7 @@ import oblitusnumen.calendar.ui.model.screen.DateScreen
 import oblitusnumen.calendar.ui.model.screen.EntryEdit
 import oblitusnumen.calendar.ui.model.tab.CalendarTab
 import oblitusnumen.calendar.ui.model.tab.EntriesTab
+import oblitusnumen.calendar.ui.model.tab.TagsTab
 import oblitusnumen.calendar.ui.theme.CalendarTheme
 import java.time.LocalDate
 
@@ -59,7 +60,7 @@ class MainActivity : ComponentActivity() {
         ) {
             composable(route = NavRoutes.Calendar.route) {
                 val calendarTab = viewModel {
-                    CalendarTab(calendarViewModel.dbManager, {date, evtDates ->
+                    CalendarTab(calendarViewModel.dbManager, { date, evtDates ->
                         calendarViewModel.workaroundArgList = listOf(date, evtDates)
                         navController.navigate(NavRoutes.ThatDayDetails.withArgs("date arg")) //fixme proper args
                     }, {
@@ -137,11 +138,10 @@ class MainActivity : ComponentActivity() {
             }
 
             composable(route = NavRoutes.Tags.route) {
+                val tagsTab = viewModel { TagsTab(calendarViewModel.dbManager) }
                 Scaffold(
                     bottomBar = { tryDrawBottomBar(navController) }) {
-                    Button({ navController.navigateUp() }) {
-                        Text("hii")
-                    }
+                    tagsTab.compose()
                 }
             }
         }
