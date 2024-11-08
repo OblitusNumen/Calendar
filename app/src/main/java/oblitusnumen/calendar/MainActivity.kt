@@ -3,7 +3,9 @@ package oblitusnumen.calendar
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.absolutePadding
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -55,6 +57,7 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun navGraph(navController: NavHostController, calendarViewModel: CalendarViewModel) {
         NavHost(
+            modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
             navController = navController,
             startDestination = NavRoutes.Calendar.route
         ) {
@@ -70,7 +73,7 @@ class MainActivity : ComponentActivity() {
                 }
                 Scaffold(
                     topBar = { calendarTab.topBar() },
-                    bottomBar = { tryDrawBottomBar(navController) },
+                    bottomBar = { drawBottomBar(navController) },
                     floatingActionButton = { calendarTab.functionButton() }) {
                     calendarTab.compose(
                         Modifier.absolutePadding(//seems like a hack
@@ -132,7 +135,7 @@ class MainActivity : ComponentActivity() {
                     }
                 }
                 Scaffold(
-                    bottomBar = { tryDrawBottomBar(navController) }) {
+                    bottomBar = { drawBottomBar(navController) }) {
                     entriesTab.compose()
                 }
             }
@@ -140,7 +143,7 @@ class MainActivity : ComponentActivity() {
             composable(route = NavRoutes.Tags.route) {
                 val tagsTab = viewModel { TagsTab(calendarViewModel.dbManager) }
                 Scaffold(
-                    bottomBar = { tryDrawBottomBar(navController) }) {
+                    bottomBar = { drawBottomBar(navController) }) {
                     tagsTab.compose()
                 }
             }
@@ -148,33 +151,31 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    fun tryDrawBottomBar(navController: NavController) {
-        if (NavRoutes.isTopLevel(navController.currentBackStackEntryAsState().value?.destination?.route)) {
-            NavigationBar {
-                val navBackStackEntry by navController.currentBackStackEntryAsState()
-                val currentDestination = navBackStackEntry?.destination
-                NavRoutes.getTopLevelRoutes().forEach { topLevelRoute ->
-                    NavigationBarItem(
-                        icon = { Icon(topLevelRoute.icon, contentDescription = topLevelRoute.name) },
-                        label = { Text(topLevelRoute.name) },
-                        selected = currentDestination?.route == topLevelRoute.route.route,
-                        onClick = {
-                            navController.navigate(topLevelRoute.route.route) {
-                                // Pop up to the start destination of the graph to
-                                // avoid building up a large stack of destinations
-                                // on the back stack as users select items
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
-                                }
-                                // Avoid multiple copies of the same destination when
-                                // reselecting the same item
-                                launchSingleTop = true
-                                // Restore state when reselecting a previously selected item
-                                restoreState = true
+    fun drawBottomBar(navController: NavController) {
+        NavigationBar {
+            val navBackStackEntry by navController.currentBackStackEntryAsState()
+            val currentDestination = navBackStackEntry?.destination
+            NavRoutes.getTopLevelRoutes().forEach { topLevelRoute ->
+                NavigationBarItem(
+                    icon = { Icon(topLevelRoute.icon, contentDescription = topLevelRoute.name) },
+                    label = { Text(topLevelRoute.name) },
+                    selected = currentDestination?.route == topLevelRoute.route.route,
+                    onClick = {
+                        navController.navigate(topLevelRoute.route.route) {
+                            // Pop up to the start destination of the graph to
+                            // avoid building up a large stack of destinations
+                            // on the back stack as users select items
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
                             }
+                            // Avoid multiple copies of the same destination when
+                            // reselecting the same item
+                            launchSingleTop = true
+                            // Restore state when reselecting a previously selected item
+                            restoreState = true
                         }
-                    )
-                }
+                    }
+                )
             }
         }
     }
