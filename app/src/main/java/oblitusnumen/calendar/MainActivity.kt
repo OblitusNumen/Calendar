@@ -133,9 +133,14 @@ class MainActivity : ComponentActivity() {
                         navController.navigate(NavRoutes.EntryDetails.withArgs("new entry")) //fixme proper args
                     }
                 }
-                Scaffold(
+                Scaffold(topBar = { entriesTab.topBar() },
                     bottomBar = { drawBottomBar(navController) }) {
-                    entriesTab.compose()
+                    entriesTab.compose(
+                        Modifier.absolutePadding(//seems like a hack
+                            PADDING, 50.dp,
+                            PADDING, 50.dp
+                        )
+                    )
                 }
             }
 
