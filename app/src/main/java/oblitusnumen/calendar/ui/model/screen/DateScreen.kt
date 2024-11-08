@@ -15,10 +15,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import oblitusnumen.calendar.BackButton
-import oblitusnumen.calendar.implementation.Utils.zonedDateTime
+import oblitusnumen.calendar.implementation.bgColorToTextColor
 import oblitusnumen.calendar.implementation.data.Date
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.Entry
+import oblitusnumen.calendar.implementation.zonedDateTime
 import java.time.LocalDate
 
 class DateScreen(private val day: LocalDate,

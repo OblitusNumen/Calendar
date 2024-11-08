@@ -4,7 +4,6 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import oblitusnumen.calendar.implementation.Utils;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
@@ -12,6 +11,9 @@ import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
+
+import static oblitusnumen.calendar.implementation.UtilsKt.log;
+import static oblitusnumen.calendar.implementation.UtilsKt.zonedDateTime;
 
 public class DbManager extends SQLiteOpenHelper {
     public static final int DATABASE_VERSION = 1;
@@ -50,7 +52,7 @@ public class DbManager extends SQLiteOpenHelper {
     public DbManager(Context context) {
         super(context, DB_NAME, null, DATABASE_VERSION);
         this.context = context;
-        Utils.log("DbManager created");
+        log("DbManager created");
     }
 
     public List<Date> getDates(ZonedDateTime start, ZonedDateTime end) {
@@ -58,7 +60,7 @@ public class DbManager extends SQLiteOpenHelper {
     }
 
     public List<Date> getDates(LocalDate start, LocalDate end) {
-        return getDates(Utils.zonedDateTime(start), Utils.zonedDateTime(end));
+        return getDates(zonedDateTime(start), zonedDateTime(end));
     }
 
     public Entry createEntry() {
@@ -69,12 +71,12 @@ public class DbManager extends SQLiteOpenHelper {
         File filesDir = context.getFilesDir();
         if (filesDir.exists()) return;
         if (!filesDir.mkdirs()) throw new RuntimeException("could not create directory for data: " + filesDir);
-        Utils.log("Created files directory");
+        log("Created files directory");
     }
 
     @Override
     public void onCreate(SQLiteDatabase sqLiteDatabase) {
-        Utils.log("DbManager.onCreate");
+        log("DbManager.onCreate");
 //        sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + Entry.TABLE_NAME);
 //        sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + Tag.TABLE_NAME);
 //        sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + EntryTagLinks.TABLE_NAME);

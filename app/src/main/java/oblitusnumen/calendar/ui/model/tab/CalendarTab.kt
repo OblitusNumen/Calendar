@@ -29,10 +29,12 @@ import kotlinx.coroutines.launch
 import oblitusnumen.calendar.MainActivity.Companion.LIST_CENTER
 import oblitusnumen.calendar.R
 import oblitusnumen.calendar.getWidthPartIncludePadding
-import oblitusnumen.calendar.implementation.Utils.zonedDateTime
+import oblitusnumen.calendar.implementation.bgColorToTextColor
 import oblitusnumen.calendar.implementation.data.Date
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.Entry
+import oblitusnumen.calendar.implementation.measureTextLine
+import oblitusnumen.calendar.implementation.zonedDateTime
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
@@ -131,7 +133,7 @@ class CalendarTab(
                 modifier = Modifier.align(Alignment.CenterHorizontally)
                     .padding(top = 2.dp),
                 text = then.dayOfMonth.toString(),
-                color = if (colorToLuminance(bgColor) > .5) Color.Black else Color.White
+                color = bgColorToTextColor(bgColor)
             )
             repeat(if (evtOverflow) maxElements - 1 else eventDates.count()) {
                 drawEvtInDay(Color.Green, eventDates[it].desc) //fixme get color from Date
@@ -140,19 +142,6 @@ class CalendarTab(
                 drawEvtInDay(Color.Red, "+" + (eventDates.count() - maxElements + 1))
             Spacer(Modifier.height(1.dp + spacerHeight))
         }
-    }
-
-    private fun colorToLuminance(color: Color): Double {
-        return 0.299 * color.red + 0.587 * color.green + 0.114 * color.blue
-    }
-
-    @Composable
-    private fun measureTextLine(style: TextStyle): Dp {
-        val textMeasurer = rememberTextMeasurer()
-        val linePx = remember(textMeasurer, style) {
-            textMeasurer.measure("0", style).size.height
-        }
-        return with(LocalDensity.current) { linePx.toDp() }
     }
 
     @Composable
@@ -166,7 +155,7 @@ class CalendarTab(
             text = text,
             maxLines = 1,
             style = MaterialTheme.typography.bodySmall,
-            color = if (colorToLuminance(bgColor) > .5) Color.Black else Color.White
+            color = bgColorToTextColor(bgColor)
         )
     }
 

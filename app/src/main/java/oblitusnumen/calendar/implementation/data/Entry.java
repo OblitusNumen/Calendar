@@ -4,7 +4,6 @@ package oblitusnumen.calendar.implementation.data;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.provider.BaseColumns;
-import oblitusnumen.calendar.implementation.Utils;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
@@ -13,6 +12,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import static oblitusnumen.calendar.implementation.UtilsKt.rmRecursively;
 
 public class Entry implements BaseColumns {
     public static final String TABLE_NAME = "entries";
@@ -100,7 +101,7 @@ public class Entry implements BaseColumns {
 //        dbManager.getWritableDatabase().execSQL("DELETE FROM " + Tag.TABLE_NAME + " WHERE " + Tag.COLUMN_NAME_ENTRY_ID + " = ?", new String[]{String.valueOf(id)});
         dbManager.getWritableDatabase().execSQL("DELETE FROM " + Notification.TABLE_NAME + " WHERE " + Notification.COLUMN_NAME_ENTRY_ID + " = ?", new String[]{String.valueOf(id)});
         dbManager.getWritableDatabase().execSQL("DELETE FROM " + Date.TABLE_NAME + " WHERE " + Date.COLUMN_NAME_ENTRY_ID + " = ?", new String[]{String.valueOf(id)});
-        Utils.rmRecursively(getDir());
+        rmRecursively(getDir());
         dbManager.getWritableDatabase().execSQL("DELETE FROM " + TABLE_NAME + " WHERE " + COLUMN_NAME_ID + " = ?", new String[]{String.valueOf(id)});
     }
 

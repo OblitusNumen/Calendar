@@ -16,11 +16,11 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import oblitusnumen.calendar.BackButton
-import oblitusnumen.calendar.implementation.Utils.defaultZoneId
 import oblitusnumen.calendar.implementation.data.Date
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.Entry
 import oblitusnumen.calendar.implementation.data.Tag
+import oblitusnumen.calendar.implementation.defaultZoneId
 import java.time.ZonedDateTime
 
 class EntryEdit(private val dbManager: DbManager,
