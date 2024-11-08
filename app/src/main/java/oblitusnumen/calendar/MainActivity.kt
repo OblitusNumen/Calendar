@@ -63,8 +63,8 @@ class MainActivity : ComponentActivity() {
         ) {
             composable(route = NavRoutes.Calendar.route) {
                 val calendarTab = viewModel {
-                    CalendarTab(calendarViewModel.dbManager, { date, evtDates ->
-                        calendarViewModel.workaroundArgList = listOf(date, evtDates)
+                    CalendarTab(calendarViewModel.dbManager, { date ->
+                        calendarViewModel.workaroundArgList = listOf(date)
                         navController.navigate(NavRoutes.ThatDayDetails.withArgs("date arg")) //fixme proper args
                     }, {
                         calendarViewModel.workaroundArgList = listOf(it)
@@ -89,7 +89,6 @@ class MainActivity : ComponentActivity() {
                 val dateScreen = viewModel {
                     DateScreen(
                         calendarViewModel.workaroundArgList!![0] as LocalDate,
-                        calendarViewModel.workaroundArgList!![1] as List<oblitusnumen.calendar.implementation.data.Date>,
                         dbManager,
                         {
                             calendarViewModel.workaroundArgList = listOf(it)

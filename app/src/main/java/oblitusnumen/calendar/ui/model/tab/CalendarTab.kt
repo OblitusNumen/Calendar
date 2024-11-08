@@ -40,7 +40,7 @@ import java.time.temporal.ChronoUnit
 
 class CalendarTab(
     private val dbManager: DbManager,
-    private val toThatDayInfo: (LocalDate, List<Date>) -> Unit,
+    private val toThatDayInfo: (LocalDate) -> Unit,
     private val newEntry: (Entry) -> Unit
 ) : ViewModel() {
     private var calendarLazyListState: LazyListState? = null
@@ -127,7 +127,7 @@ class CalendarTab(
                 .background(
                     bgColor,
                     shape = RoundedCornerShape(10.dp)
-                ).clickable(onClick = { toThatDayInfo(then, eventDates) })
+                ).clickable(onClick = { toThatDayInfo(then) })
         ) {
             Text(
                 modifier = Modifier.align(Alignment.CenterHorizontally)

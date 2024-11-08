@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -25,23 +26,25 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 class DateScreen(private val day: LocalDate,
-                 private val dates: List<Date>,
                  private val dbManager: DbManager,
                  private val editEntry: (Entry) -> Unit,
                  private val backPress: () -> Unit) : ViewModel() {
 
     @Composable
-    fun compose(modifier: Modifier = Modifier) { //fixme crash on item deletion
-        Column(modifier) {
-            Text("Date $day")
-            LazyColumn {
-                items(dates) {
-                    drawEntry(it)
-                }
+    fun compose(modifier: Modifier = Modifier) {
+        val dates = remember {
+            val begin = zonedDateTime(day)
+            dbManager.getDates(
+                day,
+                day.plusDays(1)
+            ).filter { date -> date.forDay(begin) != null }.sortedBy { it.forDay(begin) }
+        }
+        LazyColumn(modifier) {
+            items(dates) {
+                drawEntry(it)
             }
         }
     }
-    // TODO: fix orientation
 
     @Composable
     fun functionButton() {
@@ -108,6 +111,9 @@ class DateScreen(private val day: LocalDate,
 
     @Composable
     fun topBar() {
-        BackButton(backPress)
+        Row {
+            BackButton(backPress)
+            Text("Date $day")
+        }
     }
 }
