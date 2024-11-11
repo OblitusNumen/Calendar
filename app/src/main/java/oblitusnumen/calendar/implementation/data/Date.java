@@ -131,8 +131,12 @@ public class Date implements BaseColumns {
         return getZoneDateTime(idx).withZoneSameInstant(zoneId);
     }
 
-    ZonedDateTime getZoneDateTime(int idx) {
+    public ZonedDateTime getZoneDateTime(int idx) {
         return period.getTime(Instant.ofEpochSecond(start).atZone(zoneId), idx);
+    }
+
+    public Period getPeriod() {
+        return period;
     }
 
     long getTime(int idx) {

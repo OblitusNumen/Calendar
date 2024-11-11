@@ -1,152 +1,179 @@
 package oblitusnumen.calendar.ui.model.screen
 
-import androidx.compose.foundation.ScrollState
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.outlined.Call
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import oblitusnumen.calendar.BackButton
+import oblitusnumen.calendar.implementation.bgColorToTextColor
 import oblitusnumen.calendar.implementation.data.Date
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.Entry
 import oblitusnumen.calendar.implementation.data.Tag
-import oblitusnumen.calendar.implementation.defaultZoneId
 import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+import kotlin.math.roundToInt
 
 class EntryEdit(private val dbManager: DbManager,
                 private val entry: Entry,
                 private val backPress: () -> Unit) : ViewModel() {
-    private var newName: MutableState<TextFieldValue>? = null
-    private var tags: MutableList<Tag> = entry.tags
-    private var dates: MutableList<Date>
-    private var contents: String   // FIXME: this should be List<Content>
+    private var entryName by mutableStateOf(TextFieldValue(entry.name))
+    private var tags: List<Tag> by mutableStateOf(entry.tags.sortedBy { it.name })
+    private var dates: List<Date> by mutableStateOf(entry.dates.sortedBy { it.start })
+    private var contents by mutableStateOf(TextFieldValue(entry.contents))  // FIXME: this should be List<Content>
 
-    // TODO:
+    @OptIn(ExperimentalLayoutApi::class)
     @Composable
     fun compose(modifier: Modifier = Modifier) {
-        Column(modifier.verticalScroll(ScrollState(0))) {
-            if (newName == null) newName = remember { mutableStateOf(TextFieldValue(entry.name)) }
-            TextField(value = newName!!.value, onValueChange = { t ->
-                newName!!.value = t
-            }, placeholder = { Text("name") })
-            dates()
-            tags()
-            contents()
-        }
-    }
-
-    @Composable
-    fun contents() {
-        Box(Modifier.fillMaxWidth().wrapContentHeight().border(2.dp, MaterialTheme.colorScheme.primary)) {
-            var textFieldValue by remember { mutableStateOf(TextFieldValue(contents)) }
-            TextField(textFieldValue, modifier = Modifier.fillMaxWidth(), onValueChange = { value ->
-                contents = value.text
-                textFieldValue = value
-            })
-        }
-    }
-
-    @Composable
-    fun dates() {
-        Text("dates")
-        var flag by remember { mutableStateOf(false) }
-        flag
-        for (date in dates) {
-            Row {
-                Button(onClick = {
-                    dates.remove(date)
-                    flag = !flag
-                }) {
-                    Text("一")
-                }
-                Text(date.getZoneDateTime(defaultZoneId(), 0).toString())// FIXME: index might be not 0
-                val desk = remember { mutableStateOf(TextFieldValue(date.desc)) }
-                TextField(desk.value, onValueChange = { value ->
-                    date.desc = value.text
-                    desk.value = value
-                })
+        Column(modifier.fillMaxWidth().verticalScroll(rememberScrollState()).fillMaxHeight()) {
+            TextField(
+                modifier = Modifier.fillMaxWidth().padding(12.dp),
+                value = entryName, onValueChange = {
+                    if (!it.text.contains('\n'))
+                        entryName = it
+                },
+                textStyle = MaterialTheme.typography.titleLarge,
+                placeholder = { Text("Enter event name...") },
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
+            )
+            FlowRow(
+                Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+            ) {
+                for (tag in tags)
+                    drawTag(tag)
             }
-        }
-        Button(onClick = {
-            // TODO:
-            dates.add(
-                Date(
+            Box(Modifier.fillMaxWidth().padding(top = 8.dp).clickable {
+                tags = tags + Tag(dbManager, "genTag" + (Math.random() * 100000).roundToInt())
+                // fixme show screen/menu
+            }) {
+                Text(
+                    modifier = Modifier.align(Alignment.CenterStart)
+                        .padding(horizontal = 44.dp, vertical = 4.dp),
+                    text = "Add tag...",
+                    style = MaterialTheme.typography.titleLarge
+                )
+            }
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
+            for (date in dates)
+                drawDate(date)
+            Box(Modifier.fillMaxWidth()/*.padding(top = 8.dp)*/.clickable {
+                dates += Date(
                     dbManager,
                     entry,
                     "",
                     ZonedDateTime.now(),
                     0,
-                    10,
-                    Date.Period(Date.Period.Modifier.WEEK, 1)
+                    1,
+                    Date.Period(Date.Period.Modifier.WEEK, 1)//fixme proper date adding
                 )
+            }) {
+                Text(
+                    modifier = Modifier.align(Alignment.CenterStart)
+                        .padding(horizontal = 44.dp, vertical = 4.dp),
+                    text = "Add date...",
+                    style = MaterialTheme.typography.titleLarge
+                )
+            }
+            /*HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
+            repeat(3) { todo no notification support yet
+                Row(modifier = Modifier.clickable { }) {
+                    Icon(
+                        Icons.Outlined.Notifications, null,
+                        Modifier.align(Alignment.CenterVertically).padding(8.dp)
+                    )
+                    Text(
+                        modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp)
+                            .weight(1f),
+                        text = "30 min before",
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                    IconButton(
+                        modifier = Modifier.align(Alignment.CenterVertically),
+                        onClick = {},
+                        content = { Icon(Icons.Filled.Clear, contentDescription = null) })
+                }
+            }
+            Box(Modifier.fillMaxWidth()/*.padding(top = 8.dp)*/.clickable { }) {
+                Text(
+                    modifier = Modifier.align(Alignment.CenterStart)
+                        .padding(horizontal = 44.dp, vertical = 4.dp),
+                    text = "Add notification",
+                    style = MaterialTheme.typography.titleLarge
+                )
+            }*/
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
+            TextField(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp).padding(bottom = 12.dp),
+                value = contents, onValueChange = {
+                    contents = it
+                },
+                textStyle = MaterialTheme.typography.bodyLarge,
+                placeholder = { Text("Enter description...") },
+                minLines = 5
             )
-            flag = !flag
-        }) {
-            Text("十")
         }
     }
 
     @Composable
-    fun tags() {
-        val addingTag = remember {
-            mutableStateOf(false)
+    fun drawDate(date: Date) {
+        val text =
+            date.getZoneDateTime(1).format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")) +
+                    " " + date.period + " x" + date.timesRepeat //todo much better algorithm needed
+        Row(modifier = Modifier.clickable { }) {
+            Icon(
+                Icons.Outlined.Call, "",
+                Modifier.align(Alignment.CenterVertically).padding(8.dp)
+            )
+            Text(
+                modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp)
+                    .weight(1f),
+                text = text,
+                style = MaterialTheme.typography.titleLarge
+            )
+            IconButton(
+                modifier = Modifier.align(Alignment.CenterVertically),
+                onClick = { dates -= date },
+                content = { Icon(Icons.Filled.Clear, contentDescription = null) })
         }
-        if (addingTag.value) {
-            Text("addTag")
-            val allTags = dbManager.tags
-            val textFieldValue = remember { mutableStateOf(TextFieldValue("")) }
-            val newTag = Tag(dbManager, textFieldValue.value.text)
-            val addTag = { tag: Tag ->
-                tags.add(tag)
-                addingTag.value = false
-            }
-            TextField(value = textFieldValue.value, onValueChange = { value ->
-                if (value.text.contains("\n")) {// FIXME:
-                    addTag.invoke(newTag)
-                }
-                textFieldValue.value = value
-            })
-            val filteredTags = allTags.filter { t ->
-                t.name.contains(textFieldValue.value.text, false) && !tags.contains(t)
-            }.plus(newTag)// FIXME: adding existing tag
-            for (tag in filteredTags) {
-                Text(tag.name, Modifier.clickable(onClick = {
-                    tags.add(tag)
-                    addingTag.value = false
-                }))
-            }
-        } else {
-            Text("tags")
-            var flag by remember { mutableStateOf(false) }
-            flag
-            for (tag in tags) {
-                Row {
-                    Button(onClick = {
-                        tags.remove(tag)
-                        flag = !flag
-                    }) {
-                        Text("一")
-                    }
-                    Text(tag.name)
-                }
-            }
-            Button(onClick = {
-                // TODO:
-                addingTag.value = true
-            }) {
-                Text("十")
-            }
-        }
+    }
+
+    @Composable
+    fun drawTag(tag: Tag) {
+        val bgColor = Color.Transparent //fixme tag color
+        InputChip(
+            false,
+            { tags = tags - tag },
+            {
+                Text(
+                    tag.name, style = MaterialTheme.typography.bodyLarge,
+                    color = bgColorToTextColor(bgColor)
+                )
+            },
+            modifier = Modifier.padding(horizontal = 4.dp),
+            trailingIcon = {
+                Icon(
+                    Icons.Filled.Clear, null,
+                    tint = bgColorToTextColor(bgColor)
+                )
+            },
+            colors = InputChipDefaults.inputChipColors(containerColor = bgColor),
+        )
     }
 
     @Composable
@@ -154,7 +181,7 @@ class EntryEdit(private val dbManager: DbManager,
         Row {
             BackButton(backPress)
             Button(onClick = {
-                entry.set(newName!!.value.text, tags, dates, contents)
+                entry.set(entryName.text, tags, dates, contents.text)
             }, modifier = Modifier.align(Alignment.Top)) {
                 Text("save")
             }
@@ -165,12 +192,5 @@ class EntryEdit(private val dbManager: DbManager,
                 Text("delete")
             }
         }
-    }
-
-    init {
-        tags.sortBy { it.name }
-        this.dates = entry.dates
-        dates.sortBy { it.start }
-        this.contents = entry.contents
     }
 }
