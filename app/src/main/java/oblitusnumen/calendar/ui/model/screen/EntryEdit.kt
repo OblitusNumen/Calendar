@@ -59,7 +59,7 @@ class EntryEdit(private val dbManager: DbManager,
                     drawTag(tag)
             }
             Box(Modifier.fillMaxWidth().padding(top = 8.dp).clickable {
-                tags = tags + Tag(dbManager, "genTag" + (Math.random() * 100000).roundToInt())
+                tags = tags + Tag.getOrNew(dbManager, "genTag" + (Math.random() * 100000).roundToInt())
                 // fixme show screen/menu
             }) {
                 Text(

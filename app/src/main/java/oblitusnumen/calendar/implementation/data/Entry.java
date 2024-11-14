@@ -144,21 +144,21 @@ public class Entry implements BaseColumns {
         this.name = name;
         update();
         LinkedList<Tag> tags1 = new LinkedList<>(tags);
-        Map<Integer, Tag> tagsOld = getTags().stream().collect(Collectors.toMap(t -> t.id, t -> t));
+        Map<Integer, Tag> tagsOld = getTags().stream().collect(Collectors.toMap(Tag::getId, t -> t));
         tags1.removeIf(t -> {
-            if (t.id == -1) {
+            if (t.getId() == -1) {
                 t.create();
-                addTag(t.id);
+                addTag(t.getId());
                 return true;
             }
             return false;
         });
 //        Map<Integer, Tag> tagsNew = tags1.stream().collect(Collectors.toMap(t -> t.id, t -> t));
         for (Tag tag : tags1) {
-            if (tagsOld.containsKey(tag.id)) {
-                tagsOld.remove(tag.id);
+            if (tagsOld.containsKey(tag.getId())) {
+                tagsOld.remove(tag.getId());
             } else {
-                addTag(tag.id);
+                addTag(tag.getId());
             }
         }
         for (Integer t : tagsOld.keySet()) {

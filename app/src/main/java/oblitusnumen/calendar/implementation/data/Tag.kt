@@ -1,86 +1,62 @@
-package oblitusnumen.calendar.implementation.data;
+package oblitusnumen.calendar.implementation.data
 
-import android.content.ContentValues;
-import android.database.Cursor;
-import android.provider.BaseColumns;
+import android.content.ContentValues
+import android.database.Cursor
+import android.provider.BaseColumns
 
-public class Tag implements BaseColumns {
-    public static final String TABLE_NAME = "tags";
-    public static final String COLUMN_NAME_ID = "id";
-    public static final String COLUMN_NAME_NAME = "name";
-    public static final String COLUMN_NAME_COLOR = "color";
-    private final DbManager dbManager;
-    int id = -1;
-    String name;
-    int color = -1;
-    // TODO: 10/25/24 fix dupe tags
+class Tag : BaseColumns {
+    private val dbManager: DbManager
+    var id: Int = -1
+        private set
+    var name: String
+    var color: Int = -1
 
-    Tag(DbManager dbManager, ContentValues contentValues) {
-        this.dbManager = dbManager;
-        this.id = (int) contentValues.get(COLUMN_NAME_ID);
-        this.name = (String) contentValues.get(COLUMN_NAME_NAME);
-        this.color = (int) contentValues.get(COLUMN_NAME_COLOR);
+    private constructor(dbManager: DbManager, name: String) {
+        this.dbManager = dbManager
+        this.name = name
     }
 
-    public Tag(DbManager dbManager, String name) {
-        this.dbManager = dbManager;
-        this.name = name;
-        Tag tag = dbManager.tagByName(name);
-        if (tag != null) {
-            id = tag.id;
-            this.name = tag.name;
-            color = tag.color;
+    internal constructor(dbManager: DbManager, id: Int, name: String, color: Int) {
+        this.dbManager = dbManager
+        this.id = id
+        this.name = name
+        this.color = color
+    }
+
+    internal constructor(dbManager: DbManager, cursor: Cursor) : this(
+        dbManager, cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_ID)),
+        cursor.getString(cursor.getColumnIndex(COLUMN_NAME_NAME)),
+        cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_COLOR))
+    )
+
+    fun create() { //fixme may fail on UNIQUE violation
+        val contentValues = ContentValues()
+        contentValues.put(COLUMN_NAME_ID, null as Int?)
+        contentValues.put(COLUMN_NAME_NAME, name)
+        contentValues.put(COLUMN_NAME_COLOR, color)
+        id = dbManager.writableDatabase.insert(TABLE_NAME, null, contentValues).toInt()
+    }
+
+    fun exists(): Boolean {
+        return id != -1
+    }
+
+    fun delete(cascade: Boolean = false) { //fixme full checks. ask for cascade. set id to -1
+        throw UnsupportedOperationException("Not yet implemented")
+    }
+
+    fun update() { //fixme value update may fail
+        throw UnsupportedOperationException("Not yet implemented")
+    }
+
+    companion object {
+        const val TABLE_NAME: String = "tags"
+        const val COLUMN_NAME_ID: String = "id"
+        const val COLUMN_NAME_NAME: String = "name"
+        const val COLUMN_NAME_COLOR: String = "color"
+        fun getOrNew(dbManager: DbManager, name: String): Tag {
+            val tag = dbManager.tagByName(name)
+            return tag ?: Tag(dbManager, name)
         }
-    }
-
-    Tag(DbManager dbManager, int id, String name, int color) {
-        this.dbManager = dbManager;
-        this.id = id;
-        this.name = name;
-        this.color = color;
-    }
-
-    Tag(DbManager dbManager, Cursor cursor) {
-        this(dbManager, cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_ID)),
-                cursor.getString(cursor.getColumnIndex(COLUMN_NAME_NAME)),
-                cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_COLOR)));
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public int getColor() {
-        return color;
-    }
-
-    public void setColor(int color) {
-        this.color = color;
-    }
-
-    void create() {
-        ContentValues contentValues = toContentValues();
-        contentValues.put(COLUMN_NAME_ID, (Integer) null);
-        id = (int) dbManager.getWritableDatabase().insert(TABLE_NAME, null, contentValues);
-    }
-
-    ContentValues toContentValues() {
-        ContentValues contentValues = new ContentValues();
-        contentValues.put(COLUMN_NAME_ID, id);
-        contentValues.put(COLUMN_NAME_NAME, name);
-        contentValues.put(COLUMN_NAME_COLOR, color);
-        return contentValues;
-    }
-
-    void addEntry(int entryId) {
-        new EntryTagLinks(dbManager, entryId, id).create();
-    }
-
-    void rmEntry(int entryId) {
-        new EntryTagLinks(dbManager, entryId, id).delete();
     }
 }
