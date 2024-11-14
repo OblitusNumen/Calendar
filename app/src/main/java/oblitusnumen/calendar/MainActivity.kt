@@ -64,8 +64,7 @@ class MainActivity : ComponentActivity() {
             composable(route = NavRoutes.Calendar.route) {
                 val calendarTab = viewModel {
                     CalendarTab(calendarViewModel.dbManager, { date ->
-                        calendarViewModel.workaroundArgList = listOf(date)
-                        navController.navigate(NavRoutes.ThatDayDetails.withArgs("date arg")) //fixme proper args
+                        navController.navigate(NavRoutes.ThatDayDetails.withArgs(date.toEpochDay().toString()))
                     }, {
                         calendarViewModel.workaroundArgList = listOf(it)
                         navController.navigate(NavRoutes.EntryDetails.withArgs("new entry")) //fixme proper args
@@ -84,11 +83,12 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            composable(route = NavRoutes.ThatDayDetails.route) { //navBackStackEntry ->
-                //val thatDay = navBackStackEntry.arguments?.getString(NavRoutes.ThatDayDetails.date)
+            composable(route = NavRoutes.ThatDayDetails.route) { navBackStackEntry ->
+                val thatDayText = navBackStackEntry.arguments?.getString(NavRoutes.ThatDayDetails.date)
+                val thatDay = LocalDate.ofEpochDay(thatDayText?.toLong() ?: 0)
                 val dateScreen = viewModel {
                     DateScreen(
-                        calendarViewModel.workaroundArgList!![0] as LocalDate,
+                        thatDay,
                         dbManager,
                         {
                             calendarViewModel.workaroundArgList = listOf(it)
