@@ -35,7 +35,7 @@ import oblitusnumen.calendar.ui.theme.CalendarTheme
 import java.time.LocalDate
 
 class MainActivity : ComponentActivity() {
-    private val dbManager = DbManager(this)
+    private var calendarViewModel: CalendarViewModel? = null
 
     companion object {
         val PADDING: Dp = 5.dp
@@ -44,18 +44,17 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        dbManager.init()
         setContent {
             CalendarTheme {
-                val calendarViewModel = viewModel { CalendarViewModel(dbManager) }
-                calendarViewModel.navController = rememberNavController()
-                navGraph(calendarViewModel.navController!!, calendarViewModel)
+                calendarViewModel = viewModel { CalendarViewModel(DbManager(this@MainActivity)) }
+                calendarViewModel!!.navController = rememberNavController()
+                navGraph(calendarViewModel!!.navController!!, calendarViewModel!!.dbManager, calendarViewModel!!)
             }
         }
     }
 
     @Composable
-    fun navGraph(navController: NavHostController, calendarViewModel: CalendarViewModel) {
+    fun navGraph(navController: NavHostController, dbManager: DbManager, calendarViewModel: CalendarViewModel) {
         NavHost(
             modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
             navController = navController,
@@ -63,7 +62,7 @@ class MainActivity : ComponentActivity() {
         ) {
             composable(route = NavRoutes.Calendar.route) {
                 val calendarTab = viewModel {
-                    CalendarTab(calendarViewModel.dbManager, { date ->
+                    CalendarTab(dbManager, { date ->
                         navController.navigate(NavRoutes.ThatDayDetails.withArgs(date.toEpochDay().toString()))
                     }, {
                         calendarViewModel.workaroundArgList = listOf(it)
@@ -112,7 +111,7 @@ class MainActivity : ComponentActivity() {
                 //val entry = navBackStackEntry.arguments?.getString(NavRoutes.EntryDetails.entry)
                 val entryEdit = viewModel {
                     EntryEdit(
-                        calendarViewModel.dbManager,
+                        dbManager,
                         calendarViewModel.workaroundArgList!![0] as Entry
                     ) { navController.navigateUp() }
                 }
@@ -128,7 +127,7 @@ class MainActivity : ComponentActivity() {
 
             composable(route = NavRoutes.Entries.route) {
                 val entriesTab = viewModel {
-                    EntriesTab(calendarViewModel.dbManager) {
+                    EntriesTab(dbManager) {
                         calendarViewModel.workaroundArgList = listOf(it)
                         navController.navigate(NavRoutes.EntryDetails.withArgs("new entry")) //fixme proper args
                     }
@@ -145,7 +144,7 @@ class MainActivity : ComponentActivity() {
             }
 
             composable(route = NavRoutes.Tags.route) {
-                val tagsTab = viewModel { TagsTab(calendarViewModel.dbManager) }
+                val tagsTab = viewModel { TagsTab(dbManager) }
                 Scaffold(
                     bottomBar = { drawBottomBar(navController) }) {
                     tagsTab.compose()
@@ -185,7 +184,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
-        dbManager.close()
+        calendarViewModel?.dbManager?.close()
         super.onDestroy()
     }
 

@@ -20,7 +20,7 @@ class TagsTab(private val dbManager: DbManager) : ViewModel() {
     @Composable
     fun compose() {
         Column(Modifier.verticalScroll(ScrollState(0)).fillMaxWidth()) {
-            for (tag in dbManager.tags) {
+            for (tag in dbManager.getAllTags()) {
                 Box(
                     Modifier.height(50.dp).fillMaxWidth()
                         .border(width = 2.dp, color = MaterialTheme.colorScheme.primary)

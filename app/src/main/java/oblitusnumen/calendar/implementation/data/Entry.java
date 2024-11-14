@@ -87,7 +87,7 @@ public class Entry implements BaseColumns {
     }
 
     public File getDir() {
-        return new File(dbManager.context.getFilesDir(), String.valueOf(id));
+        return new File(dbManager.getFilesDir(), String.valueOf(id));
     }
 
     public File getContentsFile() {
