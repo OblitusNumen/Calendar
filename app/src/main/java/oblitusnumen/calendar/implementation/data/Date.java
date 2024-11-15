@@ -11,8 +11,6 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 
 public class Date implements BaseColumns {
     public static final String TABLE_NAME = "dates";
@@ -228,83 +226,6 @@ public class Date implements BaseColumns {
 
     void removeEvents(int from, int to) {
         exceptionRules.removeEvents(from, to);
-    }
-
-    public static class Period {
-        Modifier modifier;
-        int count;
-
-        public Period(Modifier modifier, int count) {
-            this.modifier = modifier;
-            this.count = count;
-        }
-
-        Period(String period) {
-            this.modifier = Modifier.modifiers.get(period.charAt(0));
-            count = Integer.parseInt(period.substring(1));
-        }
-
-        public static Period none() {
-            return new Period(Modifier.NONE, 0);
-        }
-
-        @Override
-        public @NotNull String toString() {
-            return "" + modifier.symbol + count;
-        }
-
-        public ZonedDateTime getTime(ZonedDateTime time, int idx) {
-            return modifier.plus(time, count * idx);
-        }
-
-        public enum Modifier {
-            NONE('N') {
-                @Override
-                public ZonedDateTime plus(ZonedDateTime time, int count) {
-                    return time;
-                }
-            },
-            DAY('D') {
-                @Override
-                public ZonedDateTime plus(ZonedDateTime time, int count) {
-                    return time.plusDays(count);
-                }
-            },
-            WEEK('W') {
-                @Override
-                public ZonedDateTime plus(ZonedDateTime time, int count) {
-                    return time.plusWeeks(count);
-                }
-            },
-            MONTH('M') {
-                @Override
-                public ZonedDateTime plus(ZonedDateTime time, int count) {
-                    return time.plusMonths(count);
-                }
-            },
-            YEAR('Y') {
-                @Override
-                public ZonedDateTime plus(ZonedDateTime time, int count) {
-                    return time.plusYears(count);
-                }
-            };
-
-            static final Map<Character, Modifier> modifiers = new HashMap<>();
-
-            static {
-                for (Modifier value : Modifier.values()) {
-                    modifiers.put(value.symbol, value);
-                }
-            }
-
-            final char symbol;
-
-            Modifier(char symbol) {
-                this.symbol = symbol;
-            }
-
-            public abstract ZonedDateTime plus(ZonedDateTime time, int count);
-        }
     }
 
     static class ExceptionRules {

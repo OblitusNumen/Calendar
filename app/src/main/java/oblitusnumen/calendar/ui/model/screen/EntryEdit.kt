@@ -22,10 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import oblitusnumen.calendar.BackButton
 import oblitusnumen.calendar.implementation.bgColorToTextColor
-import oblitusnumen.calendar.implementation.data.Date
-import oblitusnumen.calendar.implementation.data.DbManager
-import oblitusnumen.calendar.implementation.data.Entry
-import oblitusnumen.calendar.implementation.data.Tag
+import oblitusnumen.calendar.implementation.data.*
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import kotlin.math.roundToInt
@@ -80,7 +77,7 @@ class EntryEdit(private val dbManager: DbManager,
                     ZonedDateTime.now(),
                     0,
                     1,
-                    Date.Period(Date.Period.Modifier.WEEK, 1)//fixme proper date adding
+                    Period(Period.WEEK, 1)//fixme proper date adding
                 )
             }) {
                 Text(
