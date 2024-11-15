@@ -105,9 +105,9 @@ class Entry : BaseColumns {
             arrayOf(id.toString())
         ).use { cursor ->
             if (cursor != null) {
-                val idxId = cursor.getInt(cursor.getColumnIndex(Tag.COLUMN_NAME_ID))
-                val idxName = cursor.getInt(cursor.getColumnIndex(Tag.COLUMN_NAME_NAME))
-                val idxColor = cursor.getInt(cursor.getColumnIndex(Tag.COLUMN_NAME_COLOR))
+                val idxId = cursor.getColumnIndex(Tag.COLUMN_NAME_ID)
+                val idxName = cursor.getColumnIndex(Tag.COLUMN_NAME_NAME)
+                val idxColor = cursor.getColumnIndex(Tag.COLUMN_NAME_COLOR)
                 while (cursor.moveToNext())
                     tags.add(
                         Tag(
