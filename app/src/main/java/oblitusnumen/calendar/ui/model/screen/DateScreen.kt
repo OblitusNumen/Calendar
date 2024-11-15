@@ -25,10 +25,12 @@ import oblitusnumen.calendar.implementation.zonedDateTime
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-class DateScreen(private val day: LocalDate,
-                 private val dbManager: DbManager,
-                 private val editEntry: (Entry) -> Unit,
-                 private val backPress: () -> Unit) : ViewModel() {
+class DateScreen(
+    private val day: LocalDate,
+    private val dbManager: DbManager,
+    private val editEntry: (Entry) -> Unit,
+    private val backPress: () -> Unit
+) : ViewModel() {
 
     @Composable
     fun compose(modifier: Modifier = Modifier) {

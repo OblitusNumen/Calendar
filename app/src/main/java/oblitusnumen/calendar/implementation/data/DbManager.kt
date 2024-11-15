@@ -106,17 +106,17 @@ class DbManager(context: Context) :
     }
 
     fun getEntries(): List<Entry> {
-            val entries: MutableList<Entry> = ArrayList()
-            readableDatabase.rawQuery("SELECT * FROM ${Entry.TABLE_NAME}", arrayOf()).use { cursor ->
-                if (cursor != null) {
-                    val idxId = cursor.getColumnIndex(Entry.COLUMN_NAME_ID)
-                    val idxName = cursor.getColumnIndex(Entry.COLUMN_NAME_NAME)
-                    while (cursor.moveToNext())
-                        entries.add(Entry(this, cursor.getInt(idxId), cursor.getString(idxName)))
-                }
+        val entries: MutableList<Entry> = ArrayList()
+        readableDatabase.rawQuery("SELECT * FROM ${Entry.TABLE_NAME}", arrayOf()).use { cursor ->
+            if (cursor != null) {
+                val idxId = cursor.getColumnIndex(Entry.COLUMN_NAME_ID)
+                val idxName = cursor.getColumnIndex(Entry.COLUMN_NAME_NAME)
+                while (cursor.moveToNext())
+                    entries.add(Entry(this, cursor.getInt(idxId), cursor.getString(idxName)))
             }
-            return entries
         }
+        return entries
+    }
 
     companion object {
         const val DATABASE_VERSION: Int = 1

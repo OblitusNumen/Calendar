@@ -19,8 +19,10 @@ import oblitusnumen.calendar.implementation.bgColorToTextColor
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.Entry
 
-class EntriesTab(private val dbManager: DbManager,
-                 private val editEntry: (Entry) -> Unit) : ViewModel() {
+class EntriesTab(
+    private val dbManager: DbManager,
+    private val editEntry: (Entry) -> Unit
+) : ViewModel() {
 
     @Composable
     fun compose(modifier: Modifier) {

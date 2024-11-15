@@ -27,9 +27,11 @@ import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import kotlin.math.roundToInt
 
-class EntryEdit(private val dbManager: DbManager,
-                private val entry: Entry,
-                private val backPress: () -> Unit) : ViewModel() {
+class EntryEdit(
+    private val dbManager: DbManager,
+    private val entry: Entry,
+    private val backPress: () -> Unit
+) : ViewModel() {
     private var entryName by mutableStateOf(TextFieldValue(entry.name))
     private var tags: List<Tag> by mutableStateOf(entry.getTags().sortedBy { it.name })
     private var dates: List<Date> by mutableStateOf(entry.getDates().sortedBy { it.start })
