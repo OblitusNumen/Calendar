@@ -156,7 +156,7 @@ public class Date implements BaseColumns {
     }
 
     public Entry getEntry() {
-        return dbManager.entryById(entryId);
+        return Entry.Companion.byId(dbManager, entryId);
     }
 
     public long getStart() {

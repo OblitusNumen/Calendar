@@ -1,7 +1,6 @@
 package oblitusnumen.calendar.implementation.data
 
 import android.content.ContentValues
-import android.database.Cursor
 import android.provider.BaseColumns
 
 class Tag : BaseColumns {
@@ -22,12 +21,6 @@ class Tag : BaseColumns {
         this.name = name
         this.color = color
     }
-
-    internal constructor(dbManager: DbManager, cursor: Cursor) : this(
-        dbManager, cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_ID)),
-        cursor.getString(cursor.getColumnIndex(COLUMN_NAME_NAME)),
-        cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_COLOR))
-    )
 
     fun create() { //fixme may fail on UNIQUE violation
         val contentValues = ContentValues()
@@ -55,8 +48,18 @@ class Tag : BaseColumns {
         const val COLUMN_NAME_NAME: String = "name"
         const val COLUMN_NAME_COLOR: String = "color"
         fun getOrNew(dbManager: DbManager, name: String): Tag {
-            val tag = dbManager.tagByName(name)
-            return tag ?: Tag(dbManager, name)
+            dbManager.readableDatabase.rawQuery(
+                "SELECT * FROM $TABLE_NAME WHERE ${Entry.COLUMN_NAME_NAME} = ?",
+                arrayOf(name)
+            ).use { cursor ->
+                return if (cursor.moveToFirst()) {
+                    Tag(
+                        dbManager, cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_ID)),
+                        cursor.getString(cursor.getColumnIndex(COLUMN_NAME_NAME)),
+                        cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_COLOR))
+                    )
+                } else Tag(dbManager, name)
+            }
         }
     }
 }
