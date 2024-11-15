@@ -50,7 +50,7 @@ class EntriesTab(private val dbManager: DbManager,
     @OptIn(ExperimentalLayoutApi::class)
     @Composable
     fun drawEntry(entry: Entry) {
-        val tags = entry.tags
+        val tags = entry.getTags()
         Column(
             Modifier.padding(2.dp).fillMaxWidth()
                 .background(

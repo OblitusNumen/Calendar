@@ -67,7 +67,7 @@ public class Date implements BaseColumns {
 
     public Date(DbManager dbManager, Entry entry, String desc, ZonedDateTime time, long duration, int timesRepeat, Period period) {
         this.dbManager = dbManager;
-        this.entryId = entry.id;
+        this.entryId = entry.getId();
         this.desc = desc;
         this.start = time.toEpochSecond();
         this.duration = duration;
@@ -144,7 +144,11 @@ public class Date implements BaseColumns {
     }
 
     public String getDesc() {
-        return desc.isEmpty() ? getEntry().name : desc;
+        return desc.isEmpty() ? getEntry().getName() : desc;
+    }
+
+    public boolean exists() {
+        return id != -1;
     }
 
     public void setDesc(String desc) {

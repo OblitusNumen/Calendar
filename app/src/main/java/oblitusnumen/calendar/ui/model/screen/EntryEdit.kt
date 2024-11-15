@@ -34,9 +34,9 @@ class EntryEdit(private val dbManager: DbManager,
                 private val entry: Entry,
                 private val backPress: () -> Unit) : ViewModel() {
     private var entryName by mutableStateOf(TextFieldValue(entry.name))
-    private var tags: List<Tag> by mutableStateOf(entry.tags.sortedBy { it.name })
-    private var dates: List<Date> by mutableStateOf(entry.dates.sortedBy { it.start })
-    private var contents by mutableStateOf(TextFieldValue(entry.contents))  // FIXME: this should be List<Content>
+    private var tags: List<Tag> by mutableStateOf(entry.getTags().sortedBy { it.name })
+    private var dates: List<Date> by mutableStateOf(entry.getDates().sortedBy { it.start })
+    private var contents by mutableStateOf(TextFieldValue(entry.getContents()))  // FIXME: this should be List<Content>
 
     @OptIn(ExperimentalLayoutApi::class)
     @Composable
