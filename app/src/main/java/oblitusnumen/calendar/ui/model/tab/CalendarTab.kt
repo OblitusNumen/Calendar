@@ -132,7 +132,7 @@ class CalendarTab(
                 color = bgColorToTextColor(bgColor)
             )
             repeat(if (evtOverflow) maxElements - 1 else eventDates.count()) {
-                drawEvtInDay(Color.Green, eventDates[it].desc) //fixme get color from Date
+                drawEvtInDay(Color.Green, eventDates[it].getDesc()) //fixme get color from Date
             }
             if (evtOverflow)
                 drawEvtInDay(Color.Red, "+" + (eventDates.count() - maxElements + 1))

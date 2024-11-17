@@ -88,18 +88,22 @@ class ExceptionRules internal constructor(serialized: String = "") { // all oper
             return false*/
         //val index = findIndex(day) //for faster work
         //return exceptions[index].start <= day && exceptions[index].end >= day
-        for (e in exceptions) {
-            if (e.end >= day && e.start <= day)
-                return true
-            if (e.start > day)
-                return false
-        }
-        return false
+        return getRangeForDate(day) != null
     }
 
     fun trimToFitRange(start: Long, end: Long) {
         removeDates(Long.MIN_VALUE, start - 1)
         removeDates(end + 1, Long.MAX_VALUE)
+    }
+
+    fun getRangeForDate(day: Long): ExceptionRange? {
+        for (e in exceptions) {
+            if (e.end >= day && e.start <= day)
+                return e
+            if (e.start > day)
+                return null
+        }
+        return null
     }
 
     override fun toString(): String {

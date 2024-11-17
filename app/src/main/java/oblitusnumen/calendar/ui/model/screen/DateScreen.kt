@@ -93,7 +93,7 @@ class DateScreen(
                 Text(
                     modifier = Modifier.align(Alignment.CenterVertically),
                     text = date.forDay(zonedDateTime(day))
-                        .format(DateTimeFormatter.ofPattern("HH:mm")), //fixme should show end time
+                        !!.format(DateTimeFormatter.ofPattern("HH:mm")), //fixme should show end time
                     style = MaterialTheme.typography.bodyLarge,
                 )
             }

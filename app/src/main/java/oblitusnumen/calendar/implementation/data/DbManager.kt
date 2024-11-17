@@ -74,7 +74,7 @@ class DbManager(context: Context) :
                             cursor.getLong(timeStartIdx),
                             cursor.getLong(durationIdx),
                             cursor.getLong(timeEndsIdx),
-                            cursor.getInt(timesRepeatsIdx),
+                            cursor.getLong(timesRepeatsIdx),
                             cursor.getString(periodIdx),
                             cursor.getString(timeZoneIdx),
                             cursor.getString(removedIdx)

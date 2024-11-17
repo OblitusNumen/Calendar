@@ -3,10 +3,8 @@ package oblitusnumen.calendar.implementation.data
 import java.time.ZonedDateTime
 
 class Period {
-    var modifier: Char
-        private set
-    var data: Long
-        private set
+    val modifier: Char
+    val data: Long
 
     constructor() {
         modifier = ONCE
@@ -16,6 +14,8 @@ class Period {
     constructor(modifier: Char, data: Long) {
         verify(modifier)
         this.modifier = modifier
+        if (data < 0)
+            throw IllegalArgumentException("period cannot be negative")
         if (modifier != WEEKDAY)
             this.data = data
         else
@@ -52,6 +52,17 @@ class Period {
             modifier != YEAR &&
             modifier != WEEKDAY)
             throw IllegalArgumentException("Bad modifier $modifier")
+    }
+
+    fun secondsApproximation(): Long {
+        return when (modifier) {
+            ONCE -> 0
+            DAY, WEEKDAY -> 86400 * data
+            WEEK -> 86400 * 7 * data
+            MONTH -> 86400 * 30 * data
+            YEAR -> 86400 * 365 * data
+            else -> 0
+        }
     }
 
     @Suppress("unused")
