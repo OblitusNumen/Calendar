@@ -10,6 +10,61 @@ import java.util.Random;
 import java.util.Set;
 
 public class DateTest extends TestCase {
+    public void testDateExceptionRules() {
+        ExceptionRules exceptionRules = new ExceptionRules();
+        assertEquals(0, exceptionRules.exceptionDatesCount());
+        assertFalse(exceptionRules.containsDate(0));
+        assertEquals(exceptionRules.toString(), "");
+        exceptionRules = new ExceptionRules("0_2,4,6_10,12,14");
+        assertFalse(exceptionRules.containsDate(3));
+        assertTrue(exceptionRules.containsDate(4));
+        assertTrue(exceptionRules.containsDate(6));
+        assertTrue(exceptionRules.containsDate(7));
+        assertTrue(exceptionRules.containsDate(10));
+        assertEquals(11, exceptionRules.exceptionDatesCount());
+        exceptionRules.addDate(11);
+        assertEquals(12, exceptionRules.exceptionDatesCount());
+        assertEquals("0_2,4,6_12,14", exceptionRules.toString());
+        exceptionRules.addDates(3, 13);
+        assertEquals("0_14", exceptionRules.toString());
+        exceptionRules = new ExceptionRules("5_8,12,14");
+        exceptionRules.addDates(0, 4);
+        assertEquals("0_8,12,14", exceptionRules.toString());
+        exceptionRules.addDates(17, 18);
+        assertEquals("0_8,12,14,17_18", exceptionRules.toString());
+        exceptionRules = new ExceptionRules("5_8,12,14");
+        exceptionRules.addDates(0, 20);
+        assertEquals("0_20", exceptionRules.toString());
+        exceptionRules.addDates(0, 20);
+        assertEquals("0_20", exceptionRules.toString());
+        exceptionRules = new ExceptionRules("5_8,12,14");
+        exceptionRules.addDates(1, 2);
+        assertEquals("1_2,5_8,12,14", exceptionRules.toString());
+        exceptionRules.removeDates(8, 12);
+        assertEquals("1_2,5_7,14", exceptionRules.toString());
+        exceptionRules.removeDates(3, 6);
+        assertEquals("1_2,7,14", exceptionRules.toString());
+        exceptionRules.removeDates(0, 1);
+        assertEquals("2,7,14", exceptionRules.toString());
+        exceptionRules.removeDates(0, 13);
+        assertEquals("14", exceptionRules.toString());
+        exceptionRules = new ExceptionRules("5_8,12,14_18");
+        exceptionRules.removeDate(6);
+        assertEquals("5,7_8,12,14_18", exceptionRules.toString());
+        exceptionRules.removeDates(15, 16);
+        assertEquals("5,7_8,12,14,17_18", exceptionRules.toString());
+        exceptionRules.removeDates(19, 30);
+        assertEquals("5,7_8,12,14,17_18", exceptionRules.toString());
+        exceptionRules.trimToFitRange(8, 17);
+        assertEquals("8,12,14,17", exceptionRules.toString());
+        exceptionRules = new ExceptionRules();
+        exceptionRules.addDates(-15, -5);
+        exceptionRules.addDate(-3);
+        assertEquals("-15_-5,-3", exceptionRules.toString());
+        exceptionRules = new ExceptionRules("-10_-9,-8,-3_0,2");
+        assertEquals("-10_-9,-8,-3_0,2", exceptionRules.toString());
+    }
+
     public void testRemoved() {
         int numberOfDated = 50;
         Date date = new Date(null, 0, 0, "", 0, 0, 0, numberOfDated,
