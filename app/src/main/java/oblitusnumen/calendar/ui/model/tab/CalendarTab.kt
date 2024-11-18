@@ -40,9 +40,11 @@ class CalendarTab(
     private val newEntry: (Entry) -> Unit
 ) : ViewModel() {
     private var calendarLazyListState: LazyListState? = null
+    private var evtHeight: Dp = 0.dp
 
     @Composable
     fun compose(modifier: Modifier = Modifier) {
+        evtHeight = measureTextLine(MaterialTheme.typography.bodySmall) + 4.dp
         Column(modifier) {
             Row {
                 repeat(7) {
@@ -113,7 +115,6 @@ class CalendarTab(
         val begin = zonedDateTime(then)
         val eventDates = dates.filter { date -> date.forDay(begin) != null }.sortedBy { it.forDay(begin) }
 
-        val evtHeight = measureTextLine(MaterialTheme.typography.bodySmall) + 4.dp
         val today = (now.year == then.year && now.month == then.month && then.dayOfMonth == now.dayOfMonth)
         val bgColor = if (today) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primaryContainer
         val evtOverflow = eventDates.count() > maxElements
