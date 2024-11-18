@@ -85,6 +85,7 @@ class CalendarTab(
     @Composable
     fun displayWeek(monthValue: Int, date0: LocalDate) {
         var date = date0
+        val now = LocalDate.now()
         val blockW = getWidthPartIncludePadding(7f)
         Row {
             while (date.month.value % 12 + 1 == monthValue) {
@@ -97,7 +98,7 @@ class CalendarTab(
                     date.plusWeeks(1)
                 )
             while (date.month.value == monthValue) {
-                displayDay(blockW, 3, date, dates)
+                displayDay(blockW, now, 3, date, dates)
                 if (date.dayOfWeek.value == 7) break
                 date = date.plusDays(1)
             }
@@ -107,13 +108,13 @@ class CalendarTab(
     @Composable
     fun displayDay(
         blockW: Dp,
+        now: LocalDate,
         maxElements: Int,
         then: LocalDate,
         dates: List<Date>
     ) {
-        val now = LocalDate.now()
         val begin = zonedDateTime(then)
-        val eventDates = dates.filter { date -> date.forDay(begin) != null }.sortedBy { it.forDay(begin) }
+        val eventDates = dates.filter { it.forDay(begin) != null }.sortedBy { it.forDay(begin) }
 
         val today = (now.year == then.year && now.month == then.month && then.dayOfMonth == now.dayOfMonth)
         val bgColor = if (today) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primaryContainer
@@ -133,7 +134,7 @@ class CalendarTab(
                 color = bgColorToTextColor(bgColor)
             )
             repeat(if (evtOverflow) maxElements - 1 else eventDates.count()) {
-                drawEvtInDay(Color.Green, eventDates[it].getDesc()) //fixme get color from Date
+                drawEvtInDay(Color.Green, eventDates[it].getDesc()) //fixme get color from Date. should cache these vals in Date
             }
             if (evtOverflow)
                 drawEvtInDay(Color.Red, "+" + (eventDates.count() - maxElements + 1))
