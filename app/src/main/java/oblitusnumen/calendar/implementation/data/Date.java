@@ -17,9 +17,9 @@ public class Date implements BaseColumns {
     public static final String COLUMN_NAME_ID = "id";
     public static final String COLUMN_NAME_ENTRY_ID = "entryId";
     public static final String COLUMN_NAME_DESC = "description";
-    public static final String COLUMN_NAME_TIME_START = "start";
+    public static final String COLUMN_NAME_TIME_START = "timeStart";
     public static final String COLUMN_NAME_DURATION = "duration";
-    public static final String COLUMN_NAME_TIME_ENDS = "end";
+    public static final String COLUMN_NAME_TIME_ENDS = "timeEnd";
     public static final String COLUMN_NAME_TIMES_REPEATS = "timesRepeat";
     public static final String COLUMN_NAME_PERIOD = "period";
     public static final String COLUMN_NAME_TIME_ZONE = "timeZone";
