@@ -135,7 +135,7 @@ class Date : BaseColumns {
         return period.getTime(Instant.ofEpochSecond(start).atZone(zoneId), idx)
     }
 
-    fun getZonedDateTimeIndex(start: Long, finish: Long): Long { //any(?) in range. should use getNextClosestRaw
+    fun getZonedDateTimeIndex(start: Long, finish: Long): Long { //any(?) in range. still used by tests
         if (finish <= this.start) return -1
         if (this.end == this.start) return if (this.start >= start) 0 else -1
         val period = (this.end - this.start) / timesRepeat
@@ -155,15 +155,39 @@ class Date : BaseColumns {
         return -1
     }
 
+    fun getZonedDateTimeInRange(start: Long, finish: Long): ZonedDateTime? { //any(?) in range
+        if (finish <= this.start) return null
+        if (this.end == this.start) return if (this.start >= start) getZoneDateTime(0) else null
+        val period = (this.end - this.start) / timesRepeat
+        val idx = min((timesRepeat - 1), ((finish - this.start) / period))
+        val zdtIdx = getZoneDateTime(idx)
+        val time = zdtIdx.toEpochSecond()
+        if (time in start..<finish) return zdtIdx
+        if (time >= finish && idx > 1) {
+            val zdtIdxM1 = getZoneDateTime(idx - 1)
+            val timeM1 = zdtIdxM1.toEpochSecond()
+            return if (timeM1 >= finish || timeM1 < start) null
+            else zdtIdxM1
+        }
+        if (time < start && idx < timesRepeat - 1) {
+            val zdtIdxP1 = getZoneDateTime(idx + 1)
+            val timeP1 = zdtIdxP1.toEpochSecond()
+            return if (timeP1 < start || timeP1 >= finish) null
+            else zdtIdxP1
+        }
+        return null
+    }
+
     /**
      * @return null if event does not happen during next day from `startOfDay` or time which event takes place at
      */
     fun forDay(startOfDay: ZonedDateTime): ZonedDateTime? {
-        val start = startOfDay.toEpochSecond()
-        val end = startOfDay.plusDays(1).toEpochSecond()
-        val zonedDateTimeIndex = getZonedDateTimeIndex(start, end)
-        if (zonedDateTimeIndex == -1L || exceptionRules.containsDate(zonedDateTimeIndex)) return null
-        return getZoneDateTime(zonedDateTimeIndex)
+        val zonedDateTime = getZonedDateTimeInRange(
+            startOfDay.toEpochSecond(),
+            startOfDay.plusDays(1).toEpochSecond()
+        ) //todo maybe check startOfTheDay for exceptions instead?
+        if (zonedDateTime == null || exceptionRules.containsDate(zonedDateTime.toEpochDays())) return null
+        return zonedDateTime
     }
 
     private fun getTime(idx: Long): Long {
