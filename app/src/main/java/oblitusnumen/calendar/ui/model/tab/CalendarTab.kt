@@ -114,7 +114,10 @@ class CalendarTab(
         dates: List<Date>
     ) {
         val begin = zonedDateTime(then)
-        val eventDates = dates.filter { it.forDay(begin) != null }.sortedBy { it.forDay(begin) }
+        val startOfDayCache = begin.toEpochSecond()
+        val endOfDayCache = begin.plusDays(1).toEpochSecond()
+        val eventDates = dates.filter { it.anyInRange(startOfDayCache, endOfDayCache) != null }
+            .sortedBy { it.anyInRange(startOfDayCache, endOfDayCache) }
 
         val today = (now.year == then.year && now.month == then.month && then.dayOfMonth == now.dayOfMonth)
         val bgColor = if (today) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primaryContainer

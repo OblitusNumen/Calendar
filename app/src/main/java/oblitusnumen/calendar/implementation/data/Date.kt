@@ -182,10 +182,11 @@ class Date : BaseColumns {
      * @return null if event does not happen during next day from `startOfDay` or time which event takes place at
      */
     fun forDay(startOfDay: ZonedDateTime): ZonedDateTime? {
-        val zonedDateTime = getZonedDateTimeInRange(
-            startOfDay.toEpochSecond(),
-            startOfDay.plusDays(1).toEpochSecond()
-        ) //todo maybe check startOfTheDay for exceptions instead?
+        return anyInRange(startOfDay.toEpochSecond(), startOfDay.plusDays(1).toEpochSecond())
+    }
+
+    fun anyInRange(start: Long, finish: Long): ZonedDateTime? {
+        val zonedDateTime = getZonedDateTimeInRange(start, finish)
         if (zonedDateTime == null || exceptionRules.containsDate(zonedDateTime.toEpochDays())) return null
         return zonedDateTime
     }
