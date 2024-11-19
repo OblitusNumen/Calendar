@@ -21,7 +21,7 @@ import oblitusnumen.calendar.implementation.data.Entry
 
 class EntriesTab(
     private val dbManager: DbManager,
-    private val editEntry: (Entry) -> Unit
+    private val editEntry: (Int) -> Unit
 ) : ViewModel() {
 
     @Composable
@@ -58,7 +58,7 @@ class EntriesTab(
                 .background(
                     MaterialTheme.colorScheme.primaryContainer,
                     shape = RoundedCornerShape(10.dp)
-                ).clickable(onClick = { editEntry(entry) })
+                ).clickable(onClick = { editEntry(entry.id) })
         ) {
             Row(Modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 8.dp)) {
                 Text(

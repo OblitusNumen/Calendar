@@ -20,7 +20,6 @@ import oblitusnumen.calendar.BackButton
 import oblitusnumen.calendar.implementation.bgColorToTextColor
 import oblitusnumen.calendar.implementation.data.Date
 import oblitusnumen.calendar.implementation.data.DbManager
-import oblitusnumen.calendar.implementation.data.Entry
 import oblitusnumen.calendar.implementation.zonedDateTime
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -28,7 +27,7 @@ import java.time.format.DateTimeFormatter
 class DateScreen(
     private val day: LocalDate,
     private val dbManager: DbManager,
-    private val editEntry: (Entry) -> Unit,
+    private val editEntry: (Int) -> Unit,
     private val backPress: () -> Unit
 ) : ViewModel() {
 
@@ -50,7 +49,7 @@ class DateScreen(
 
     @Composable
     fun functionButton() {
-        FloatingActionButton(onClick = { editEntry(dbManager.createEntry()) }) {
+        FloatingActionButton(onClick = { editEntry(-1) }) {
             Icon(Icons.Filled.Add, "add event")
         }
     }
@@ -80,7 +79,7 @@ class DateScreen(
                 .background(
                     MaterialTheme.colorScheme.primaryContainer,
                     shape = RoundedCornerShape(10.dp)
-                ).clickable(onClick = { editEntry(entry) })
+                ).clickable(onClick = { editEntry(entry.id) })
         ) {
             Row(Modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 8.dp)) {
                 Text(

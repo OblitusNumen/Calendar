@@ -48,13 +48,13 @@ class MainActivity : ComponentActivity() {
             CalendarTheme {
                 calendarViewModel = viewModel { CalendarViewModel(DbManager(this@MainActivity)) }
                 calendarViewModel!!.navController = rememberNavController()
-                navGraph(calendarViewModel!!.navController!!, calendarViewModel!!.dbManager, calendarViewModel!!)
+                navGraph(calendarViewModel!!.navController!!, calendarViewModel!!.dbManager)
             }
         }
     }
 
     @Composable
-    fun navGraph(navController: NavHostController, dbManager: DbManager, calendarViewModel: CalendarViewModel) {
+    fun navGraph(navController: NavHostController, dbManager: DbManager) {
         NavHost(
             modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
             navController = navController,
@@ -64,10 +64,7 @@ class MainActivity : ComponentActivity() {
                 val calendarTab = viewModel {
                     CalendarTab(dbManager, { date ->
                         navController.navigate(NavRoutes.ThatDayDetails.withArgs(date.toEpochDay().toString()))
-                    }, {
-                        calendarViewModel.workaroundArgList = listOf(it)
-                        navController.navigate(NavRoutes.EntryDetails.withArgs("new entry")) //fixme proper args
-                    })
+                    }, { navController.navigate(NavRoutes.EntryDetails.withArgs("-1")) })
                 }
                 Scaffold(
                     topBar = { calendarTab.topBar() },
@@ -89,10 +86,7 @@ class MainActivity : ComponentActivity() {
                     DateScreen(
                         thatDay,
                         dbManager,
-                        {
-                            calendarViewModel.workaroundArgList = listOf(it)
-                            navController.navigate(NavRoutes.EntryDetails.withArgs("new entry")) //fixme proper args
-                        },
+                        { navController.navigate(NavRoutes.EntryDetails.withArgs(it.toString())) },
                         { navController.navigateUp() })
                 }
                 Scaffold(
@@ -107,12 +101,13 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            composable(route = NavRoutes.EntryDetails.route) { //navBackStackEntry ->
-                //val entry = navBackStackEntry.arguments?.getString(NavRoutes.EntryDetails.entry)
+            composable(route = NavRoutes.EntryDetails.route) { navBackStackEntry ->
+                val entry = navBackStackEntry.arguments?.getString(NavRoutes.EntryDetails.entry)
+                val entryId = entry?.toInt() ?: -1
                 val entryEdit = viewModel {
                     EntryEdit(
                         dbManager,
-                        calendarViewModel.workaroundArgList!![0] as Entry
+                        if (entryId < 0) dbManager.createEntry() else Entry.byId(dbManager, entryId)!!
                     ) { navController.navigateUp() }
                 }
                 Scaffold(topBar = { entryEdit.topBar() }) {
@@ -128,8 +123,7 @@ class MainActivity : ComponentActivity() {
             composable(route = NavRoutes.Entries.route) {
                 val entriesTab = viewModel {
                     EntriesTab(dbManager) {
-                        calendarViewModel.workaroundArgList = listOf(it)
-                        navController.navigate(NavRoutes.EntryDetails.withArgs("new entry")) //fixme proper args
+                        navController.navigate(NavRoutes.EntryDetails.withArgs(it.toString()))
                     }
                 }
                 Scaffold(topBar = { entriesTab.topBar() },
@@ -189,7 +183,6 @@ class MainActivity : ComponentActivity() {
     }
 
     class CalendarViewModel(val dbManager: DbManager) : ViewModel() {
-        var workaroundArgList: List<Any>? = null
         var navController: NavHostController? = null
     }
 }

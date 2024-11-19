@@ -28,7 +28,6 @@ import oblitusnumen.calendar.getWidthPartIncludePadding
 import oblitusnumen.calendar.implementation.bgColorToTextColor
 import oblitusnumen.calendar.implementation.data.Date
 import oblitusnumen.calendar.implementation.data.DbManager
-import oblitusnumen.calendar.implementation.data.Entry
 import oblitusnumen.calendar.implementation.measureTextLine
 import oblitusnumen.calendar.implementation.zonedDateTime
 import java.time.LocalDate
@@ -37,7 +36,7 @@ import java.time.temporal.ChronoUnit
 class CalendarTab(
     private val dbManager: DbManager,
     private val toThatDayInfo: (LocalDate) -> Unit,
-    private val newEntry: (Entry) -> Unit
+    private val newEntry: () -> Unit
 ) : ViewModel() {
     private var calendarLazyListState: LazyListState? = null
     private var evtHeight: Dp = 0.dp
@@ -162,7 +161,7 @@ class CalendarTab(
 
     @Composable
     fun functionButton() {
-        FloatingActionButton(onClick = { newEntry(dbManager.createEntry()) }) {
+        FloatingActionButton(onClick = newEntry) {
             Icon(Icons.Filled.Add, "add event")
         }
     }
