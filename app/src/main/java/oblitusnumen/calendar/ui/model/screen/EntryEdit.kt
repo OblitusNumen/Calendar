@@ -256,18 +256,30 @@ class EntryEdit(
         }
     }
 
+    enum class DateSequenceEndVariant {
+        ENDLESS,
+        BY_DATE,
+        OCCURRENCES
+    }
+
     @Composable
     fun periodSelectorDialog(onConfirm: () -> Unit, onDismiss: () -> Unit, date: Date) {
         var periodCount by remember { mutableStateOf(date.period.data.toString()) }
         var selectedPeriod by remember { mutableStateOf(PeriodType(date.period.modifier)) }
-        val selectedMillis =
-            remember {
-                mutableStateOf(
-                    (if (date.isEndless) date.getZoneDateTime(0) else date.getLastZoneDateTime()).toLocalDate()
-                        .toEpochDay() * 86400000
-                )
-            }
-        var isEndless by remember { mutableStateOf(date.isEndless) }
+        var selectedMillis by
+        remember {
+            mutableStateOf(
+                (if (date.isEndless) date.getZoneDateTime(0) else date.getLastZoneDateTime()).toLocalDate()
+                    .toEpochDay() * 86_400_000
+            )
+        }
+        var occurrencesCount by remember { mutableStateOf(if (date.isEndless) "1" else "${date.timesRepeat}") }
+        var endVariantSelectedOption by remember {
+            mutableStateOf(
+                if (date.isEndless) DateSequenceEndVariant.ENDLESS
+                else DateSequenceEndVariant.BY_DATE
+            )
+        }
         /*val monSelected = remember { mutableStateOf(false) }
         val tueSelected = remember { mutableStateOf(false) }
         val wedSelected = remember { mutableStateOf(false) }
@@ -285,15 +297,21 @@ class EntryEdit(
             confirmButton = {
                 TextButton(onClick = {
                     date.setPeriod(Period(selectedPeriod.id, periodCount.toLong()))
-                    if (isEndless)
-                        date.makeEndless()
-                    else if (date.isPeriodic)
-                        date.setRange(
-                            startOfDayEnd = ZonedDateTime.of(
-                                LocalDate.ofEpochDay(selectedMillis.value / 86400000).atStartOfDay(),
-                                date.getZoneDateTime(0).zone
+                    if (date.isPeriodic) {
+                        when (endVariantSelectedOption) {
+                            DateSequenceEndVariant.ENDLESS -> date.makeEndless()
+                            DateSequenceEndVariant.BY_DATE -> date.setRange(
+                                startOfDayEnd = ZonedDateTime.of(
+                                    LocalDate.ofEpochDay(selectedMillis / 86400000).atStartOfDay(),
+                                    date.getZoneDateTime(0).zone
+                                )
                             )
-                        )
+
+                            DateSequenceEndVariant.OCCURRENCES -> {
+                                date.setTimesRepeat(if (occurrencesCount.isEmpty()) 1 else occurrencesCount.toLong())
+                            }
+                        }
+                    }
                     onConfirm()
                 }) {
                     Text("OK")
@@ -302,7 +320,9 @@ class EntryEdit(
             text = {
                 Column {
                     Row {
+                        //period count text field
                         OutlinedTextField(
+                            enabled = selectedPeriod.id != Period.ONCE,
                             modifier = Modifier.width(100.dp).padding(horizontal = 8.dp),
                             value = periodCount, onValueChange = {
                                 try {
@@ -314,9 +334,13 @@ class EntryEdit(
                                 }
                             },
                             textStyle = MaterialTheme.typography.bodyLarge,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Number,
+                                imeAction = ImeAction.Done
+                            ),
                             label = { Text("Count") }
                         )
+
                         materialSpinner(
                             "Type", PeriodType.getAll(),
                             { selectedPeriod = it },
@@ -333,16 +357,84 @@ class EntryEdit(
                         drawWeekdayButton(satSelected, "Sat")
                         drawWeekdayButton(sunSelected, "Sun")
                     }*/
-                    Row {
+                    //end variant selection
+                    //endless radiobutton
+                    Row(
+                        Modifier.fillMaxWidth().clickable {
+                            if (selectedPeriod.id != Period.ONCE) endVariantSelectedOption =
+                                DateSequenceEndVariant.ENDLESS
+                        }
+                    ) {
+                        RadioButton(
+                            selected = (endVariantSelectedOption == DateSequenceEndVariant.ENDLESS),
+                            onClick = { endVariantSelectedOption = DateSequenceEndVariant.ENDLESS },
+                            Modifier.align(Alignment.CenterVertically),
+                            enabled = selectedPeriod.id != Period.ONCE
+                        )
                         Text(
                             "Endless",
                             Modifier.padding(vertical = 4.dp, horizontal = 16.dp).align(Alignment.CenterVertically),
-                            style = MaterialTheme.typography.titleLarge
+                            style = MaterialTheme.typography.titleLarge,
+                            color = if (selectedPeriod.id != Period.ONCE) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(
+                                alpha = .5F
+                            )
                         )
-                        Switch(checked = isEndless, onCheckedChange = { isEndless = it })
                     }
-                    if (!isEndless) {
-                        DateTimePicker.datePickerField(selectedMillis, "End date")
+                    //end date radiobutton
+                    Row(
+                        Modifier.fillMaxWidth().clickable {
+                            if (selectedPeriod.id != Period.ONCE) endVariantSelectedOption =
+                                DateSequenceEndVariant.BY_DATE
+                        }
+                    ) {
+                        RadioButton(
+                            selected = (endVariantSelectedOption == DateSequenceEndVariant.BY_DATE),
+                            onClick = { endVariantSelectedOption = DateSequenceEndVariant.BY_DATE },
+                            Modifier.align(Alignment.CenterVertically),
+                            enabled = selectedPeriod.id != Period.ONCE
+                        )
+                        DateTimePicker.datePickerField(
+                            selectedMillis, "End date",
+                            selectedPeriod.id != Period.ONCE
+                        ) {
+                            endVariantSelectedOption = DateSequenceEndVariant.BY_DATE
+                            selectedMillis = it
+                        }
+                    }
+                    //occurrences radiobutton
+                    Row(
+                        Modifier.fillMaxWidth().clickable {
+                            if (selectedPeriod.id != Period.ONCE) endVariantSelectedOption =
+                                DateSequenceEndVariant.OCCURRENCES
+                        }
+                    ) {
+                        RadioButton(
+                            selected = (endVariantSelectedOption == DateSequenceEndVariant.OCCURRENCES),
+                            onClick = { endVariantSelectedOption = DateSequenceEndVariant.OCCURRENCES },
+                            Modifier.align(Alignment.CenterVertically),
+                            enabled = selectedPeriod.id != Period.ONCE
+                        )
+                        OutlinedTextField(
+                            enabled = selectedPeriod.id != Period.ONCE,
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                            value = occurrencesCount,
+                            onValueChange = {
+                                endVariantSelectedOption = DateSequenceEndVariant.OCCURRENCES
+                                try {
+                                    if (it.toLong() > 0)
+                                        occurrencesCount = it
+                                } catch (_: NumberFormatException) {
+                                    if (it.isEmpty())
+                                        occurrencesCount = it
+                                }
+                            },
+                            textStyle = MaterialTheme.typography.bodyLarge,
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Number,
+                                imeAction = ImeAction.Done
+                            ),
+                            label = { Text("Occurrences") }
+                        )
                     }
                 }
             }

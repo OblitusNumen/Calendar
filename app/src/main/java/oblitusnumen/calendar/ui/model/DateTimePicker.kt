@@ -1,6 +1,5 @@
 package oblitusnumen.calendar.ui.model
 
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -10,11 +9,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import java.text.SimpleDateFormat
+import oblitusnumen.calendar.implementation.convertMillisToDate
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-import java.util.*
 
 class DateTimePicker {
     private var datePickerShown by mutableStateOf(false)
@@ -89,47 +87,39 @@ class DateTimePicker {
     }
 
     companion object {
-        private fun convertMillisToDate(millis: Long): String {
-            val formatter = SimpleDateFormat("MM/dd/yyyy", Locale.getDefault())
-            return formatter.format(Date(millis))
-        }
-
         @Composable
-        fun datePickerField(selectedMillis: MutableState<Long>, label: String) {
+        fun datePickerField(selectedMillis: Long, label: String, enabled: Boolean, confirmCallback: (Long) -> Unit) {
             var showDatePicker by remember { mutableStateOf(false) }
-            val selectedDate = convertMillisToDate(selectedMillis.value)
+            val selectedDate = convertMillisToDate(selectedMillis)
+            OutlinedTextField(
+                enabled = enabled,
+                value = selectedDate,
+                onValueChange = { },
+                label = { Text(label) },
+                readOnly = true,
+                trailingIcon = {
+                    IconButton(enabled = enabled,
+                        onClick = { showDatePicker = !showDatePicker }) {
+                        Icon(
+                            imageVector = Icons.Default.DateRange,
+                            contentDescription = "Select date"
+                        )
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth().padding(8.dp)
+                    .height(64.dp)
+            )
 
-            Box(
-                modifier = Modifier.fillMaxWidth().padding(8.dp),
-            ) {
-                OutlinedTextField(
-                    value = selectedDate,
-                    onValueChange = { },
-                    label = { Text(label) },
-                    readOnly = true,
-                    trailingIcon = {
-                        IconButton(onClick = { showDatePicker = !showDatePicker }) {
-                            Icon(
-                                imageVector = Icons.Default.DateRange,
-                                contentDescription = "Select date"
-                            )
-                        }
+            if (showDatePicker) {
+                datePickerModal(
+                    {
+                        confirmCallback(it)
+                        showDatePicker = false
                     },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(64.dp)
+                    { showDatePicker = false },
+                    selectedMillis,
                 )
-
-                if (showDatePicker) {
-                    datePickerModal(
-                        {
-                            selectedMillis.value = it
-                            showDatePicker = false
-                        },
-                        { showDatePicker = false },
-                        selectedMillis.value,
-                    )
-                }
             }
         }
 

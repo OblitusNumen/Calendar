@@ -9,9 +9,11 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Dp
 import java.io.File
+import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
+import java.util.*
 
 
 fun rmRecursively(file: File) {
@@ -22,6 +24,11 @@ fun rmRecursively(file: File) {
         }
     }
     if (!file.delete()) throw RuntimeException("could not delete file $file")
+}
+
+fun convertMillisToDate(millis: Long): String {
+    val formatter = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+    return formatter.format(Date(millis))
 }
 
 fun zonedDateTime(day: LocalDate): ZonedDateTime {
