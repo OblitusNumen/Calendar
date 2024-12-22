@@ -125,6 +125,14 @@ class ExceptionRules internal constructor(serialized: String = "") { // all oper
         return count
     }
 
+    fun listAll(): List<Long> {
+        val list = mutableListOf<Long>()
+        for (e in exceptions)
+            for (i in e.start..e.end)
+                list.add(i)
+        return list
+    }
+
     /*private fun findIndex(day: Long): Int { //todo bad, but is it actually needed?
         var begin = 0
         var end = exceptions.size

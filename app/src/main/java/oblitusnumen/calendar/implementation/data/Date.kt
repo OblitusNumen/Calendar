@@ -24,7 +24,8 @@ class Date : BaseColumns {
         private set
     var period: Period
         private set
-    private var zoneId: ZoneId
+    var zoneId: ZoneId
+        private set
     var exceptionRules: ExceptionRules
         private set
 
@@ -120,6 +121,9 @@ class Date : BaseColumns {
             arrayOf(id.toString())
         )
     }
+
+    val isPeriodic: Boolean
+        get() = period.modifier != Period.ONCE
 
     val isEndless: Boolean
         get() = end > END_ENDLESS_THRESHOLD
