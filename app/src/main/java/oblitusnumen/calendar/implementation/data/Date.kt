@@ -139,6 +139,12 @@ class Date : BaseColumns {
         return period.getTime(Instant.ofEpochSecond(start).atZone(zoneId), idx)
     }
 
+    fun getLastZoneDateTime(): ZonedDateTime {
+        if (isPeriodic)
+            return getZoneDateTime(timesRepeat - 1)
+        return getZoneDateTime(0)
+    }
+
     fun getZonedDateTimeIndex(start: Long, finish: Long): Long { //any(?) in range. still used by tests
         if (finish <= this.start) return -1
         if (this.end == this.start) return if (this.start >= start) 0 else -1

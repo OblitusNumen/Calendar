@@ -217,10 +217,10 @@ class DateTimePicker {
 @Composable
 fun <T> materialSpinner(
     title: String, options: List<T>,
-    onSelect: (option: T) -> Unit, modifier: Modifier = Modifier
+    onSelect: (option: T) -> Unit, initialOption: T = options[0], modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
-    var selectedOption by remember { mutableStateOf(options[0]) }
+    var selectedOption by remember { mutableStateOf(initialOption) }
 
     ExposedDropdownMenuBox(
         expanded = expanded, onExpandedChange = { expanded = it },

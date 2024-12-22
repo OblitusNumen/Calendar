@@ -16,9 +16,12 @@ class Period {
         this.modifier = modifier
         if (data < 0)
             throw IllegalArgumentException("period cannot be negative")
-        if (modifier != WEEKDAY)
-            this.data = data
-        else
+        if (modifier != WEEKDAY) {
+            if (data == 0L)
+                this.data = 1
+            else
+                this.data = data
+        } else
             this.data = data and WD_ALL
     }
 
