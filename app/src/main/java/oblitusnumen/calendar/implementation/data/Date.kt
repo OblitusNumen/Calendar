@@ -198,7 +198,7 @@ class Date : BaseColumns {
 
     fun anyInRange(start: Long, finish: Long): ZonedDateTime? {
         val zonedDateTime = getZonedDateTimeInRange(start, finish)
-        if (zonedDateTime == null || exceptionRules.containsDate(zonedDateTime.toEpochDays())) return null
+        if (zonedDateTime == null || exceptionRules.containsDate(zonedDateTime.toEpochDays())) return null // FIXME: should not be checked using zoned DateTime
         return zonedDateTime
     }
 

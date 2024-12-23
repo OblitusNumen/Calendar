@@ -9,7 +9,9 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.outlined.Call
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -32,6 +34,7 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import kotlin.math.roundToInt
+import kotlin.random.Random
 
 class EntryEdit(
     private val dbManager: DbManager,
@@ -100,18 +103,19 @@ class EntryEdit(
                     style = MaterialTheme.typography.bodyLarge
                 )
             }
-            /*HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
-            repeat(3) { todo no notification support yet
-                Row(modifier = Modifier.clickable { }) {
+            //todo no notification support yet
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
+            repeat(3) {
+                Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp).clickable { }) {
                     Icon(
-                        Icons.Outlined.Notifications, null,
+                        if (Random.nextBoolean()) Icons.Outlined.Notifications else Icons.Filled.Notifications, null,
                         Modifier.align(Alignment.CenterVertically).padding(8.dp)
                     )
                     Text(
                         modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp)
                             .weight(1f),
                         text = "30 min before",
-                        style = MaterialTheme.typography.titleLarge
+                        style = MaterialTheme.typography.bodyLarge
                     )
                     IconButton(
                         modifier = Modifier.align(Alignment.CenterVertically),
@@ -119,14 +123,14 @@ class EntryEdit(
                         content = { Icon(Icons.Filled.Clear, contentDescription = null) })
                 }
             }
-            Box(Modifier.fillMaxWidth()/*.padding(top = 8.dp)*/.clickable { }) {
+            Box(Modifier.defaultMinSize(minHeight = 52.dp).fillMaxWidth()/*.padding(top = 8.dp)*/.clickable { }) {
                 Text(
                     modifier = Modifier.align(Alignment.CenterStart)
                         .padding(horizontal = 44.dp, vertical = 4.dp),
                     text = "Add notification",
-                    style = MaterialTheme.typography.titleLarge
+                    style = MaterialTheme.typography.bodyLarge
                 )
-            }*/
+            }
             HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
             OutlinedTextField(
                 modifier = Modifier.defaultMinSize(minHeight = 52.dp).fillMaxWidth().padding(horizontal = 12.dp).padding(bottom = 12.dp),
@@ -157,7 +161,7 @@ class EntryEdit(
                         " until " + date.getLastZoneDateTime().format(DateTimeFormatter.ofPattern("dd MMM yyyy"))
         else
             PeriodType(date.period.modifier).toString()
-        Column(Modifier.padding(vertical = 4.dp)) {
+        Column(Modifier.padding(bottom = 6.dp)) {
             updated// fixme this is hack...
             Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp).clickable {
                 dateTimePicker.dateTimePick({}, {
