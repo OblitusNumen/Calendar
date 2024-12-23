@@ -6,6 +6,7 @@ import android.database.sqlite.SQLiteDatabase
 import android.provider.BaseColumns
 import oblitusnumen.calendar.implementation.data.Entry.Companion.byId
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import kotlin.math.min
@@ -258,11 +259,8 @@ class Date : BaseColumns {
     }
 
     @JvmOverloads
-    fun addExceptions(startOfDayStart: ZonedDateTime, startOfDayEnd: ZonedDateTime = startOfDayStart) {
-        exceptionRules.addDates(
-            startOfDayStart.toEpochDays(),
-            startOfDayEnd.toEpochDays()
-        )
+    fun addExceptions(dateStart: LocalDate, dateEnd: LocalDate = dateStart) {
+        exceptionRules.addDates(dateStart.toEpochDay(), dateEnd.toEpochDay())
     }
 
     @JvmOverloads

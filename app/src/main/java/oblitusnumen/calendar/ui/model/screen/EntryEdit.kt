@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import oblitusnumen.calendar.BackButton
 import oblitusnumen.calendar.implementation.bgColorToTextColor
+import oblitusnumen.calendar.implementation.convertMillisToDate
 import oblitusnumen.calendar.implementation.data.*
 import oblitusnumen.calendar.ui.model.DateTimePicker
 import oblitusnumen.calendar.ui.model.materialSpinner
@@ -149,11 +150,11 @@ class EntryEdit(
             }, { periodSelectorShown = false }, date)
         var updated by remember { mutableStateOf(false) }
         val textStart = (if (date.isPeriodic) "from " else "") +
-                date.getZoneDateTime(0).format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
+                date.getZoneDateTime(0).format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm"))
         val textPeriod: String = if (date.isPeriodic)
             "every " + date.period.data.toString() + " " + PeriodType(date.period.modifier).toString() +
                     if (date.isEndless) "" else
-                        " until " + date.getLastZoneDateTime().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                        " until " + date.getLastZoneDateTime().format(DateTimeFormatter.ofPattern("dd MMM yyyy"))
         else
             PeriodType(date.period.modifier).toString()
         Column(Modifier.padding(vertical = 4.dp)) {
@@ -196,9 +197,7 @@ class EntryEdit(
             }
             if (date.isPeriodic) {
                 for (epochDay in date.exceptionRules.listAll()) {
-                    val textException =
-                        "except " + ZonedDateTime.ofInstant(Instant.ofEpochSecond(epochDay * 86400), date.zoneId)
-                            .format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                    val textException = "except " + convertMillisToDate(epochDay * 86400000)
                     Row(modifier = Modifier.padding(horizontal = 40.dp)) {
                         Text(
                             modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp)
@@ -223,7 +222,7 @@ class EntryEdit(
                 }
                 Row(modifier = Modifier.clickable {
                     dateTimePicker.datePick({}, {
-                        date.addExceptions(ZonedDateTime.of(it.atStartOfDay(), date.getZoneDateTime(0).zone))
+                        date.addExceptions(it)
                         updatedDates += date
                         updated = !updated
                     })
