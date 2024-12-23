@@ -108,7 +108,6 @@ class DateTimePicker {
                 },
                 modifier = Modifier
                     .fillMaxWidth().padding(8.dp)
-                    .height(64.dp)
             )
 
             if (showDatePicker) {

@@ -72,16 +72,16 @@ class EntryEdit(
             }) {
                 Text(
                     modifier = Modifier.align(Alignment.CenterStart)
-                        .padding(horizontal = 44.dp, vertical = 4.dp),
+                        .padding(horizontal = 44.dp, vertical = 16.dp),
                     text = "Add tag...",
-                    style = MaterialTheme.typography.titleLarge
+                    style = MaterialTheme.typography.bodyLarge
                 )
             }
             HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
             for (date in dates)
                 drawDate(date)
-            Box(Modifier.fillMaxWidth()/*.padding(top = 8.dp)*/.clickable {
-                dateTimePicker.dateTimePick({ /* todo maybe toast */ }, {
+            Box(Modifier.defaultMinSize(minHeight = 52.dp).fillMaxWidth()/*.padding(top = 8.dp)*/.clickable {
+                dateTimePicker.dateTimePick({}, {
                     dates += Date(
                         dbManager,
                         entry,
@@ -95,9 +95,9 @@ class EntryEdit(
             }) {
                 Text(
                     modifier = Modifier.align(Alignment.CenterStart)
-                        .padding(horizontal = 44.dp, vertical = 4.dp),
+                        .padding(horizontal = 44.dp, vertical = 16.dp),
                     text = "Add date...",
-                    style = MaterialTheme.typography.titleLarge
+                    style = MaterialTheme.typography.bodyLarge
                 )
             }
             /*HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
@@ -129,7 +129,7 @@ class EntryEdit(
             }*/
             HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
             OutlinedTextField(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp).padding(bottom = 12.dp),
+                modifier = Modifier.defaultMinSize(minHeight = 52.dp).fillMaxWidth().padding(horizontal = 12.dp).padding(bottom = 12.dp),
                 value = contents, onValueChange = {
                     contents = it
                 },
@@ -159,7 +159,7 @@ class EntryEdit(
             PeriodType(date.period.modifier).toString()
         Column(Modifier.padding(vertical = 4.dp)) {
             updated// fixme this is hack...
-            Row(modifier = Modifier.clickable {
+            Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp).clickable {
                 dateTimePicker.dateTimePick({}, {
                     // fixme probably cannot correctly change time...
                     date.setRange(startOfDayStart = ZonedDateTime.of(it, date.zoneId))
@@ -172,10 +172,10 @@ class EntryEdit(
                     Modifier.align(Alignment.CenterVertically).padding(8.dp)
                 )
                 Text(
-                    modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp)
+                    modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp, vertical = 8.dp)
                         .weight(1f),
                     text = textStart,
-                    style = MaterialTheme.typography.titleLarge
+                    style = MaterialTheme.typography.bodyLarge
                 )
                 IconButton(
                     modifier = Modifier.align(Alignment.CenterVertically),
@@ -185,25 +185,25 @@ class EntryEdit(
                     },
                     content = { Icon(Icons.Filled.Clear, contentDescription = null) })
             }
-            Row(modifier = Modifier.clickable {
+            Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp).clickable {
                 periodSelectorShown = true
             }.padding(horizontal = 40.dp)) {
                 Text(
-                    modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp)
+                    modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp, vertical = 8.dp)
                         .weight(1f),
                     text = textPeriod,
-                    style = MaterialTheme.typography.titleLarge
+                    style = MaterialTheme.typography.bodyLarge
                 )
             }
             if (date.isPeriodic) {
                 for (epochDay in date.exceptionRules.listAll()) {
                     val textException = "except " + convertMillisToDate(epochDay * 86400000)
-                    Row(modifier = Modifier.padding(horizontal = 40.dp)) {
+                    Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp).padding(horizontal = 40.dp)) {
                         Text(
                             modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp)
                                 .weight(1f),
                             text = textException,
-                            style = MaterialTheme.typography.titleLarge
+                            style = MaterialTheme.typography.bodyLarge
                         )
                         IconButton(
                             modifier = Modifier.align(Alignment.CenterVertically),
@@ -220,7 +220,7 @@ class EntryEdit(
                             content = { Icon(Icons.Filled.Clear, contentDescription = null) })
                     }
                 }
-                Row(modifier = Modifier.clickable {
+                Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp).clickable {
                     dateTimePicker.datePick({}, {
                         date.addExceptions(it)
                         updatedDates += date
@@ -228,10 +228,10 @@ class EntryEdit(
                     })
                 }.padding(horizontal = 40.dp)) {
                     Text(
-                        modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp)
+                        modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp, vertical = 8.dp)
                             .weight(1f),
                         text = "Add exception...",
-                        style = MaterialTheme.typography.titleLarge
+                        style = MaterialTheme.typography.bodyLarge
                     )
                 }
             }
@@ -263,7 +263,7 @@ class EntryEdit(
 
     @Composable
     fun periodSelectorDialog(onConfirm: () -> Unit, onDismiss: () -> Unit, date: Date) {
-        var periodCount by remember { mutableStateOf(date.period.data.toString()) }
+        var periodCount by remember { mutableStateOf(if (date.period.modifier == Period.ONCE) "1" else date.period.data.toString()) }
         var selectedPeriod by remember { mutableStateOf(PeriodType(date.period.modifier)) }
         var selectedMillis by
         remember {
@@ -356,6 +356,7 @@ class EntryEdit(
                         drawWeekdayButton(satSelected, "Sat")
                         drawWeekdayButton(sunSelected, "Sun")
                     }*/
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp).padding(top = 8.dp))
                     //end variant selection
                     //endless radiobutton
                     Row(
@@ -373,9 +374,9 @@ class EntryEdit(
                         Text(
                             "Endless",
                             Modifier.padding(vertical = 4.dp, horizontal = 16.dp).align(Alignment.CenterVertically),
-                            style = MaterialTheme.typography.titleLarge,
+                            style = MaterialTheme.typography.bodyLarge,
                             color = if (selectedPeriod.id != Period.ONCE) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(
-                                alpha = .5F
+                                alpha = .4F
                             )
                         )
                     }
@@ -415,7 +416,7 @@ class EntryEdit(
                         )
                         OutlinedTextField(
                             enabled = selectedPeriod.id != Period.ONCE,
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                            modifier = Modifier.fillMaxWidth().padding(8.dp),
                             value = occurrencesCount,
                             onValueChange = {
                                 endVariantSelectedOption = DateSequenceEndVariant.OCCURRENCES
@@ -488,7 +489,7 @@ class EntryEdit(
 data class PeriodType(val id: Char) {
     override fun toString(): String {
         return when (id) {
-            Period.ONCE -> "once"
+            Period.ONCE -> "ounce"
             Period.DAY -> "day"
             Period.WEEK -> "week"
             Period.WEEKDAY -> "weekday"

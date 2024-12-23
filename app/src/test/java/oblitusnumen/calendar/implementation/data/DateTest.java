@@ -140,7 +140,7 @@ public class DateTest extends TestCase {
     public void testFixExceptionList() {
         Date date = new Date(null, 0, 0, "", 0, 0, 0, 80,
                 new Period(Period.DAY, 1).toString(), "UTC", "").fixEnd();
-        date.addExceptions(date.getZoneDateTime(1), date.getZoneDateTime(100));
+        date.addExceptions(date.getZoneDateTime(1).toLocalDate(), date.getZoneDateTime(100).toLocalDate());
         assertEquals(80, date.getTimesRepeat());
         date.fixExceptionList();
         assertEquals("1_79", date.getExceptionRules().toString());
@@ -156,15 +156,15 @@ public class DateTest extends TestCase {
         int numberOfDated = 50;
         Date date = new Date(null, 0, 0, "", 0, 0, 0, numberOfDated,
                 new Period(Period.WEEK, 1).toString(), "UTC", "");
-        date.addExceptions(date.getZoneDateTime(5), date.getZoneDateTime(23));
+        date.addExceptions(date.getZoneDateTime(5).toLocalDate(), date.getZoneDateTime(23).toLocalDate());
         assertEquals(50, date.getTimesRepeat());
         assertEquals("35_161", date.getExceptionRules().toString());
-        date.addExceptions(date.getZoneDateTime(20), date.getZoneDateTime(23));
+        date.addExceptions(date.getZoneDateTime(20).toLocalDate(), date.getZoneDateTime(23).toLocalDate());
         assertEquals(50, date.getTimesRepeat());
         assertEquals("35_161", date.getExceptionRules().toString());
         date = new Date(null, 0, 0, "", 0, 0, 0, numberOfDated,
                 new Period(Period.MONTH, 1).toString(), "UTC", "");
-        date.addExceptions(date.getZoneDateTime(3), date.getZoneDateTime(12));
+        date.addExceptions(date.getZoneDateTime(3).toLocalDate(), date.getZoneDateTime(12).toLocalDate());
         assertEquals("90_365", date.getExceptionRules().toString());
     }
 
@@ -172,7 +172,7 @@ public class DateTest extends TestCase {
         int numberOfDated = 50;
         Date date = new Date(null, 0, 0, "", 0, 0, 0, numberOfDated,
                 new Period(Period.WEEK, 1).toString(), "UTC", "").fixEnd();
-        date.addExceptions(date.getZoneDateTime(0), date.getZoneDateTime(50));
+        date.addExceptions(date.getZoneDateTime(0).toLocalDate(), date.getZoneDateTime(50).toLocalDate());
         date.fixDateRange();
         date.fixExceptionList();
         assertEquals(0, date.getTimesRepeat());
@@ -180,9 +180,9 @@ public class DateTest extends TestCase {
         assertEquals("", date.getExceptionRules().toString());
         date = new Date(null, 0, 0, "", 0, 0, 0, numberOfDated,
                 new Period(Period.WEEK, 1).toString(), "UTC", "").fixEnd();
-        date.addExceptions(date.getZoneDateTime(0), date.getZoneDateTime(4));
-        date.addExceptions(date.getZoneDateTime(40), date.getZoneDateTime(49));
-        date.addExceptions(date.getZoneDateTime(21), date.getZoneDateTime(24));
+        date.addExceptions(date.getZoneDateTime(0).toLocalDate(), date.getZoneDateTime(4).toLocalDate());
+        date.addExceptions(date.getZoneDateTime(40).toLocalDate(), date.getZoneDateTime(49).toLocalDate());
+        date.addExceptions(date.getZoneDateTime(21).toLocalDate(), date.getZoneDateTime(24).toLocalDate());
         assertEquals(50, date.getTimesRepeat());
         date.fixDateRange();
         assertEquals(35, date.getTimesRepeat());
@@ -191,7 +191,7 @@ public class DateTest extends TestCase {
         assertFalse(date.isEmpty());
         date.fixExceptionList();
         assertEquals("147_168", date.getExceptionRules().toString());
-        date.addExceptions(date.getZoneDateTime(0), date.getZoneDateTime(34));
+        date.addExceptions(date.getZoneDateTime(0).toLocalDate(), date.getZoneDateTime(34).toLocalDate());
         date.fixDateRange();
         assertTrue(date.isEmpty());
     }
