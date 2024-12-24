@@ -25,6 +25,7 @@ import androidx.navigation.compose.rememberNavController
 import oblitusnumen.calendar.MainActivity.Companion.PADDING
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.Entry
+import oblitusnumen.calendar.implementation.notifications.NotificationBroadcastReceiver
 import oblitusnumen.calendar.ui.model.navigation.NavRoutes
 import oblitusnumen.calendar.ui.model.screen.DateScreen
 import oblitusnumen.calendar.ui.model.screen.EntryEdit
@@ -33,6 +34,7 @@ import oblitusnumen.calendar.ui.model.tab.EntriesTab
 import oblitusnumen.calendar.ui.model.tab.TagsTab
 import oblitusnumen.calendar.ui.theme.CalendarTheme
 import java.time.LocalDate
+import java.time.ZonedDateTime
 
 class MainActivity : ComponentActivity() {
     private var calendarViewModel: CalendarViewModel? = null
@@ -44,6 +46,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        NotificationBroadcastReceiver.createNotificationChannels(this)
         setContent {
             CalendarTheme {
                 calendarViewModel = viewModel { CalendarViewModel(DbManager(this@MainActivity)) }
@@ -149,6 +152,7 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     fun drawBottomBar(navController: NavController) {
+        val tm = this
         NavigationBar {
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentDestination = navBackStackEntry?.destination
@@ -158,6 +162,17 @@ class MainActivity : ComponentActivity() {
                     label = { Text(topLevelRoute.name) },
                     selected = currentDestination?.route == topLevelRoute.route.route,
                     onClick = {
+                        /*if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                            val alarmManager = ContextCompat.getSystemService(context, AlarmManager::class.java)
+                            if (alarmManager?.canScheduleExactAlarms() == false) {
+                                Intent().also { intent ->
+                                    intent.action = Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM
+                                    context.startActivity(intent)
+                                }
+                            }
+                        }*/
+                        NotificationBroadcastReceiver.scheduleNotification(tm, "my awesome notif",
+                            "msg??", ZonedDateTime.now().plusSeconds(10).toEpochSecond() * 1000)
                         navController.navigate(topLevelRoute.route.route) {
                             // Pop up to the start destination of the graph to
                             // avoid building up a large stack of destinations

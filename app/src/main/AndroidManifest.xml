@@ -17,7 +17,7 @@
             android:theme="@style/Theme.Calendar"
             tools:targetApi="31">
         <receiver
-                android:name=".implementation.notifications.NotificationBroadcastReciever"
+                android:name=".implementation.notifications.NotificationBroadcastReceiver"
                 android:enabled="true"
                 android:exported="true">
         </receiver>
