@@ -213,12 +213,7 @@ class EntryEdit(
                             modifier = Modifier.align(Alignment.CenterVertically),
                             onClick = {
                                 updatedDates += date
-                                date.removeExceptions(
-                                    ZonedDateTime.ofInstant(
-                                        Instant.ofEpochSecond(epochDay * 86400),
-                                        date.zoneId
-                                    )
-                                )
+                                date.removeExceptions(LocalDate.ofEpochDay(epochDay))
                                 updated = !updated
                             },
                             content = { Icon(Icons.Filled.Clear, contentDescription = null) })

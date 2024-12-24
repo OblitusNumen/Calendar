@@ -186,7 +186,7 @@ class Date : BaseColumns {
 
     fun anyInRange(start: Long, finish: Long): ZonedDateTime? {
         val zonedDateTime = getZonedDateTimeInRange(start, finish)
-        if (zonedDateTime == null || exceptionRules.containsDate(zonedDateTime.toEpochDays())) return null // FIXME: should not be checked using zoned DateTime
+        if (zonedDateTime == null || exceptionRules.containsDate(zonedDateTime.toEpochDays())) return null
         return zonedDateTime
     }
 
@@ -213,7 +213,7 @@ class Date : BaseColumns {
     }
 
     private fun ZonedDateTime.toEpochDays(): Long {
-        return toEpochSecond() / 86400
+        return toLocalDate().toEpochDay()
     }
 
     private fun verifyParams(start: Long = this.start, timesRepeat: Long = this.timesRepeat, period: Period = this.period) {
@@ -246,17 +246,12 @@ class Date : BaseColumns {
         //todo maybe shrink exceptions?
     }
 
-    @JvmOverloads
     fun addExceptions(dateStart: LocalDate, dateEnd: LocalDate = dateStart) {
         exceptionRules.addDates(dateStart.toEpochDay(), dateEnd.toEpochDay())
     }
 
-    @JvmOverloads
-    fun removeExceptions(startOfDayStart: ZonedDateTime, startOfDayEnd: ZonedDateTime = startOfDayStart) {
-        exceptionRules.removeDates(
-            startOfDayStart.toEpochDays(),
-            startOfDayEnd.toEpochDays()
-        )
+    fun removeExceptions(dateStart: LocalDate, dateEnd: LocalDate = dateStart) {
+        exceptionRules.removeDates(dateStart.toEpochDay(), dateEnd.toEpochDay())
     }
 
     fun setRange(startOfDayStart: ZonedDateTime? = null, startOfDayEnd: ZonedDateTime? = null) {
@@ -268,13 +263,13 @@ class Date : BaseColumns {
                 this.start = start
                 makeEndless()
             } else {
-                val end = getZoneDateTime(timesRepeat - 1)
+                val end = getLastZoneDateTime()
                 this.start = start
                 setRange(startOfDayEnd = end)
             }
         }
         if (startOfDayEnd != null) {
-            val end = startOfDayEnd.plusDays(1).toEpochSecond()
+            val end = startOfDayEnd.plusDays(1).toEpochSecond() - 1
             var expectedCount = (end - start) / period.secondsApproximation() + 1
             verifyParams(timesRepeat = expectedCount)
             while (getZoneDateTime(expectedCount) < startOfDayEnd.plusDays(1))
@@ -297,7 +292,7 @@ class Date : BaseColumns {
             exceptionRules = ExceptionRules()
         exceptionRules.trimToFitRange(
             getZoneDateTime(0).toEpochDays(),
-            getZoneDateTime(timesRepeat - 1).toEpochDays()
+            getLastZoneDateTime().toEpochDays()
         )
     }
 
@@ -320,9 +315,9 @@ class Date : BaseColumns {
 
     fun fixDateRange() {
         val epoch0 = ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, zoneId)
-        if (exceptionRules.containsDate(getZoneDateTime(timesRepeat - 1).toEpochDays())) {
-            val v = exceptionRules.getRangeForDate(getZoneDateTime(timesRepeat - 1).toEpochDays())!!
-            val newEnd = period.getTime(epoch0.plusDays(v.start), -1)
+        if (exceptionRules.containsDate(getLastZoneDateTime().toEpochDays())) {
+            val endExceptionRange = exceptionRules.getRangeForDate(getLastZoneDateTime().toEpochDays())!!
+            val newEnd = epoch0.plusDays(endExceptionRange.start - 1)
             if (newEnd.toEpochSecond() < start) {
                 timesRepeat = 0
                 end = start
@@ -331,13 +326,13 @@ class Date : BaseColumns {
             }
         }
         if (exceptionRules.containsDate(getZoneDateTime(0).toEpochDays())) {
-            val v = exceptionRules.getRangeForDate(getZoneDateTime(0).toEpochDays())!!
+            val startExceptionRange = exceptionRules.getRangeForDate(getZoneDateTime(0).toEpochDays())!!
             if (timesRepeat != 0L) {
-                val newStartIdx = getNextClosestIdxRaw(epoch0.plusDays(v.end + 1).toEpochSecond())
+                val newStartIdx = getNextClosestIdxRaw(epoch0.plusDays(startExceptionRange.end + 1).toEpochSecond())
                 if (newStartIdx != -1L)
                     setRange(startOfDayStart = getZoneDateTime(newStartIdx))
                 else
-                    setRange(startOfDayStart = getZoneDateTime(timesRepeat - 1))
+                    setRange(startOfDayStart = getLastZoneDateTime())
             }
         }
     }
