@@ -47,75 +47,25 @@ class DbManager(context: Context) :
 
     fun getDates(start: Long, end: Long): List<Date> {
         require(end >= start) { "end must be more than start, got start=$start, end=$end" }
-        val dates: MutableList<Date> = ArrayList()
         readableDatabase.rawQuery(
             "SELECT * FROM ${Date.TABLE_NAME} WHERE " +
                     "${Date.COLUMN_NAME_TIME_START} < ? AND ${Date.COLUMN_NAME_TIME_ENDS} >= ?",
             arrayOf(end.toString(), start.toString())
         ).use { cursor ->
-            if (cursor != null) {
-                val idIdx: Int = cursor.getColumnIndex(Date.COLUMN_NAME_ID)
-                val entryIdx: Int = cursor.getColumnIndex(Date.COLUMN_NAME_ENTRY_ID)
-                val descIdx: Int = cursor.getColumnIndex(Date.COLUMN_NAME_DESC)
-                val timeStartIdx: Int = cursor.getColumnIndex(Date.COLUMN_NAME_TIME_START)
-                val durationIdx: Int = cursor.getColumnIndex(Date.COLUMN_NAME_DURATION)
-                val timeEndsIdx: Int = cursor.getColumnIndex(Date.COLUMN_NAME_TIME_ENDS)
-                val timesRepeatsIdx: Int = cursor.getColumnIndex(Date.COLUMN_NAME_TIMES_REPEATS)
-                val periodIdx: Int = cursor.getColumnIndex(Date.COLUMN_NAME_PERIOD)
-                val timeZoneIdx: Int = cursor.getColumnIndex(Date.COLUMN_NAME_TIME_ZONE)
-                val removedIdx: Int = cursor.getColumnIndex(Date.COLUMN_NAME_REMOVED)
-                while (cursor.moveToNext())
-                    dates.add(
-                        Date(
-                            this,
-                            cursor.getInt(idIdx),
-                            cursor.getInt(entryIdx),
-                            cursor.getString(descIdx),
-                            cursor.getLong(timeStartIdx),
-                            cursor.getLong(durationIdx),
-                            cursor.getLong(timeEndsIdx),
-                            cursor.getLong(timesRepeatsIdx),
-                            cursor.getString(periodIdx),
-                            cursor.getString(timeZoneIdx),
-                            cursor.getString(removedIdx)
-                        )
-                    )
-            }
+            return Date.cursorToList(this, cursor)
         }
-        return dates
     }
 
     fun getAllTags(): List<Tag> {
-        val tags: MutableList<Tag> = ArrayList()
         readableDatabase.rawQuery("SELECT * FROM ${Tag.TABLE_NAME}", arrayOf()).use { cursor ->
-            if (cursor != null) {
-                val idxId = cursor.getColumnIndex(Tag.COLUMN_NAME_ID)
-                val idxName = cursor.getColumnIndex(Tag.COLUMN_NAME_NAME)
-                val idxColor = cursor.getColumnIndex(Tag.COLUMN_NAME_COLOR)
-                while (cursor.moveToNext())
-                    tags.add(
-                        Tag(
-                            this, cursor.getInt(idxId),
-                            cursor.getString(idxName),
-                            cursor.getInt(idxColor)
-                        )
-                    )
-            }
+            return Tag.cursorToList(this, cursor)
         }
-        return tags
     }
 
     fun getEntries(): List<Entry> {
-        val entries: MutableList<Entry> = ArrayList()
         readableDatabase.rawQuery("SELECT * FROM ${Entry.TABLE_NAME}", arrayOf()).use { cursor ->
-            if (cursor != null) {
-                val idxId = cursor.getColumnIndex(Entry.COLUMN_NAME_ID)
-                val idxName = cursor.getColumnIndex(Entry.COLUMN_NAME_NAME)
-                while (cursor.moveToNext())
-                    entries.add(Entry(this, cursor.getInt(idxId), cursor.getString(idxName)))
-            }
+            return Entry.cursorToList(this, cursor)
         }
-        return entries
     }
 
     companion object {
@@ -149,6 +99,7 @@ class DbManager(context: Context) :
         private const val SQL_CREATE_NOTIFICATIONS =
             "CREATE TABLE IF NOT EXISTS ${Notification.TABLE_NAME} (" +
                     "${Notification.COLUMN_NAME_ENTRY_ID} INTEGER NOT NULL," +
-                    "${Notification.COLUMN_NAME_TIME_OFFSET} BIGINT NOT NULL);"
+                    "${Notification.COLUMN_NAME_TIME_OFFSET} BIGINT NOT NULL," +
+                    "${Notification.COLUMN_NAME_SOUND} INT NOT NULL);"
     }
 }

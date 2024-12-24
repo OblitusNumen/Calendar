@@ -9,6 +9,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
+import java.util.ArrayList
 import kotlin.math.min
 
 class Date : BaseColumns {
@@ -32,19 +33,6 @@ class Date : BaseColumns {
 
     val entry: Entry
         get() = byId(dbManager!!, entryId)!!
-
-    internal constructor(dbManager: DbManager, cursor: Cursor) : this(
-        dbManager, cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_ID)),
-        cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_ENTRY_ID)),
-        cursor.getString(cursor.getColumnIndex(COLUMN_NAME_DESC)),
-        cursor.getLong(cursor.getColumnIndex(COLUMN_NAME_TIME_START)),
-        cursor.getLong(cursor.getColumnIndex(COLUMN_NAME_DURATION)),
-        cursor.getLong(cursor.getColumnIndex(COLUMN_NAME_TIME_ENDS)),
-        cursor.getLong(cursor.getColumnIndex(COLUMN_NAME_TIMES_REPEATS)),
-        cursor.getString(cursor.getColumnIndex(COLUMN_NAME_PERIOD)),
-        cursor.getString(cursor.getColumnIndex(COLUMN_NAME_TIME_ZONE)),
-        cursor.getString(cursor.getColumnIndex(COLUMN_NAME_REMOVED))
-    )
 
     internal constructor(
         dbManager: DbManager?,
@@ -368,5 +356,39 @@ class Date : BaseColumns {
         const val COLUMN_NAME_REMOVED: String = "exceptionRules"
         const val END_ENDLESS_EXPECT: Long = 18014398509481984L //2^54
         const val END_ENDLESS_THRESHOLD: Long = 9007199254740992L //2^53
+
+        fun cursorToList(
+            dbManager: DbManager,
+            cursor: Cursor
+        ): MutableList<Date> {
+            val dates: MutableList<Date> = ArrayList()
+            val idIdx: Int = cursor.getColumnIndex(COLUMN_NAME_ID)
+            val entryIdx: Int = cursor.getColumnIndex(COLUMN_NAME_ENTRY_ID)
+            val descIdx: Int = cursor.getColumnIndex(COLUMN_NAME_DESC)
+            val timeStartIdx: Int = cursor.getColumnIndex(COLUMN_NAME_TIME_START)
+            val durationIdx: Int = cursor.getColumnIndex(COLUMN_NAME_DURATION)
+            val timeEndsIdx: Int = cursor.getColumnIndex(COLUMN_NAME_TIME_ENDS)
+            val timesRepeatsIdx: Int = cursor.getColumnIndex(COLUMN_NAME_TIMES_REPEATS)
+            val periodIdx: Int = cursor.getColumnIndex(COLUMN_NAME_PERIOD)
+            val timeZoneIdx: Int = cursor.getColumnIndex(COLUMN_NAME_TIME_ZONE)
+            val removedIdx: Int = cursor.getColumnIndex(COLUMN_NAME_REMOVED)
+            while (cursor.moveToNext())
+                dates.add(
+                    Date(
+                        dbManager,
+                        cursor.getInt(idIdx),
+                        cursor.getInt(entryIdx),
+                        cursor.getString(descIdx),
+                        cursor.getLong(timeStartIdx),
+                        cursor.getLong(durationIdx),
+                        cursor.getLong(timeEndsIdx),
+                        cursor.getLong(timesRepeatsIdx),
+                        cursor.getString(periodIdx),
+                        cursor.getString(timeZoneIdx),
+                        cursor.getString(removedIdx)
+                    )
+                )
+            return dates
+        }
     }
 }

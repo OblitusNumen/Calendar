@@ -1,6 +1,7 @@
 package oblitusnumen.calendar.implementation.data
 
 import android.content.ContentValues
+import android.database.Cursor
 import android.provider.BaseColumns
 import oblitusnumen.calendar.implementation.rmRecursively
 import java.io.File
@@ -35,7 +36,7 @@ class Entry : BaseColumns {
         }
     }
 
-    internal constructor(dbManager: DbManager, id: Int, name: String) {
+    private constructor(dbManager: DbManager, id: Int, name: String) {
         this.dbManager = dbManager
         this.id = id
         this.name = name
@@ -58,16 +59,12 @@ class Entry : BaseColumns {
     }
 
     fun getDates(): List<Date> {
-        val dates: MutableList<Date> = ArrayList()
         dbManager.readableDatabase.rawQuery(
             "SELECT * FROM ${Date.TABLE_NAME} WHERE ${Date.COLUMN_NAME_ENTRY_ID} = ?",
             arrayOf(id.toString())
         ).use { cursor ->
-            if (cursor != null)
-                while (cursor.moveToNext())
-                    dates.add(Date(dbManager, cursor))
+            return Date.cursorToList(dbManager, cursor)
         }
-        return dates
     }
 
     private val dir: File
@@ -97,28 +94,14 @@ class Entry : BaseColumns {
     }
 
     fun getTags(): List<Tag> {
-        val tags: MutableList<Tag> = ArrayList()
         dbManager.readableDatabase.rawQuery(
             "SELECT ${Tag.TABLE_NAME}.* FROM ${Tag.TABLE_NAME} JOIN ${EntryTagLinks.TABLE_NAME} " +
                     "ON ${Tag.TABLE_NAME}.${Tag.COLUMN_NAME_ID} = ${EntryTagLinks.TABLE_NAME}.${EntryTagLinks.COLUMN_NAME_TAG_ID} " +
                     "WHERE ${EntryTagLinks.TABLE_NAME}.${EntryTagLinks.COLUMN_NAME_ENTRY_ID} = ?",
             arrayOf(id.toString())
         ).use { cursor ->
-            if (cursor != null) {
-                val idxId = cursor.getColumnIndex(Tag.COLUMN_NAME_ID)
-                val idxName = cursor.getColumnIndex(Tag.COLUMN_NAME_NAME)
-                val idxColor = cursor.getColumnIndex(Tag.COLUMN_NAME_COLOR)
-                while (cursor.moveToNext())
-                    tags.add(
-                        Tag(
-                            dbManager, cursor.getInt(idxId),
-                            cursor.getString(idxName),
-                            cursor.getInt(idxColor)
-                        )
-                    )
-            }
+            return Tag.cursorToList(dbManager, cursor)
         }
-        return tags
     }
 
     fun set(name: String, tags: List<Tag>, dates: List<Date>, contents: String) {
@@ -186,11 +169,11 @@ class Entry : BaseColumns {
     }
 
     private fun addTag(tagId: Int) {
-        EntryTagLinks(dbManager, id, tagId).create()
+        EntryTagLinks.create(dbManager, id, tagId)
     }
 
     private fun rmTag(tagId: Int) {
-        EntryTagLinks(dbManager, id, tagId).delete()
+        EntryTagLinks.delete(dbManager, id, tagId)
     }
 
     companion object {
@@ -211,6 +194,18 @@ class Entry : BaseColumns {
                     cursor.getString(cursor.getColumnIndex(COLUMN_NAME_NAME))
                 ) else null
             }
+        }
+
+        fun cursorToList(
+            dbManager: DbManager,
+            cursor: Cursor
+        ): MutableList<Entry> {
+            val entries: MutableList<Entry> = ArrayList()
+            val idxId = cursor.getColumnIndex(COLUMN_NAME_ID)
+            val idxName = cursor.getColumnIndex(COLUMN_NAME_NAME)
+            while (cursor.moveToNext())
+                entries.add(Entry(dbManager, cursor.getInt(idxId), cursor.getString(idxName)))
+            return entries
         }
     }
 }

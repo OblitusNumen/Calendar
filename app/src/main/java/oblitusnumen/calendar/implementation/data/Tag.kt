@@ -1,26 +1,12 @@
 package oblitusnumen.calendar.implementation.data
 
 import android.content.ContentValues
+import android.database.Cursor
 import android.provider.BaseColumns
 
-class Tag : BaseColumns {
-    private val dbManager: DbManager
-    var id: Int = -1
+class Tag private constructor(private val dbManager: DbManager, var name: String, id: Int = -1, var color: Int = -1) : BaseColumns {
+    var id: Int = id
         private set
-    var name: String
-    var color: Int = -1
-
-    private constructor(dbManager: DbManager, name: String) {
-        this.dbManager = dbManager
-        this.name = name
-    }
-
-    internal constructor(dbManager: DbManager, id: Int, name: String, color: Int) {
-        this.dbManager = dbManager
-        this.id = id
-        this.name = name
-        this.color = color
-    }
 
     fun create() { //fixme may fail on UNIQUE violation
         val contentValues = ContentValues()
@@ -47,6 +33,7 @@ class Tag : BaseColumns {
         const val COLUMN_NAME_ID: String = "id"
         const val COLUMN_NAME_NAME: String = "name"
         const val COLUMN_NAME_COLOR: String = "color"
+
         fun getOrNew(dbManager: DbManager, name: String): Tag {
             dbManager.readableDatabase.rawQuery(
                 "SELECT * FROM $TABLE_NAME WHERE ${Entry.COLUMN_NAME_NAME} = ?",
@@ -54,12 +41,31 @@ class Tag : BaseColumns {
             ).use { cursor ->
                 return if (cursor.moveToFirst()) {
                     Tag(
-                        dbManager, cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_ID)),
-                        cursor.getString(cursor.getColumnIndex(COLUMN_NAME_NAME)),
+                        dbManager, cursor.getString(cursor.getColumnIndex(COLUMN_NAME_NAME)),
+                        cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_ID)),
                         cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_COLOR))
                     )
                 } else Tag(dbManager, name)
             }
+        }
+
+        fun cursorToList(
+            dbManager: DbManager,
+            cursor: Cursor
+        ): MutableList<Tag> {
+            val tags: MutableList<Tag> = ArrayList()
+            val idxId = cursor.getColumnIndex(COLUMN_NAME_ID)
+            val idxName = cursor.getColumnIndex(COLUMN_NAME_NAME)
+            val idxColor = cursor.getColumnIndex(COLUMN_NAME_COLOR)
+            while (cursor.moveToNext())
+                tags.add(
+                    Tag(
+                        dbManager, cursor.getString(idxName),
+                        cursor.getInt(idxId),
+                        cursor.getInt(idxColor)
+                    )
+                )
+            return tags
         }
     }
 }
