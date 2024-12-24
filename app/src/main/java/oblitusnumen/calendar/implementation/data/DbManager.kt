@@ -62,6 +62,12 @@ class DbManager(context: Context) :
         }
     }
 
+    fun getAllNotifications(): List<Notification> {
+        readableDatabase.rawQuery("SELECT * FROM ${Notification.TABLE_NAME}", arrayOf()).use { cursor ->
+            return Notification.cursorToList(this, cursor)
+        }
+    }
+
     fun getEntries(): List<Entry> {
         readableDatabase.rawQuery("SELECT * FROM ${Entry.TABLE_NAME}", arrayOf()).use { cursor ->
             return Entry.cursorToList(this, cursor)

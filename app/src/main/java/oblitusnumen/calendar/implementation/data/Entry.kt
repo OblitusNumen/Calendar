@@ -58,6 +58,13 @@ class Entry : BaseColumns {
         }
     }
 
+    fun getNotifications(): List<Notification> {
+        dbManager.readableDatabase.rawQuery("SELECT * FROM ${Notification.TABLE_NAME} " +
+                "WHERE ${Notification.COLUMN_NAME_ENTRY_ID} = ?", arrayOf(id.toString())).use { cursor ->
+            return Notification.cursorToList(dbManager, cursor)
+        }
+    }
+
     fun getDates(): List<Date> {
         dbManager.readableDatabase.rawQuery(
             "SELECT * FROM ${Date.TABLE_NAME} WHERE ${Date.COLUMN_NAME_ENTRY_ID} = ?",

@@ -1,20 +1,49 @@
-package oblitusnumen.calendar.implementation.data;
+package oblitusnumen.calendar.implementation.data
+
+import android.content.ContentValues
+import android.database.Cursor
+import android.provider.BaseColumns
+import java.util.ArrayList
 
 
-import android.content.ContentValues;
-import android.provider.BaseColumns;
+class Notification private constructor(
+    private val dbManager: DbManager,
+    var entryId: Int,
+    var offset: Long,
+    var sound: Boolean = true
+) : BaseColumns {
 
-public final class Notification implements BaseColumns {
-    public static final String TABLE_NAME = "notifications";
-    public static final String COLUMN_NAME_ENTRY_ID = "entryId";
-    public static final String COLUMN_NAME_TIME_OFFSET = "timeOffset";
-    private final DbManager dbManager;
-    int entryId;
-    long offset;
+    fun create() { //fixme may fail on UNIQUE violation// createOrUpdate
+        val contentValues = ContentValues()
+        contentValues.put(COLUMN_NAME_ENTRY_ID, entryId)
+        contentValues.put(COLUMN_NAME_TIME_OFFSET, offset)
+        contentValues.put(COLUMN_NAME_SOUND, if (sound) 1 else 0)
+        dbManager.writableDatabase.insert(TABLE_NAME, null, contentValues).toInt()
+    }
 
-    Notification(DbManager dbManager, ContentValues contentValues) {
-        this.dbManager = dbManager;
-        entryId = (int) contentValues.get(COLUMN_NAME_ENTRY_ID);
-        offset = (long) contentValues.get(COLUMN_NAME_TIME_OFFSET);
+    companion object {
+        const val TABLE_NAME: String = "notifications"
+        const val COLUMN_NAME_ENTRY_ID: String = "entryId"
+        const val COLUMN_NAME_TIME_OFFSET: String = "timeOffset"
+        const val COLUMN_NAME_SOUND: String = "sound"
+
+        fun cursorToList(
+            dbManager: DbManager,
+            cursor: Cursor
+        ): MutableList<Notification> {
+            val notifications: MutableList<Notification> = ArrayList()
+            val idxEntryId = cursor.getColumnIndex(COLUMN_NAME_ENTRY_ID)
+            val idxOffset = cursor.getColumnIndex(COLUMN_NAME_TIME_OFFSET)
+            val idxSound = cursor.getColumnIndex(COLUMN_NAME_SOUND)
+            while (cursor.moveToNext())
+                notifications.add(
+                    Notification(
+                        dbManager, cursor.getInt(idxEntryId),
+                        cursor.getLong(idxOffset),
+                        cursor.getInt(idxSound) != 0
+                    )
+                )
+            return notifications
+        }
     }
 }
