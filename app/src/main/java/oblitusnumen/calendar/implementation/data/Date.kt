@@ -138,6 +138,31 @@ class Date : BaseColumns {
         return getZoneDateTime(0)
     }
 
+    fun getNext(start: Long): ZonedDateTime? {
+        var date: ZonedDateTime? = null
+        var curStart = start
+        while (date == null) {
+            val nextClosestRaw = getNextClosestRaw(curStart) ?: break
+            val epochSecond = nextClosestRaw.toEpochSecond()
+            if (exceptionRules.getRangeForDate(nextClosestRaw.toEpochDays()) == null) date = nextClosestRaw
+            curStart = epochSecond + 1
+        }
+        return date
+    }
+
+    fun getAllInRange(start: Long, end: Long): List<ZonedDateTime> {
+        val dates: MutableList<ZonedDateTime> = ArrayList<ZonedDateTime>()
+        var curStart = start
+        while (true) {
+            val nextClosestRaw = getNextClosestRaw(curStart) ?: break
+            val epochSecond = nextClosestRaw.toEpochSecond()
+            if (epochSecond >= end) break
+            if (exceptionRules.getRangeForDate(nextClosestRaw.toEpochDays()) == null) dates.add(nextClosestRaw)
+            curStart = epochSecond + 1
+        }
+        return dates
+    }
+
     fun getZonedDateTimeIndex(start: Long, finish: Long): Long { //any(?) in range. still used by tests
         if (finish <= this.start) return -1
         if (this.end == this.start) return if (this.start >= start) 0 else -1
@@ -298,6 +323,26 @@ class Date : BaseColumns {
             getZoneDateTime(0).toEpochDays(),
             getLastZoneDateTime().toEpochDays()
         )
+    }
+
+    private fun getNextClosestRaw(time: Long): ZonedDateTime? {
+        if (time > end || timesRepeat <= 0)
+            return null
+        if (time <= start)
+            return getFirstZoneDateTime()
+        val period = (end - start) / (timesRepeat - 1)
+        val idx = min((timesRepeat - 1), ((time - start) / period))
+        val zoneDateTime = getZoneDateTime(idx)
+        val evt = zoneDateTime.toEpochSecond()
+        if (evt < time) {
+            val zoneDateTimeP1 = getZoneDateTime(idx + 1)
+            val evtNext = zoneDateTimeP1.toEpochSecond()
+            return if (evtNext >= time && idx < timesRepeat) zoneDateTimeP1 else null
+        }
+        if (idx == 0L) return getFirstZoneDateTime()
+        val zoneDateTimeM1 = getZoneDateTime(idx - 1)
+        val evtPrev = zoneDateTimeM1.toEpochSecond()
+        return if (evtPrev < time) zoneDateTime else zoneDateTimeM1
     }
 
     private fun getNextClosestIdxRaw(time: Long): Long {

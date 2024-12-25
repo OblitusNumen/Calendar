@@ -3,10 +3,13 @@ package oblitusnumen.calendar.implementation.data
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
+import oblitusnumen.calendar.implementation.notifications.PendingNotification
 import oblitusnumen.calendar.implementation.zonedDateTime
 import java.io.File
 import java.time.LocalDate
 import java.time.ZonedDateTime
+import java.util.*
+import kotlin.collections.ArrayList
 
 class DbManager(context: Context) :
     SQLiteOpenHelper(context, DB_NAME, null, DATABASE_VERSION) {
@@ -15,6 +18,50 @@ class DbManager(context: Context) :
     init {
         if (!filesDir.exists() && !filesDir.mkdirs())
             throw RuntimeException("could not create directory for data: $filesDir")
+    }
+
+    fun getNextNotificationTime(timeStamp: Long): Long? {
+        var notificationTime: Long? = null
+        for (notification in getAllNotifications()) {
+            val fromO = notification.offset + timeStamp
+            val entry = getEntryById(notification.entryId)
+            for (date in entry.getDates()) {
+                val nextTime = date.getNext(fromO)
+                if (nextTime != null) {
+                    val nnt = nextTime.toEpochSecond() - notification.offset
+                    if (notificationTime == null || notificationTime > nnt) notificationTime = nnt
+                }
+            }
+        }
+        return notificationTime
+    }
+
+    fun getPendingNotificationsInRange(from: Long, to: Long): List<PendingNotification> {
+        val notifications: MutableList<PendingNotification> = ArrayList()
+        for (notification in getAllNotifications()) {
+            val fromO = notification.offset + from
+            val toO = notification.offset + to
+            val entry = getEntryById(notification.entryId)
+            for (date in entry.getDates()) {
+                for (dateTime in date.getAllInRange(fromO, toO)) {
+                    notifications.add(PendingNotification(date.id, notification.offset, dateTime.toEpochSecond()))
+                }
+            }
+        }
+        dedupeAndSort(notifications)
+        return notifications
+    }
+
+    private fun dedupeAndSort(notifications: MutableList<PendingNotification>) {
+        Objects.hash()
+        val dedupeMap: MutableMap<Int, PendingNotification> = HashMap<Int, PendingNotification>()
+        for (notification in notifications) {
+            val get = dedupeMap[notification.dateHash()]
+            if (get == null || get < notification) dedupeMap[notification.dateHash()] = notification
+        }
+        notifications.clear()
+        notifications.addAll(dedupeMap.values)
+        notifications.sort()
     }
 
     fun getDates(start: ZonedDateTime, end: ZonedDateTime): List<Date> {
@@ -65,6 +112,12 @@ class DbManager(context: Context) :
     fun getAllNotifications(): List<Notification> {
         readableDatabase.rawQuery("SELECT * FROM ${Notification.TABLE_NAME}", arrayOf()).use { cursor ->
             return Notification.cursorToList(this, cursor)
+        }
+    }
+
+    fun getEntryById(id: Int): Entry {
+        readableDatabase.rawQuery("SELECT * FROM ${Entry.TABLE_NAME} WHERE ${Entry.COLUMN_NAME_ID} = ?", arrayOf(id.toString())).use { cursor ->
+            return Entry.cursorToList(this, cursor)[0]
         }
     }
 
