@@ -124,8 +124,12 @@ class Date : BaseColumns {
         return getZoneDateTime(idx).withZoneSameInstant(zoneId)
     }
 
-    fun getZoneDateTime(idx: Long): ZonedDateTime {
+    private fun getZoneDateTime(idx: Long): ZonedDateTime {
         return period.getTime(Instant.ofEpochSecond(start).atZone(zoneId), idx)
+    }
+
+    fun getFirstZoneDateTime(): ZonedDateTime {
+        return getZoneDateTime(0)
     }
 
     fun getLastZoneDateTime(): ZonedDateTime {
