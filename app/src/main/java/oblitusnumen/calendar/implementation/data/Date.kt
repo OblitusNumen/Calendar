@@ -4,7 +4,6 @@ import android.content.ContentValues
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.provider.BaseColumns
-import oblitusnumen.calendar.implementation.data.Entry.Companion.byId
 import org.jetbrains.annotations.TestOnly
 import java.time.Instant
 import java.time.LocalDate
@@ -15,7 +14,7 @@ import kotlin.math.min
 
 class Date : BaseColumns {
     private val dbManager: DbManager?
-    var id: Int = -1
+    var id: Int? = null
         private set
     private var entryId: Int
     private var desc: String
@@ -33,7 +32,7 @@ class Date : BaseColumns {
         private set
 
     val entry: Entry
-        get() = byId(dbManager!!, entryId)!!
+        get() = dbManager!!.getEntryById(entryId)!!
 
     internal constructor(
         dbManager: DbManager?,
@@ -71,7 +70,7 @@ class Date : BaseColumns {
         period: Period
     ) {
         this.dbManager = dbManager
-        this.entryId = entry.id
+        this.entryId = entry.id!!
         this.desc = desc
         this.start = time.toEpochSecond()
         this.duration = duration
@@ -83,26 +82,34 @@ class Date : BaseColumns {
 
     fun createOrUpdate() {
         if (!isEmpty) {
-            val contentValues = ContentValues()
-            contentValues.put(COLUMN_NAME_ID, null as Int?)
-            contentValues.put(COLUMN_NAME_ENTRY_ID, entryId)
-            contentValues.put(COLUMN_NAME_DESC, desc)
-            contentValues.put(COLUMN_NAME_TIME_START, start)
-            contentValues.put(COLUMN_NAME_DURATION, duration)
-            contentValues.put(COLUMN_NAME_TIME_ENDS, end)
-            contentValues.put(COLUMN_NAME_TIMES_REPEATS, timesRepeat)
-            contentValues.put(COLUMN_NAME_PERIOD, period.toString())
-            contentValues.put(COLUMN_NAME_TIME_ZONE, zoneId.toString())
-            contentValues.put(COLUMN_NAME_REMOVED, exceptionRules.toString())
-            id = dbManager!!.writableDatabase.insertWithOnConflict(
-                TABLE_NAME,
-                null,
-                contentValues,
-                SQLiteDatabase.CONFLICT_REPLACE //todo will this really work?.. should be zero conflicts as id is null
-            ).toInt()
+            if (id == null) {
+                create()
+            } else {
+                update()
+            }
         } else {
             delete()
         }
+    }
+
+    fun create() {
+        val contentValues = getContentValues()
+        contentValues.put(COLUMN_NAME_ID, null as Int?)
+        id = dbManager!!.writableDatabase.insertWithOnConflict(
+            TABLE_NAME,
+            null,
+            contentValues,
+            SQLiteDatabase.CONFLICT_REPLACE
+        ).toInt()
+    }
+
+    fun update() {
+        dbManager!!.writableDatabase.update(
+            TABLE_NAME,
+            getContentValues(),
+            "$COLUMN_NAME_ID = ?",
+            arrayOf(id.toString())
+        )
     }
 
     fun delete() { //fixme delete cascade?
@@ -110,6 +117,21 @@ class Date : BaseColumns {
             "DELETE FROM $TABLE_NAME WHERE $COLUMN_NAME_ID = ?",
             arrayOf(id.toString())
         )
+        id = null
+    }
+
+    private fun getContentValues(): ContentValues {
+        val contentValues = ContentValues()
+        contentValues.put(COLUMN_NAME_ENTRY_ID, entryId)
+        contentValues.put(COLUMN_NAME_DESC, desc)
+        contentValues.put(COLUMN_NAME_TIME_START, start)
+        contentValues.put(COLUMN_NAME_DURATION, duration)
+        contentValues.put(COLUMN_NAME_TIME_ENDS, end)
+        contentValues.put(COLUMN_NAME_TIMES_REPEATS, timesRepeat)
+        contentValues.put(COLUMN_NAME_PERIOD, period.toString())
+        contentValues.put(COLUMN_NAME_TIME_ZONE, zoneId.toString())
+        contentValues.put(COLUMN_NAME_REMOVED, exceptionRules.toString())
+        return contentValues
     }
 
     val isPeriodic: Boolean
@@ -229,7 +251,7 @@ class Date : BaseColumns {
     }
 
     fun exists(): Boolean {
-        return id != -1
+        return id != null
     }
 
     fun setDesc(desc: String) {
@@ -295,7 +317,10 @@ class Date : BaseColumns {
             } else {
                 val end = getLastZoneDateTime()
                 this.start = start
-                setRange(startOfDayEnd = end)
+                if (period.modifier == Period.ONCE)
+                    setTimesRepeat(1)
+                else
+                    setRange(startOfDayEnd = end)
             }
         }
         if (startOfDayEnd != null) {

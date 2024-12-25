@@ -28,13 +28,11 @@ import oblitusnumen.calendar.implementation.convertMillisToDate
 import oblitusnumen.calendar.implementation.data.*
 import oblitusnumen.calendar.ui.model.DateTimePicker
 import oblitusnumen.calendar.ui.model.materialSpinner
-import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import kotlin.math.roundToInt
-import kotlin.random.Random
 
 class EntryEdit(
     private val dbManager: DbManager,
@@ -44,6 +42,7 @@ class EntryEdit(
     private var entryName by mutableStateOf(TextFieldValue(entry.name))
     private var tags: List<Tag> by mutableStateOf(entry.getTags().sortedBy { it.name })
     private var dates: List<Date> by mutableStateOf(entry.getDates().sortedBy { it.start })
+    private var notifications: List<Notification> by mutableStateOf(entry.getNotifications().sortedBy { it.offset.secondsApproximation() })
     private var contents by mutableStateOf(TextFieldValue(entry.getContents()))  // FIXME: this should be List<Content>
     private var dateTimePicker = DateTimePicker()
     private var updatedDates = mutableSetOf<Date>()
@@ -105,25 +104,50 @@ class EntryEdit(
             }
             //todo no notification support yet
             HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
-            repeat(3) {
-                Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp).clickable { }) {
+            var notificationChoose by remember { mutableStateOf(false) }
+            if (notificationChoose) drawNotificationAddMenu({ offset, sound ->
+                notificationChoose = false
+                for (notification in notifications) {
+                    if (notification.offset.toString() == offset.toString()) {
+                        notifications -= notification
+                        break
+                    }
+                }
+                notifications = (notifications + Notification(
+                    dbManager,
+                    entry.id!!,
+                    offset,
+                    sound
+                )).sortedBy { it.offset.secondsApproximation() }
+            }, { notificationChoose = false })
+            var updated by remember { mutableStateOf(false) }
+            updated// fixme this is hack...
+            for (notification in notifications) {
+                Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp).clickable {
+                    notification.sound = !notification.sound
+                    updated = !updated
+                }) {
                     Icon(
-                        if (Random.nextBoolean()) Icons.Outlined.Notifications else Icons.Filled.Notifications, null,
+                        if (notification.sound) Icons.Filled.Notifications else Icons.Outlined.Notifications, null,
                         Modifier.align(Alignment.CenterVertically).padding(8.dp)
                     )
                     Text(
                         modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp)
                             .weight(1f),
-                        text = "30 min before",
+                        text = "${notification.offset.data} ${notification.offset.modifier} before",// FIXME: text
                         style = MaterialTheme.typography.bodyLarge
                     )
                     IconButton(
                         modifier = Modifier.align(Alignment.CenterVertically),
-                        onClick = {},
+                        onClick = {
+                            notifications -= notification
+                        },
                         content = { Icon(Icons.Filled.Clear, contentDescription = null) })
                 }
             }
-            Box(Modifier.defaultMinSize(minHeight = 52.dp).fillMaxWidth()/*.padding(top = 8.dp)*/.clickable { }) {
+            Box(Modifier.defaultMinSize(minHeight = 52.dp).fillMaxWidth()/*.padding(top = 8.dp)*/.clickable {
+                notificationChoose = true
+            }) {
                 Text(
                     modifier = Modifier.align(Alignment.CenterStart)
                         .padding(horizontal = 44.dp, vertical = 4.dp),
@@ -142,6 +166,68 @@ class EntryEdit(
                 minLines = 5
             )
         }
+    }
+
+    @Composable
+    fun drawNotificationAddMenu(onConfirm: (Period, Boolean) -> Unit, onDismiss: () -> Unit) {
+        var silent by remember { mutableStateOf(false) }
+        var offsetCount by remember { mutableStateOf("1") }
+        var selectedOffsetType by remember { mutableStateOf(OffsetType(Period.ONCE)) }
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            dismissButton = {
+                TextButton(onClick = onDismiss) {
+                    Text("Cancel")
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    onConfirm(
+                        if (selectedOffsetType.id == Period.ONCE) Period() else {
+                            val offset = offsetCount.toLong()
+                            if (offset > 0) Period(selectedOffsetType.id, offset) else Period()
+                        }, !silent
+                    )
+                }) {
+                    Text("OK")
+                }
+            },
+            text = {
+                Column {
+                    Row {
+                        //offset text field
+                        OutlinedTextField(// FIXME: ui paddings
+                            enabled = selectedOffsetType.id != Period.ONCE,
+                            modifier = Modifier.width(100.dp).padding(horizontal = 8.dp),
+                            value = offsetCount, onValueChange = {
+                                try {
+                                    if (it.toLong() >= 0) offsetCount = it
+                                } catch (_: NumberFormatException) {
+                                    if (it.isEmpty())
+                                        offsetCount = it
+                                }
+                            },
+                            textStyle = MaterialTheme.typography.bodyLarge,
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Number,
+                                imeAction = ImeAction.Done
+                            ),
+                            label = { Text("Count") }
+                        )
+                        materialSpinner(
+                            "Type", OffsetType.getAll(),
+                            { selectedOffsetType = it },
+                            selectedOffsetType,
+                            Modifier.padding(horizontal = 8.dp).width(150.dp)
+                        )
+                    }
+                    Row {
+                        Text("silent")
+                        Switch(silent, onCheckedChange = { silent = it })
+                    }
+                }
+            }
+        )
     }
 
     @Composable
@@ -324,8 +410,7 @@ class EntryEdit(
                             modifier = Modifier.width(100.dp).padding(horizontal = 8.dp),
                             value = periodCount, onValueChange = {
                                 try {
-                                    it.toLong()
-                                    periodCount = it
+                                    if (it.toLong() >= 0) periodCount = it
                                 } catch (_: NumberFormatException) {
                                     if (it.isEmpty())
                                         periodCount = it
@@ -471,7 +556,7 @@ class EntryEdit(
                 for (date in updatedDates)
                     if (date.exists())
                         date.createOrUpdate()
-                entry.set(entryName.text, tags, dates, contents.text)
+                entry.set(entryName.text, tags, dates, notifications, contents.text)
             }, modifier = Modifier.align(Alignment.Top)) {
                 Text("save")
             }
@@ -481,6 +566,33 @@ class EntryEdit(
             }, modifier = Modifier.align(Alignment.Top)) {
                 Text("delete")
             }
+        }
+    }
+}
+
+data class OffsetType(val id: Char) {
+    override fun toString(): String {
+        return when (id) {
+            Period.ONCE -> "at time"
+            Period.MINUTE -> "minute"
+            Period.HOUR -> "hour"
+            Period.DAY -> "day"
+            Period.WEEK -> "week"
+            Period.MONTH -> "month"
+            else -> throw IllegalStateException()
+        }
+    }
+
+    companion object {
+        fun getAll(): List<OffsetType> {
+            val list = mutableListOf<OffsetType>()
+            list.add(OffsetType(Period.ONCE))
+            list.add(OffsetType(Period.MINUTE))
+            list.add(OffsetType(Period.HOUR))
+            list.add(OffsetType(Period.DAY))
+            list.add(OffsetType(Period.WEEK))
+            list.add(OffsetType(Period.MONTH))
+            return list
         }
     }
 }

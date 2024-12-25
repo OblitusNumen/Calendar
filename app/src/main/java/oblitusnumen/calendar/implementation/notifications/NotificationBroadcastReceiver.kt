@@ -89,7 +89,7 @@ class NotificationBroadcastReceiver : BroadcastReceiver() {
                 NotificationChannel(
                     SILENT_CHANNEL_ID,
                     "Silent",
-                    NotificationManager.IMPORTANCE_DEFAULT
+                    NotificationManager.IMPORTANCE_LOW
                 )
             )
         }

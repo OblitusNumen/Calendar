@@ -3,22 +3,35 @@ package oblitusnumen.calendar.implementation.data
 import android.content.ContentValues
 import android.database.Cursor
 import android.provider.BaseColumns
-import java.util.ArrayList
 
 
-class Notification private constructor(
+class Notification (
     private val dbManager: DbManager,
     var entryId: Int,
     var offset: Period,
     var sound: Boolean = true
 ) : BaseColumns {
 
-    fun create() { //fixme may fail on UNIQUE violation// createOrUpdate
+    fun create() {
         val contentValues = ContentValues()
         contentValues.put(COLUMN_NAME_ENTRY_ID, entryId)
         contentValues.put(COLUMN_NAME_TIME_OFFSET, offset.toString())
         contentValues.put(COLUMN_NAME_SOUND, if (sound) 1 else 0)
         dbManager.writableDatabase.insert(TABLE_NAME, null, contentValues).toInt()
+    }
+
+    fun update() {
+        dbManager.writableDatabase.execSQL(
+            "UPDATE $TABLE_NAME SET $COLUMN_NAME_SOUND = ? WHERE $COLUMN_NAME_ENTRY_ID = ? AND $COLUMN_NAME_TIME_OFFSET = ?",
+            arrayOf(if (sound) 1 else 0, entryId.toString(), offset.toString())
+        )
+    }
+
+    fun delete() {
+        dbManager.writableDatabase.execSQL(
+            "DELETE FROM $TABLE_NAME WHERE $COLUMN_NAME_ENTRY_ID = ? AND $COLUMN_NAME_TIME_OFFSET = ?",
+            arrayOf(entryId.toString(), offset.toString())
+        )
     }
 
     companion object {

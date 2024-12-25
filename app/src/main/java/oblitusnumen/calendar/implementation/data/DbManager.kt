@@ -13,7 +13,7 @@ import java.time.ZonedDateTime
 import java.util.*
 import kotlin.collections.ArrayList
 
-class DbManager(context: Context) :
+class DbManager(val context: Context) :
     SQLiteOpenHelper(context, DB_NAME, null, DATABASE_VERSION) {
     val filesDir: File = context.filesDir
 
@@ -26,7 +26,7 @@ class DbManager(context: Context) :
         var notificationTime: Long? = null
         for (notification in getAllNotifications()) {
             val fromO = notification.offset.getTime(getZonedFromEpochSeconds(timeStamp), 1).toEpochSecond()
-            val entry = getEntryById(notification.entryId)
+            val entry = getEntryById(notification.entryId) ?: throw IllegalStateException("DATABASE IS CORRUPTED")
             for (date in entry.getDates()) {
                 val nextTime = date.getNext(fromO)
                 if (nextTime != null) {
@@ -43,7 +43,7 @@ class DbManager(context: Context) :
         for (notification in getAllNotifications()) {
             val fromO = notification.offset.getTime(getZonedFromEpochSeconds(from), 1).toEpochSecond()
             val toO = notification.offset.getTime(getZonedFromEpochSeconds(to), 1).toEpochSecond()
-            val entry = getEntryById(notification.entryId)
+            val entry = getEntryById(notification.entryId) ?: throw IllegalStateException("DATABASE IS CORRUPTED")
             for (date in entry.getDates()) {
                 for (dateTime in date.getAllInRange(fromO, toO)) {
                     notifications.add(
@@ -125,9 +125,10 @@ class DbManager(context: Context) :
         }
     }
 
-    fun getEntryById(id: Int): Entry {
+    fun getEntryById(id: Int): Entry? {
         readableDatabase.rawQuery("SELECT * FROM ${Entry.TABLE_NAME} WHERE ${Entry.COLUMN_NAME_ID} = ?", arrayOf(id.toString())).use { cursor ->
-            return Entry.cursorToList(this, cursor)[0]
+            val entries = Entry.cursorToList(this, cursor)
+            return if (entries.isEmpty()) null else entries[0]
         }
     }
 

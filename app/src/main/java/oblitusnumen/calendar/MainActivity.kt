@@ -111,7 +111,7 @@ class MainActivity : ComponentActivity() {
                 val entryEdit = viewModel {
                     EntryEdit(
                         dbManager,
-                        if (entryId < 0) dbManager.createEntry() else Entry.byId(dbManager, entryId)!!
+                        if (entryId < 0) dbManager.createEntry() else dbManager.getEntryById(entryId)!!
                     ) { navController.navigateUp() }
                 }
                 Scaffold(topBar = { entryEdit.topBar() }) {

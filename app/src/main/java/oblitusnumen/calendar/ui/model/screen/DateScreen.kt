@@ -79,7 +79,7 @@ class DateScreen(
                 .background(
                     MaterialTheme.colorScheme.primaryContainer,
                     shape = RoundedCornerShape(10.dp)
-                ).clickable(onClick = { editEntry(entry.id) })
+                ).clickable(onClick = { editEntry(entry.id!!) })
         ) {
             Row(Modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 8.dp)) {
                 Text(

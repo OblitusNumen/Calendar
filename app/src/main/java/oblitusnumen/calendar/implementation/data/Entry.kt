@@ -3,6 +3,7 @@ package oblitusnumen.calendar.implementation.data
 import android.content.ContentValues
 import android.database.Cursor
 import android.provider.BaseColumns
+import oblitusnumen.calendar.implementation.notifications.NotificationBroadcastReceiver.Companion.scheduleNotification
 import oblitusnumen.calendar.implementation.rmRecursively
 import java.io.File
 import java.io.FileInputStream
@@ -13,7 +14,7 @@ import java.util.stream.Collectors
 
 class Entry : BaseColumns {
     private val dbManager: DbManager
-    var id: Int = -1
+    var id: Int? = null
         private set
     var name: String = ""
 
@@ -98,6 +99,7 @@ class Entry : BaseColumns {
             "DELETE FROM $TABLE_NAME WHERE $COLUMN_NAME_ID = ?",
             arrayOf(id.toString())
         )
+        id = null
     }
 
     fun getTags(): List<Tag> {
@@ -111,7 +113,7 @@ class Entry : BaseColumns {
         }
     }
 
-    fun set(name: String, tags: List<Tag>, dates: List<Date>, contents: String) {
+    fun set(name: String, tags: List<Tag>, dates: List<Date>, notifications: List<Notification>, contents: String) {
         //setting contents
         try {
             FileOutputStream(contentsFile).use { fos ->
@@ -166,7 +168,18 @@ class Entry : BaseColumns {
             d.delete()
         }
 
-        // TODO: 10/26/24 set notifications
+        //setting notifications
+        val notifications1 = notifications.stream().collect(Collectors.toMap({ it.offset.toString() }, { it }))
+        val notificationsOld = this.getNotifications().stream().collect(Collectors.toMap({ it.offset.toString() }, { it }))
+        for (n in notificationsOld.values) {
+            if (!notifications1.containsKey(n.offset.toString())) n.delete()
+        }
+        for (n in notifications) {
+            if (notificationsOld.containsKey(n.offset.toString())) n.update() else n.create()
+        }
+        val now = System.currentTimeMillis() / 1000
+        val nextNotificationTime = dbManager.getNextNotificationTime(now)
+        if (nextNotificationTime != null) scheduleNotification(dbManager.context, nextNotificationTime, now)
     }
 
     private fun update() {
@@ -176,11 +189,11 @@ class Entry : BaseColumns {
     }
 
     private fun addTag(tagId: Int) {
-        EntryTagLinks.create(dbManager, id, tagId)
+        EntryTagLinks.create(dbManager, id!!, tagId)
     }
 
     private fun rmTag(tagId: Int) {
-        EntryTagLinks.delete(dbManager, id, tagId)
+        EntryTagLinks.delete(dbManager, id!!, tagId)
     }
 
     companion object {
@@ -189,19 +202,6 @@ class Entry : BaseColumns {
         const val COLUMN_NAME_ID: String = "id"
         const val COLUMN_NAME_NAME: String = "name"
         const val CONTENTS_FILENAME: String = "contents.md"
-
-        fun byId(dbManager: DbManager, id: Int): Entry? {
-            dbManager.readableDatabase.rawQuery(
-                "SELECT * FROM $TABLE_NAME WHERE $COLUMN_NAME_ID = ?",
-                arrayOf(id.toString())
-            ).use { cursor ->
-                return if (cursor.moveToFirst()) Entry(
-                    dbManager,
-                    cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_ID)),
-                    cursor.getString(cursor.getColumnIndex(COLUMN_NAME_NAME))
-                ) else null
-            }
-        }
 
         fun cursorToList(
             dbManager: DbManager,
