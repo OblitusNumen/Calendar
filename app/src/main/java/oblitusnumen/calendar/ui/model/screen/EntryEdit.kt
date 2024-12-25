@@ -154,7 +154,7 @@ class EntryEdit(
             }, { periodSelectorShown = false }, date)
         var updated by remember { mutableStateOf(false) }
         val textStart = (if (date.isPeriodic) "from " else "") +
-                date.getZoneDateTime(0).format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm"))
+                date.getFirstZoneDateTime().format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm"))
         val textPeriod: String = if (date.isPeriodic)
             "every " + date.period.data.toString() + " " + PeriodType(date.period.modifier).toString() +
                     if (date.isEndless) "" else
@@ -169,7 +169,7 @@ class EntryEdit(
                     date.setRange(startOfDayStart = ZonedDateTime.of(it, date.zoneId))
                     updatedDates += date
                     updated = !updated
-                }, date.getZoneDateTime(0).toLocalDateTime())
+                }, date.getFirstZoneDateTime().toLocalDateTime())
             }) {
                 Icon(
                     Icons.Outlined.Call, "",
@@ -267,7 +267,7 @@ class EntryEdit(
         var selectedMillis by
         remember {
             mutableStateOf(
-                (if (date.isEndless) date.getZoneDateTime(0) else date.getLastZoneDateTime()).toLocalDate()
+                (if (date.isEndless) date.getFirstZoneDateTime() else date.getLastZoneDateTime()).toLocalDate()
                     .toEpochDay() * 86_400_000
             )
         }
@@ -301,7 +301,7 @@ class EntryEdit(
                             DateSequenceEndVariant.BY_DATE -> date.setRange(
                                 startOfDayEnd = ZonedDateTime.of(
                                     LocalDate.ofEpochDay(selectedMillis / 86400000).atStartOfDay(),
-                                    date.getZoneDateTime(0).zone
+                                    date.getFirstZoneDateTime().zone
                                 )
                             )
 
