@@ -38,6 +38,8 @@ class Period {
     fun getTime(start: ZonedDateTime, idx: Long): ZonedDateTime {
         return when (modifier) {
             ONCE -> start
+            MINUTE -> start.plusMinutes(idx * data)
+            HOUR -> start.plusHours(idx * data)
             DAY -> start.plusDays(idx * data)
             WEEK -> start.plusWeeks(idx * data)
             MONTH -> start.plusMonths(idx * data)
@@ -49,6 +51,8 @@ class Period {
 
     private fun verify(modifier: Char) {
         if (modifier != ONCE &&
+            modifier != MINUTE &&
+            modifier != HOUR &&
             modifier != DAY &&
             modifier != WEEK &&
             modifier != MONTH &&
@@ -60,6 +64,8 @@ class Period {
     fun secondsApproximation(): Long {
         return when (modifier) {
             ONCE -> 0
+            MINUTE -> 60 * data
+            HOUR -> 3600 * data
             DAY, WEEKDAY -> 86400 * data
             WEEK -> 86400 * 7 * data
             MONTH -> 86400 * 30 * data
@@ -71,6 +77,8 @@ class Period {
     @Suppress("unused")
     companion object {
         const val ONCE = 'O'
+        const val MINUTE = 'm'
+        const val HOUR = 'H'
         const val DAY = 'D'
         const val WEEK = 'W'
         const val MONTH = 'M'
