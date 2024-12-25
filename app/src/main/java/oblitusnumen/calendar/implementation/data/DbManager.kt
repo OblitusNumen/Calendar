@@ -3,6 +3,8 @@ package oblitusnumen.calendar.implementation.data
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
+import oblitusnumen.calendar.implementation.defaultZoneId
+import oblitusnumen.calendar.implementation.getZonedFromEpochSeconds
 import oblitusnumen.calendar.implementation.notifications.PendingNotification
 import oblitusnumen.calendar.implementation.zonedDateTime
 import java.io.File
@@ -23,12 +25,12 @@ class DbManager(context: Context) :
     fun getNextNotificationTime(timeStamp: Long): Long? {
         var notificationTime: Long? = null
         for (notification in getAllNotifications()) {
-            val fromO = notification.offset + timeStamp
+            val fromO = notification.offset.getTime(getZonedFromEpochSeconds(timeStamp), 1).toEpochSecond()
             val entry = getEntryById(notification.entryId)
             for (date in entry.getDates()) {
                 val nextTime = date.getNext(fromO)
                 if (nextTime != null) {
-                    val nnt = nextTime.toEpochSecond() - notification.offset
+                    val nnt = notification.offset.getTime(nextTime.withZoneSameInstant(defaultZoneId()), -1).toEpochSecond()
                     if (notificationTime == null || notificationTime > nnt) notificationTime = nnt
                 }
             }
@@ -39,12 +41,20 @@ class DbManager(context: Context) :
     fun getPendingNotificationsInRange(from: Long, to: Long): List<PendingNotification> {
         val notifications: MutableList<PendingNotification> = ArrayList()
         for (notification in getAllNotifications()) {
-            val fromO = notification.offset + from
-            val toO = notification.offset + to
+            val fromO = notification.offset.getTime(getZonedFromEpochSeconds(from), 1).toEpochSecond()
+            val toO = notification.offset.getTime(getZonedFromEpochSeconds(to), 1).toEpochSecond()
             val entry = getEntryById(notification.entryId)
             for (date in entry.getDates()) {
                 for (dateTime in date.getAllInRange(fromO, toO)) {
-                    notifications.add(PendingNotification(date.id, notification.offset, dateTime.toEpochSecond()))
+                    notifications.add(
+                        PendingNotification(
+                            date,
+                            notification,
+                            notification.offset.getTime(dateTime.withZoneSameInstant(defaultZoneId()), -1)
+                                .toEpochSecond(),
+                            dateTime.toEpochSecond()
+                        )
+                    )
                 }
             }
         }
@@ -158,7 +168,7 @@ class DbManager(context: Context) :
         private const val SQL_CREATE_NOTIFICATIONS =
             "CREATE TABLE IF NOT EXISTS ${Notification.TABLE_NAME} (" +
                     "${Notification.COLUMN_NAME_ENTRY_ID} INTEGER NOT NULL," +
-                    "${Notification.COLUMN_NAME_TIME_OFFSET} BIGINT NOT NULL," +
+                    "${Notification.COLUMN_NAME_TIME_OFFSET} VARCHAR(18) NOT NULL," +
                     "${Notification.COLUMN_NAME_SOUND} INT NOT NULL);"
     }
 }

@@ -10,6 +10,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Dp
 import java.io.File
 import java.text.SimpleDateFormat
+import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -24,6 +25,10 @@ fun rmRecursively(file: File) {
         }
     }
     if (!file.delete()) throw RuntimeException("could not delete file $file")
+}
+
+fun getZonedFromEpochSeconds(epochSeconds: Long): ZonedDateTime {
+    return Instant.ofEpochSecond(epochSeconds).atZone(defaultZoneId())
 }
 
 fun convertMillisToDate(millis: Long): String {

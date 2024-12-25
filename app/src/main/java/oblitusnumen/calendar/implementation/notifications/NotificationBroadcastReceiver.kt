@@ -7,58 +7,67 @@ import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import androidx.core.app.NotificationCompat
+import oblitusnumen.calendar.MainActivity
 import oblitusnumen.calendar.R
+import oblitusnumen.calendar.implementation.data.DbManager
+import oblitusnumen.calendar.implementation.getZonedFromEpochSeconds
 import java.time.ZonedDateTime
-import kotlin.random.Random
+import java.time.format.DateTimeFormatter
 
 class NotificationBroadcastReceiver : BroadcastReceiver() {
-
-    override fun onReceive(context: Context, intent: Intent) {
-
-        // Build the notification using NotificationCompat.Builder
-        val notification = NotificationCompat.Builder(context, channelID)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle(intent.getStringExtra(titleExtra)) // Set title from intent
-            .setContentText(intent.getStringExtra(messageExtra)) // Set content text from intent
-            .build()
-
-        // Get the NotificationManager service
-        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-
-        // Show the notification using the manager
-        manager.notify(notificationID + Random.nextInt(100000), notification)
-        scheduleNotification(context, "my awesome notif",
-        "msg?? $i", ZonedDateTime.now().plusMinutes(30).toEpochSecond() * 1000)
-        i++
+    override fun onReceive(c: Context, intent: Intent) {
+        val dbManager = DbManager(c)
+        val now = System.currentTimeMillis() / 1000 + 10// fixing possible early invocation
+        val sharedPreferences: SharedPreferences =
+            c.getSharedPreferences(MainActivity.SHARED_PREFERENCES_NAME, Context.MODE_PRIVATE)
+        val pendingNotifications = dbManager.getPendingNotificationsInRange(
+            sharedPreferences.getLong(
+                LAST_NOTIFICATION_TIME_PREFERENCE_NAME,
+                now
+            ), now
+        )
+        val manager = c.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        for (pendingNotification in pendingNotifications) {
+            val notification = NotificationCompat.Builder(
+                c,
+                if (pendingNotification.notification.sound) NORMAL_CHANNEL_ID else SILENT_CHANNEL_ID
+            )
+                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setContentTitle(pendingNotification.date.getDesc())
+                .setContentText(// FIXME: format
+                    "Upcoming event in ${pendingNotification.notification.offset.data} ${pendingNotification.notification.offset.modifier}\n(at ${
+                        getZonedFromEpochSeconds(
+                            pendingNotification.eventDateTime
+                        ).format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm"))
+                    })"
+                )
+                .build()
+            manager.notify(pendingNotification.dateHash(), notification)
+            scheduleNotification(c, ZonedDateTime.now().plusMinutes(30).toEpochSecond() * 1000)
+        }
+        val nextNotificationTime = dbManager.getNextNotificationTime(now)
+        if (nextNotificationTime != null) scheduleNotification(c, nextNotificationTime, now)
     }
 
-    companion object{
-        const val notificationID = 121
-        const val channelID = "channel1"
-        const val titleExtra = "titleExtra"
-        const val messageExtra = "messageExtra"
-        @JvmStatic
-        var i = 0
-        fun scheduleNotification(c: Context, title: String, message: String, triggerAtMillis: Long) {
-            // Create an intent for the Notification BroadcastReceiver
+    companion object {
+        const val NORMAL_CHANNEL_ID = "normal_channel"
+        const val SILENT_CHANNEL_ID = "silent_channel"
+        const val LAST_NOTIFICATION_TIME_PREFERENCE_NAME = "last_notification_time"
+
+        fun scheduleNotification(c: Context, triggerAtMillis: Long, now: Long = System.currentTimeMillis() / 1000) {
+            val sharedPreferences: SharedPreferences =
+                c.getSharedPreferences(MainActivity.SHARED_PREFERENCES_NAME, Context.MODE_PRIVATE)
+            sharedPreferences.edit().putLong(LAST_NOTIFICATION_TIME_PREFERENCE_NAME, now).apply()
             val intent = Intent(c, NotificationBroadcastReceiver::class.java)
-
-            // Add title and message as extras to the intent
-            intent.putExtra(titleExtra, title)
-            intent.putExtra(messageExtra, message)
-
-            // Create a PendingIntent for the broadcast
             val pendingIntent = PendingIntent.getBroadcast(
                 c,
-                notificationID,
+                12345,
                 intent,
                 PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
             )
-
-            // Get the AlarmManager service
             val alarmManager = c.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-
             alarmManager.setExactAndAllowWhileIdle(
                 AlarmManager.RTC_WAKEUP,
                 triggerAtMillis,
@@ -67,17 +76,22 @@ class NotificationBroadcastReceiver : BroadcastReceiver() {
         }
 
         fun createNotificationChannels(c: Context) {
-            val name = "getString(R.string.channel_name)"
-            val descriptionText = "getString(R.string.channel_description)"
-            val importance = NotificationManager.IMPORTANCE_DEFAULT
-            val channel = NotificationChannel(channelID, name, importance).apply {
-                description = descriptionText
-            }
-            // Register the channel with the system.
             val notificationManager: NotificationManager =
                 c.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
+            notificationManager.createNotificationChannel(
+                NotificationChannel(
+                    NORMAL_CHANNEL_ID,
+                    "Normal",
+                    NotificationManager.IMPORTANCE_DEFAULT
+                )
+            )
+            notificationManager.createNotificationChannel(
+                NotificationChannel(
+                    SILENT_CHANNEL_ID,
+                    "Silent",
+                    NotificationManager.IMPORTANCE_DEFAULT
+                )
+            )
         }
-
     }
 }

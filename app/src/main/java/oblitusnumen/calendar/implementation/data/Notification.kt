@@ -9,14 +9,14 @@ import java.util.ArrayList
 class Notification private constructor(
     private val dbManager: DbManager,
     var entryId: Int,
-    var offset: Long,
+    var offset: Period,
     var sound: Boolean = true
 ) : BaseColumns {
 
     fun create() { //fixme may fail on UNIQUE violation// createOrUpdate
         val contentValues = ContentValues()
         contentValues.put(COLUMN_NAME_ENTRY_ID, entryId)
-        contentValues.put(COLUMN_NAME_TIME_OFFSET, offset)
+        contentValues.put(COLUMN_NAME_TIME_OFFSET, offset.toString())
         contentValues.put(COLUMN_NAME_SOUND, if (sound) 1 else 0)
         dbManager.writableDatabase.insert(TABLE_NAME, null, contentValues).toInt()
     }
@@ -39,7 +39,7 @@ class Notification private constructor(
                 notifications.add(
                     Notification(
                         dbManager, cursor.getInt(idxEntryId),
-                        cursor.getLong(idxOffset),
+                        Period(cursor.getString(idxOffset)),
                         cursor.getInt(idxSound) != 0
                     )
                 )

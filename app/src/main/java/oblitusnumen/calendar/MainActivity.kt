@@ -42,6 +42,7 @@ class MainActivity : ComponentActivity() {
     companion object {
         val PADDING: Dp = 5.dp
         val LIST_CENTER: LocalDate = LocalDate.of(1970, 1, 1)
+        val SHARED_PREFERENCES_NAME: String = "calendar_preferences"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -171,8 +172,6 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                         }*/
-                        NotificationBroadcastReceiver.scheduleNotification(tm, "my awesome notif",
-                            "msg??", ZonedDateTime.now().plusSeconds(10).toEpochSecond() * 1000)
                         navController.navigate(topLevelRoute.route.route) {
                             // Pop up to the start destination of the graph to
                             // avoid building up a large stack of destinations

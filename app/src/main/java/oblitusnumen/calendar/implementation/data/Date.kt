@@ -5,6 +5,7 @@ import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.provider.BaseColumns
 import oblitusnumen.calendar.implementation.data.Entry.Companion.byId
+import org.jetbrains.annotations.TestOnly
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -310,10 +311,16 @@ class Date : BaseColumns {
         //todo maybe shrink exceptions?
     }
 
+    @TestOnly
     @Deprecated("For use only in bad testing data")
     fun fixEnd(): Date {
         setTimesRepeat(timesRepeat)
         return this
+    }
+
+    @TestOnly
+    fun getZDT(i: Long): ZonedDateTime {
+        return getZoneDateTime(i)
     }
 
     fun fixExceptionList() { //fixme check period intersections
