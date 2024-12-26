@@ -22,7 +22,7 @@ class DbManager(private val context: Context) :
 
     fun tryScheduleNotification(now: Long = System.currentTimeMillis() / 1000) {
         val nextNotificationTime = getNextNotificationTime(now)
-        if (nextNotificationTime != null) scheduleNotification(context, nextNotificationTime, now)
+        if (nextNotificationTime != null) scheduleNotification(context, nextNotificationTime * 1000, now)
     }
 
     private fun getNextNotificationTime(timeStamp: Long): Long? {
