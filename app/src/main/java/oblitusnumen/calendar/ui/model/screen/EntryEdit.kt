@@ -101,7 +101,6 @@ class EntryEdit(
                     style = MaterialTheme.typography.bodyLarge
                 )
             }
-            //todo no notification support yet
             HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
             var notificationChoose by remember { mutableStateOf(false) }
             if (notificationChoose) drawNotificationAddMenu({ offset, sound ->
@@ -247,7 +246,6 @@ class EntryEdit(
             updated// fixme this is hack...
             Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp).clickable {
                 dateTimePicker.dateTimePick({}, {
-                    // fixme probably cannot correctly change time...
                     date.setRange(startOfDayStart = ZonedDateTime.of(it, date.zoneId))
                     updated = !updated
                 }, date.getFirstZoneDateTime().toLocalDateTime())

@@ -1,6 +1,7 @@
 package oblitusnumen.calendar.implementation.data
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import oblitusnumen.calendar.implementation.defaultZoneId
@@ -134,6 +135,7 @@ class DbManager(private val context: Context) :
 
     companion object {
         const val DATABASE_VERSION: Int = 1
+        const val SHARED_PREFERENCES_NAME: String = "calendar_preferences"
         const val DB_NAME: String = "entries.db"
         private const val SQL_CREATE_ENTRIES =
             "CREATE TABLE IF NOT EXISTS ${Entry.TABLE_NAME} (" +
@@ -165,5 +167,9 @@ class DbManager(private val context: Context) :
                     "${Notification.COLUMN_NAME_ENTRY_ID} INTEGER NOT NULL," +
                     "${Notification.COLUMN_NAME_TIME_OFFSET} VARCHAR(18) NOT NULL," +
                     "${Notification.COLUMN_NAME_SOUND} INT NOT NULL);"
+
+        fun getSharedPrefs(context: Context): SharedPreferences {
+            return context.getSharedPreferences(SHARED_PREFERENCES_NAME, Context.MODE_PRIVATE)
+        }
     }
 }

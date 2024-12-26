@@ -18,6 +18,8 @@ import androidx.lifecycle.ViewModel
 import oblitusnumen.calendar.implementation.bgColorToTextColor
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.Entry
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 
 class EntriesTab(
     private val dbManager: DbManager,
@@ -68,9 +70,20 @@ class EntriesTab(
                     overflow = TextOverflow.Ellipsis,
                     maxLines = 1,
                 )
+                val now = System.currentTimeMillis() / 1000
+                var nextDate: ZonedDateTime? = null
+                var hasDates = false
+                for (date in entry.getDates()) {
+                    hasDates = true
+                    val next = date.getNext(now)
+                    if (nextDate == null || next != null && next < nextDate) nextDate = next
+                }
+                val nextDateText = if (nextDate != null)
+                    nextDate.format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm"))
+                else if (hasDates) "Ended" else ""
                 Text(
                     modifier = Modifier.align(Alignment.CenterVertically),
-                    text = "Next Date", //fixme show next date
+                    text = nextDateText,
                     style = MaterialTheme.typography.bodyLarge,
                 )
             }//todo next line "10 events from 2024.01.01 to 2025.01.01"

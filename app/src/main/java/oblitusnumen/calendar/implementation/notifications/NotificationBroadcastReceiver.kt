@@ -20,8 +20,7 @@ class NotificationBroadcastReceiver : BroadcastReceiver() {
     override fun onReceive(c: Context, intent: Intent) {
         DbManager(c).use { dbManager ->
             val now = System.currentTimeMillis() / 1000 + 10// fixing possible early invocation
-            val sharedPreferences: SharedPreferences =
-                c.getSharedPreferences(MainActivity.SHARED_PREFERENCES_NAME, Context.MODE_PRIVATE)
+            val sharedPreferences: SharedPreferences = DbManager.getSharedPrefs(c)
             val pendingNotifications = dbManager.getPendingNotificationsInRange(
                 sharedPreferences.getLong(
                     LAST_NOTIFICATION_TIME_PREFERENCE_NAME,
@@ -57,8 +56,7 @@ class NotificationBroadcastReceiver : BroadcastReceiver() {
         const val LAST_NOTIFICATION_TIME_PREFERENCE_NAME = "last_notification_time"
 
         fun scheduleNotification(c: Context, triggerAtMillis: Long, now: Long = System.currentTimeMillis() / 1000) {
-            val sharedPreferences: SharedPreferences =
-                c.getSharedPreferences(MainActivity.SHARED_PREFERENCES_NAME, Context.MODE_PRIVATE)
+            val sharedPreferences: SharedPreferences = DbManager.getSharedPrefs(c)
             sharedPreferences.edit().putLong(LAST_NOTIFICATION_TIME_PREFERENCE_NAME, now).apply()
             val intent = Intent(c, NotificationBroadcastReceiver::class.java)
             val pendingIntent = PendingIntent.getBroadcast(

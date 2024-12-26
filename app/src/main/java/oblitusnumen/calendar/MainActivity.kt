@@ -22,9 +22,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import oblitusnumen.calendar.MainActivity.Companion.PADDING
 import oblitusnumen.calendar.implementation.data.DbManager
-import oblitusnumen.calendar.implementation.data.Entry
 import oblitusnumen.calendar.implementation.notifications.NotificationBroadcastReceiver
 import oblitusnumen.calendar.ui.model.navigation.NavRoutes
 import oblitusnumen.calendar.ui.model.screen.DateScreen
@@ -34,20 +32,26 @@ import oblitusnumen.calendar.ui.model.tab.EntriesTab
 import oblitusnumen.calendar.ui.model.tab.TagsTab
 import oblitusnumen.calendar.ui.theme.CalendarTheme
 import java.time.LocalDate
-import java.time.ZonedDateTime
 
 class MainActivity : ComponentActivity() {
     private var calendarViewModel: CalendarViewModel? = null
 
     companion object {
         val PADDING: Dp = 5.dp
-        val LIST_CENTER: LocalDate = LocalDate.of(1970, 1, 1)
-        val SHARED_PREFERENCES_NAME: String = "calendar_preferences"
     }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
+    override fun onCreate(savedInstanceState: Bundle?) { //fixme ask for required permissions somewhere
         super.onCreate(savedInstanceState)
         NotificationBroadcastReceiver.createNotificationChannels(this)
+        /*if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val alarmManager = ContextCompat.getSystemService(context, AlarmManager::class.java)
+            if (alarmManager?.canScheduleExactAlarms() == false) {
+                Intent().also { intent ->
+                    intent.action = Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM
+                    context.startActivity(intent)
+                }
+            }
+        }*/
         setContent {
             CalendarTheme {
                 calendarViewModel = viewModel { CalendarViewModel(DbManager(this@MainActivity)) }
@@ -153,7 +157,6 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     fun drawBottomBar(navController: NavController) {
-        val tm = this
         NavigationBar {
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentDestination = navBackStackEntry?.destination
@@ -163,15 +166,6 @@ class MainActivity : ComponentActivity() {
                     label = { Text(topLevelRoute.name) },
                     selected = currentDestination?.route == topLevelRoute.route.route,
                     onClick = {
-                        /*if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                            val alarmManager = ContextCompat.getSystemService(context, AlarmManager::class.java)
-                            if (alarmManager?.canScheduleExactAlarms() == false) {
-                                Intent().also { intent ->
-                                    intent.action = Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM
-                                    context.startActivity(intent)
-                                }
-                            }
-                        }*/
                         navController.navigate(topLevelRoute.route.route) {
                             // Pop up to the start destination of the graph to
                             // avoid building up a large stack of destinations
@@ -203,7 +197,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun getWidthPartIncludePadding(divisor: Float): Dp {
-    return LocalConfiguration.current.screenWidthDp.dp.minus(PADDING.times(2)).div(divisor)
+    return LocalConfiguration.current.screenWidthDp.dp.minus(MainActivity.PADDING.times(2)).div(divisor)
 }
 
 @Composable

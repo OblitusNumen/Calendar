@@ -22,7 +22,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.launch
-import oblitusnumen.calendar.MainActivity.Companion.LIST_CENTER
 import oblitusnumen.calendar.R
 import oblitusnumen.calendar.getWidthPartIncludePadding
 import oblitusnumen.calendar.implementation.bgColorToTextColor
@@ -40,6 +39,7 @@ class CalendarTab(
 ) : ViewModel() {
     private var calendarLazyListState: LazyListState? = null
     private var evtHeight: Dp = 0.dp
+    private val LIST_CENTER: LocalDate = LocalDate.of(1970, 1, 1)
 
     @Composable
     fun compose(modifier: Modifier = Modifier) {
