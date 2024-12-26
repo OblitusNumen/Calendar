@@ -105,7 +105,7 @@ class Entry : BaseColumns {
         }
     }
 
-    fun set(name: String, tags: List<Tag>, dates: List<Date>, notifications: List<Notification>, contents: String) { // todo should be transaction
+    fun set(name: String, tags: Iterable<Tag>, dates: Iterable<Date>, notifications: Iterable<Notification>, contents: String) { // todo should be transaction
         //setting contents
         try {
             FileOutputStream(contentsFile).use { fos ->
@@ -121,12 +121,12 @@ class Entry : BaseColumns {
         val tagsNew = tags.map { it.id }.toSet()
         val tagsOld = getTags().groupingBy { it.id }.reduce { _, accumulator, _ -> accumulator }
         for (tId in tagsOld.keys) {
-            if (!tagsNew.contains(tId)) rmTag(tId)
+            if (!tagsNew.contains(tId)) rmTag(tId!!)
         }
         for (t in tags) {
             if (!tagsOld.containsKey(t.id)) {
                 t.create()
-                addTag(t.id)
+                addTag(t.id!!)
             }
         }
 

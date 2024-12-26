@@ -4,8 +4,8 @@ import android.content.ContentValues
 import android.database.Cursor
 import android.provider.BaseColumns
 
-class Tag private constructor(private val dbManager: DbManager, var name: String, id: Int = -1, var color: Int = -1) : BaseColumns {
-    var id: Int = id
+class Tag private constructor(private val dbManager: DbManager, var name: String, id: Int? = null, var color: Int = -1) : BaseColumns {
+    var id: Int? = id
         private set
 
     fun create() { //fixme may fail on UNIQUE violation
@@ -16,15 +16,11 @@ class Tag private constructor(private val dbManager: DbManager, var name: String
         id = dbManager.writableDatabase.insert(TABLE_NAME, null, contentValues).toInt()
     }
 
-    fun exists(): Boolean {
-        return id != -1
-    }
-
-    fun delete(cascade: Boolean = false) { //fixme full checks. ask for cascade. set id to -1
+    fun update() { //fixme value update may fail
         throw UnsupportedOperationException("Not yet implemented")
     }
 
-    fun update() { //fixme value update may fail
+    fun delete(cascade: Boolean = false) { //fixme full checks. ask for cascade. set id to -1
         throw UnsupportedOperationException("Not yet implemented")
     }
 
@@ -34,13 +30,8 @@ class Tag private constructor(private val dbManager: DbManager, var name: String
         const val COLUMN_NAME_NAME: String = "name"
         const val COLUMN_NAME_COLOR: String = "color"
 
-        fun getOrNew(dbManager: DbManager, name: String): Tag {
-            dbManager.readableDatabase.rawQuery(
-                "SELECT * FROM $TABLE_NAME WHERE ${Entry.COLUMN_NAME_NAME} = ?",
-                arrayOf(name)
-            ).use { cursor ->
-                return cursorToList(dbManager, cursor).firstOrNull() ?: Tag(dbManager, name)
-            }
+        fun new(dbManager: DbManager, name: String): Tag {
+            return Tag(dbManager, name)
         }
 
         fun cursorToList(
