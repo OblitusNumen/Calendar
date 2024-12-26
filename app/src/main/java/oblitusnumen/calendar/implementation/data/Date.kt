@@ -80,19 +80,11 @@ class Date : BaseColumns {
         setTimesRepeat(timesRepeat)
     }
 
-    fun createOrUpdate() {
-        if (!isEmpty) {
-            if (id == null) {
-                create()
-            } else {
-                update()
-            }
-        } else {
-            delete()
-        }
-    }
-
     fun create() {
+        fixDateRange()
+        fixExceptionList()
+        if (isEmpty)
+            return
         val contentValues = getContentValues()
         contentValues.put(COLUMN_NAME_ID, null as Int?)
         id = dbManager!!.writableDatabase.insertWithOnConflict(
@@ -104,6 +96,12 @@ class Date : BaseColumns {
     }
 
     fun update() {
+        fixDateRange()
+        fixExceptionList()
+        if (isEmpty) {
+            delete()
+            return
+        }
         dbManager!!.writableDatabase.update(
             TABLE_NAME,
             getContentValues(),
@@ -112,7 +110,7 @@ class Date : BaseColumns {
         )
     }
 
-    fun delete() { //fixme delete cascade?
+    fun delete() {
         dbManager!!.writableDatabase.execSQL(
             "DELETE FROM $TABLE_NAME WHERE $COLUMN_NAME_ID = ?",
             arrayOf(id.toString())
@@ -140,12 +138,8 @@ class Date : BaseColumns {
     val isEndless: Boolean
         get() = end > END_ENDLESS_THRESHOLD
 
-    val isEmpty: Boolean //todo is this really needed?
+    val isEmpty: Boolean
         get() = timesRepeat <= 0
-
-    fun getZoneDateTime(zoneId: ZoneId, idx: Long): ZonedDateTime {
-        return getZoneDateTime(idx).withZoneSameInstant(zoneId)
-    }
 
     private fun getZoneDateTime(idx: Long): ZonedDateTime {
         return period.getTime(Instant.ofEpochSecond(start).atZone(zoneId), idx)
@@ -186,6 +180,7 @@ class Date : BaseColumns {
         return dates
     }
 
+    @TestOnly
     fun getZonedDateTimeIndex(start: Long, finish: Long): Long { //any(?) in range. still used by tests
         if (finish <= this.start) return -1
         if (this.end == this.start) return if (this.start >= start) 0 else -1
@@ -206,7 +201,7 @@ class Date : BaseColumns {
         return -1
     }
 
-    fun getZonedDateTimeInRange(start: Long, finish: Long): ZonedDateTime? { //any(?) in range
+    private fun getZonedDateTimeInRange(start: Long, finish: Long): ZonedDateTime? { //any(?) in range
         if (finish <= this.start) return null
         if (this.end == this.start) return if (this.start >= start) getZoneDateTime(0) else null
         val period = (this.end - this.start) / timesRepeat
@@ -283,7 +278,6 @@ class Date : BaseColumns {
         verifyParams(timesRepeat = timesRepeat)
         this.timesRepeat = timesRepeat
         this.end = getTime(timesRepeat - 1)
-        //todo maybe shrink exceptions?
     }
 
     fun setPeriod(period: Period) {
@@ -295,7 +289,6 @@ class Date : BaseColumns {
         verifyParams(period = period)
         this.period = period
         this.end = getTime(timesRepeat - 1)
-        //todo maybe shrink exceptions?
     }
 
     fun addExceptions(dateStart: LocalDate, dateEnd: LocalDate = dateStart) {
@@ -331,9 +324,10 @@ class Date : BaseColumns {
                 expectedCount += (end - getZoneDateTime(expectedCount).toEpochSecond()) / period.secondsApproximation() + 1
             if (getZoneDateTime(expectedCount - 1) > startOfDayEnd.plusDays(1))
                 expectedCount--
+            if (expectedCount < 0)
+                expectedCount = 0
             setTimesRepeat(expectedCount)
         }
-        //todo maybe shrink exceptions?
     }
 
     @TestOnly

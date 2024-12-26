@@ -39,13 +39,7 @@ class Tag private constructor(private val dbManager: DbManager, var name: String
                 "SELECT * FROM $TABLE_NAME WHERE ${Entry.COLUMN_NAME_NAME} = ?",
                 arrayOf(name)
             ).use { cursor ->
-                return if (cursor.moveToFirst()) {
-                    Tag(
-                        dbManager, cursor.getString(cursor.getColumnIndex(COLUMN_NAME_NAME)),
-                        cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_ID)),
-                        cursor.getInt(cursor.getColumnIndex(COLUMN_NAME_COLOR))
-                    )
-                } else Tag(dbManager, name)
+                return cursorToList(dbManager, cursor).firstOrNull() ?: Tag(dbManager, name)
             }
         }
 

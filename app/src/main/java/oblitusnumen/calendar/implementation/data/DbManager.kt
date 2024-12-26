@@ -5,15 +5,12 @@ import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import oblitusnumen.calendar.implementation.defaultZoneId
 import oblitusnumen.calendar.implementation.getZonedFromEpochSeconds
+import oblitusnumen.calendar.implementation.notifications.NotificationBroadcastReceiver.Companion.scheduleNotification
 import oblitusnumen.calendar.implementation.notifications.PendingNotification
-import oblitusnumen.calendar.implementation.zonedDateTime
 import java.io.File
-import java.time.LocalDate
-import java.time.ZonedDateTime
 import java.util.*
-import kotlin.collections.ArrayList
 
-class DbManager(val context: Context) :
+class DbManager(private val context: Context) :
     SQLiteOpenHelper(context, DB_NAME, null, DATABASE_VERSION) {
     val filesDir: File = context.filesDir
 
@@ -22,7 +19,12 @@ class DbManager(val context: Context) :
             throw RuntimeException("could not create directory for data: $filesDir")
     }
 
-    fun getNextNotificationTime(timeStamp: Long): Long? {
+    fun tryScheduleNotification(now: Long = System.currentTimeMillis() / 1000) {
+        val nextNotificationTime = getNextNotificationTime(now)
+        if (nextNotificationTime != null) scheduleNotification(context, nextNotificationTime, now)
+    }
+
+    private fun getNextNotificationTime(timeStamp: Long): Long? {
         var notificationTime: Long? = null
         for (notification in getAllNotifications()) {
             val fromO = notification.offset.getTime(getZonedFromEpochSeconds(timeStamp), 1).toEpochSecond()
@@ -74,15 +76,7 @@ class DbManager(val context: Context) :
         notifications.sort()
     }
 
-    fun getDates(start: ZonedDateTime, end: ZonedDateTime): List<Date> {
-        return getDates(start.toEpochSecond(), end.toEpochSecond())
-    }
-
-    fun getDates(start: LocalDate, end: LocalDate): List<Date> {
-        return getDates(zonedDateTime(start), zonedDateTime(end))
-    }
-
-    fun createEntry(): Entry {
+    fun createEntry(): Entry { // fixme wtf is this doing here
         return Entry(this)
     }
 
@@ -119,7 +113,7 @@ class DbManager(val context: Context) :
         }
     }
 
-    fun getAllNotifications(): List<Notification> {
+    private fun getAllNotifications(): List<Notification> {
         readableDatabase.rawQuery("SELECT * FROM ${Notification.TABLE_NAME}", arrayOf()).use { cursor ->
             return Notification.cursorToList(this, cursor)
         }

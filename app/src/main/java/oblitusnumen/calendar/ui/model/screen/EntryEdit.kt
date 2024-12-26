@@ -45,7 +45,6 @@ class EntryEdit(
     private var notifications: List<Notification> by mutableStateOf(entry.getNotifications().sortedBy { it.offset.secondsApproximation() })
     private var contents by mutableStateOf(TextFieldValue(entry.getContents()))  // FIXME: this should be List<Content>
     private var dateTimePicker = DateTimePicker()
-    private var updatedDates = mutableSetOf<Date>()
 
     @OptIn(ExperimentalLayoutApi::class)
     @Composable
@@ -234,10 +233,7 @@ class EntryEdit(
     fun drawDate(date: Date) {
         var periodSelectorShown by remember { mutableStateOf(false) }
         if (periodSelectorShown)
-            periodSelectorDialog({
-                periodSelectorShown = false
-                updatedDates += date
-            }, { periodSelectorShown = false }, date)
+            periodSelectorDialog({ periodSelectorShown = false }, { periodSelectorShown = false }, date)
         var updated by remember { mutableStateOf(false) }
         val textStart = (if (date.isPeriodic) "from " else "") +
                 date.getFirstZoneDateTime().format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm"))
@@ -253,7 +249,6 @@ class EntryEdit(
                 dateTimePicker.dateTimePick({}, {
                     // fixme probably cannot correctly change time...
                     date.setRange(startOfDayStart = ZonedDateTime.of(it, date.zoneId))
-                    updatedDates += date
                     updated = !updated
                 }, date.getFirstZoneDateTime().toLocalDateTime())
             }) {
@@ -269,10 +264,7 @@ class EntryEdit(
                 )
                 IconButton(
                     modifier = Modifier.align(Alignment.CenterVertically),
-                    onClick = {
-                        dates -= date
-                        updatedDates -= date
-                    },
+                    onClick = { dates -= date },
                     content = { Icon(Icons.Filled.Clear, contentDescription = null) })
             }
             Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp).clickable {
@@ -298,7 +290,6 @@ class EntryEdit(
                         IconButton(
                             modifier = Modifier.align(Alignment.CenterVertically),
                             onClick = {
-                                updatedDates += date
                                 date.removeExceptions(LocalDate.ofEpochDay(epochDay))
                                 updated = !updated
                             },
@@ -308,7 +299,6 @@ class EntryEdit(
                 Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp).clickable {
                     dateTimePicker.datePick({}, {
                         date.addExceptions(it)
-                        updatedDates += date
                         updated = !updated
                     })
                 }.padding(horizontal = 40.dp)) {
@@ -553,9 +543,6 @@ class EntryEdit(
         Row {
             BackButton(backPress)
             Button(onClick = {
-                for (date in updatedDates)
-                    if (date.exists())
-                        date.createOrUpdate()
                 entry.set(entryName.text, tags, dates, notifications, contents.text)
             }, modifier = Modifier.align(Alignment.Top)) {
                 Text("save")

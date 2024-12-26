@@ -93,8 +93,8 @@ class CalendarTab(
             }
             val dates =
                 dbManager.getDates(
-                    date,
-                    date.plusWeeks(1)
+                    zonedDateTime(date).toEpochSecond(),
+                    zonedDateTime(date.plusWeeks(1)).toEpochSecond()
                 )
             while (date.month.value == monthValue) {
                 displayDay(blockW, now, 3, date, dates)

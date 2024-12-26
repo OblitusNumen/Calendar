@@ -3,7 +3,6 @@ package oblitusnumen.calendar.implementation.data
 import android.content.ContentValues
 import android.database.Cursor
 import android.provider.BaseColumns
-import oblitusnumen.calendar.implementation.notifications.NotificationBroadcastReceiver.Companion.scheduleNotification
 import oblitusnumen.calendar.implementation.rmRecursively
 import java.io.File
 import java.io.FileInputStream
@@ -113,7 +112,7 @@ class Entry : BaseColumns {
         }
     }
 
-    fun set(name: String, tags: List<Tag>, dates: List<Date>, notifications: List<Notification>, contents: String) {
+    fun set(name: String, tags: List<Tag>, dates: List<Date>, notifications: List<Notification>, contents: String) { // todo should be transaction
         //setting contents
         try {
             FileOutputStream(contentsFile).use { fos ->
@@ -126,60 +125,39 @@ class Entry : BaseColumns {
         update()
 
         //setting tags
-        val tags1 = LinkedList(tags)
+        val tagsNew = tags.stream().collect(Collectors.toMap(Tag::id) { it })
         val tagsOld = getTags().stream().collect(Collectors.toMap(Tag::id) { it })
-        tags1.removeIf {
-            if (it.exists())
-                return@removeIf false
-            it.create()
-            addTag(it.id)
-            return@removeIf true
+        for (tId in tagsOld.keys) {
+            if (!tagsNew.containsKey(tId)) rmTag(tId)
         }
-        for (tag in tags1) {
-            if (tagsOld.containsKey(tag.id)) {
-                tagsOld.remove(tag.id)
-            } else {
-                addTag(tag.id)
+        for (t in tags) {
+            if (!tagsOld.containsKey(t.id)) {
+                t.create()
+                addTag(t.id)
             }
-        }
-        for (t in tagsOld.keys) {
-            rmTag(t)
         }
 
         //setting dates
-        val dates1 = LinkedList(dates)
-        val datesOld = this.getDates().stream().collect(
-            Collectors.toMap({ it.id }, { it })
-        )
-        dates1.removeIf {
-            if (it.exists())
-                return@removeIf false
-            it.createOrUpdate()
-            return@removeIf true
-        }
-        for (date in dates1) { //todo incorrect date modification behavior? cannot check yet (UI does not exist)
-            if (datesOld.containsKey(date.id)) {
-                datesOld.remove(date.id)
-            } else {
-                date.createOrUpdate()
-            }
-        }
+        val datesNew = dates.stream().collect(Collectors.toMap({ it.id }, { it }))
+        val datesOld = getDates().stream().collect(Collectors.toMap({ it.id }, { it }))
         for (d in datesOld.values) {
-            d.delete()
+            if (!datesNew.containsKey(d.id)) d.delete()
+        }
+        for (d in dates) {
+            if (datesOld.containsKey(d.id)) d.update() else d.create()
         }
 
         //setting notifications
-        val notifications1 = notifications.stream().collect(Collectors.toMap({ it.offset.toString() }, { it }))
-        val notificationsOld = this.getNotifications().stream().collect(Collectors.toMap({ it.offset.toString() }, { it }))
+        val notificationsNew = notifications.stream().collect(Collectors.toMap({ it.offset.toString() }, { it }))
+        val notificationsOld = getNotifications().stream().collect(Collectors.toMap({ it.offset.toString() }, { it }))
         for (n in notificationsOld.values) {
-            if (!notifications1.containsKey(n.offset.toString())) n.delete()
+            if (!notificationsNew.containsKey(n.offset.toString())) n.delete()
         }
         for (n in notifications) {
             if (notificationsOld.containsKey(n.offset.toString())) n.update() else n.create()
         }
-        val now = System.currentTimeMillis() / 1000
-        val nextNotificationTime = dbManager.getNextNotificationTime(now)
-        if (nextNotificationTime != null) scheduleNotification(dbManager.context, nextNotificationTime, now)
+
+        dbManager.tryScheduleNotification()
     }
 
     private fun update() {
@@ -197,7 +175,6 @@ class Entry : BaseColumns {
     }
 
     companion object {
-        //TODO not every entry requires 'contents'. create dir only when needed
         const val TABLE_NAME: String = "entries"
         const val COLUMN_NAME_ID: String = "id"
         const val COLUMN_NAME_NAME: String = "name"

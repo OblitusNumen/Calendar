@@ -36,8 +36,8 @@ class DateScreen(
         val dates = remember {
             val begin = zonedDateTime(day)
             dbManager.getDates(
-                day,
-                day.plusDays(1)
+                zonedDateTime(day).toEpochSecond(),
+                zonedDateTime(day.plusDays(1)).toEpochSecond()
             ).filter { date -> date.forDay(begin) != null }.sortedBy { it.forDay(begin) }
         }
         LazyColumn(modifier) {

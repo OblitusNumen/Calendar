@@ -18,37 +18,37 @@ import java.time.format.DateTimeFormatter
 
 class NotificationBroadcastReceiver : BroadcastReceiver() {
     override fun onReceive(c: Context, intent: Intent) {
-        val dbManager = DbManager(c)
-        val now = System.currentTimeMillis() / 1000 + 10// fixing possible early invocation
-        val sharedPreferences: SharedPreferences =
-            c.getSharedPreferences(MainActivity.SHARED_PREFERENCES_NAME, Context.MODE_PRIVATE)
-        val pendingNotifications = dbManager.getPendingNotificationsInRange(
-            sharedPreferences.getLong(
-                LAST_NOTIFICATION_TIME_PREFERENCE_NAME,
-                now
-            ), now
-        )
-        val manager = c.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        for (pendingNotification in pendingNotifications) {
-            val notification = NotificationCompat.Builder(
-                c,
-                if (pendingNotification.notification.sound) NORMAL_CHANNEL_ID else SILENT_CHANNEL_ID
+        DbManager(c).use { dbManager ->
+            val now = System.currentTimeMillis() / 1000 + 10// fixing possible early invocation
+            val sharedPreferences: SharedPreferences =
+                c.getSharedPreferences(MainActivity.SHARED_PREFERENCES_NAME, Context.MODE_PRIVATE)
+            val pendingNotifications = dbManager.getPendingNotificationsInRange(
+                sharedPreferences.getLong(
+                    LAST_NOTIFICATION_TIME_PREFERENCE_NAME,
+                    now
+                ), now
             )
-                .setSmallIcon(R.drawable.ic_launcher_foreground)
-                .setContentTitle(pendingNotification.date.getDesc())
-                .setContentText(// FIXME: format
-                    "Upcoming event in ${pendingNotification.notification.offset.data} ${pendingNotification.notification.offset.modifier}\n(at ${
-                        getZonedFromEpochSeconds(
-                            pendingNotification.eventDateTime
-                        ).format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm"))
-                    })"
+            val manager = c.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            for (pendingNotification in pendingNotifications) {
+                val notification = NotificationCompat.Builder(
+                    c,
+                    if (pendingNotification.notification.sound) NORMAL_CHANNEL_ID else SILENT_CHANNEL_ID
                 )
-                .build()
-            manager.notify(pendingNotification.dateHash(), notification)
-            scheduleNotification(c, ZonedDateTime.now().plusMinutes(30).toEpochSecond() * 1000)
+                    .setSmallIcon(R.drawable.ic_launcher_foreground)
+                    .setContentTitle(pendingNotification.date.getDesc())
+                    .setContentText(// FIXME: format
+                        "Upcoming event in ${pendingNotification.notification.offset.data} ${pendingNotification.notification.offset.modifier}\n(at ${
+                            getZonedFromEpochSeconds(
+                                pendingNotification.eventDateTime
+                            ).format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm"))
+                        })"
+                    )
+                    .build()
+                manager.notify(pendingNotification.dateHash(), notification)
+                scheduleNotification(c, ZonedDateTime.now().plusMinutes(30).toEpochSecond() * 1000)
+            }
+            dbManager.tryScheduleNotification(now)
         }
-        val nextNotificationTime = dbManager.getNextNotificationTime(now)
-        if (nextNotificationTime != null) scheduleNotification(c, nextNotificationTime, now)
     }
 
     companion object {

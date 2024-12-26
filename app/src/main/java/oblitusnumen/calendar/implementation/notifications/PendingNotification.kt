@@ -4,7 +4,12 @@ import oblitusnumen.calendar.implementation.data.Date
 import oblitusnumen.calendar.implementation.data.Notification
 import java.util.*
 
-class PendingNotification(val date: Date, val notification: Notification, val notificationDateTime: Long, val eventDateTime: Long) : Comparable<PendingNotification> {
+class PendingNotification(
+    val date: Date,
+    val notification: Notification,
+    private val notificationDateTime: Long,
+    val eventDateTime: Long
+) : Comparable<PendingNotification> {
     fun dateHash(): Int {
         return Objects.hash(date.id, eventDateTime)
     }
