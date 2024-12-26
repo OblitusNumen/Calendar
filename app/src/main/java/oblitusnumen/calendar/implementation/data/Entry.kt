@@ -120,10 +120,10 @@ class Entry : BaseColumns {
         update()
 
         //setting tags
-        val tagsNew = tags.stream().collect(Collectors.toMap(Tag::id) { it })
-        val tagsOld = getTags().stream().collect(Collectors.toMap(Tag::id) { it })
+        val tagsNew = tags.map { it.id }.toSet()
+        val tagsOld = getTags().groupingBy { it.id }.reduce { _, accumulator, _ -> accumulator }
         for (tId in tagsOld.keys) {
-            if (!tagsNew.containsKey(tId)) rmTag(tId)
+            if (!tagsNew.contains(tId)) rmTag(tId)
         }
         for (t in tags) {
             if (!tagsOld.containsKey(t.id)) {
@@ -133,20 +133,21 @@ class Entry : BaseColumns {
         }
 
         //setting dates
-        val datesNew = dates.stream().collect(Collectors.toMap({ it.id }, { it }))
-        val datesOld = getDates().stream().collect(Collectors.toMap({ it.id }, { it }))
+        val datesNew = dates.map { it.id }.toSet()
+        val datesOld = getDates().groupingBy { it.id }.reduce { _, accumulator, _ -> accumulator }
         for (d in datesOld.values) {
-            if (!datesNew.containsKey(d.id)) d.delete()
+            if (!datesNew.contains(d.id)) d.delete()
         }
         for (d in dates) {
             if (datesOld.containsKey(d.id)) d.update() else d.create()
         }
 
         //setting notifications
-        val notificationsNew = notifications.stream().collect(Collectors.toMap({ it.offset.toString() }, { it }))
-        val notificationsOld = getNotifications().stream().collect(Collectors.toMap({ it.offset.toString() }, { it }))
+        val notificationsNew = notifications.map { it.offset.toString() }.toSet()
+        val notificationsOld =
+            getNotifications().groupingBy { it.offset.toString() }.reduce { _, accumulator, _ -> accumulator }
         for (n in notificationsOld.values) {
-            if (!notificationsNew.containsKey(n.offset.toString())) n.delete()
+            if (!notificationsNew.contains(n.offset.toString())) n.delete()
         }
         for (n in notifications) {
             if (notificationsOld.containsKey(n.offset.toString())) n.update() else n.create()
