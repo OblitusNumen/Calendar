@@ -27,10 +27,16 @@ class DbManager(private val context: Context) :
 
     private fun getNextNotificationTime(timeStamp: Long): Long? {
         var notificationTime: Long? = null
+        val dateCache: MutableMap<Int, List<Date>> = mutableMapOf()
         for (notification in getAllNotifications()) {
-            val fromO = notification.offset.getTime(getZonedFromEpochSeconds(timeStamp), 1).toEpochSecond()
-            val entry = getEntryById(notification.entryId) ?: throw IllegalStateException("DATABASE IS CORRUPTED")
-            for (date in entry.getDates()) {
+            val fromO = notification.offset.getTime(getZonedFromEpochSeconds(timeStamp), 1).toEpochSecond() //15us
+            val dates = dateCache.computeIfAbsent(notification.entryId) {
+                Date.getAllByEntryId(
+                    this,
+                    notification.entryId
+                )
+            }
+            for (date in dates) {
                 val nextTime = date.getNext(fromO)
                 if (nextTime != null) {
                     val nnt = notification.offset.getTime(nextTime.withZoneSameInstant(defaultZoneId()), -1).toEpochSecond()
@@ -43,11 +49,17 @@ class DbManager(private val context: Context) :
 
     fun getPendingNotificationsInRange(from: Long, to: Long): List<PendingNotification> {
         val notifications: MutableList<PendingNotification> = ArrayList()
+        val dateCache: MutableMap<Int, List<Date>> = mutableMapOf()
         for (notification in getAllNotifications()) {
             val fromO = notification.offset.getTime(getZonedFromEpochSeconds(from), 1).toEpochSecond()
             val toO = notification.offset.getTime(getZonedFromEpochSeconds(to), 1).toEpochSecond()
-            val entry = getEntryById(notification.entryId) ?: throw IllegalStateException("DATABASE IS CORRUPTED")
-            for (date in entry.getDates()) {
+            val dates = dateCache.computeIfAbsent(notification.entryId) {
+                Date.getAllByEntryId(
+                    this,
+                    notification.entryId
+                )
+            }
+            for (date in dates) {
                 for (dateTime in date.getAllInRange(fromO, toO)) {
                     notifications.add(
                         PendingNotification(

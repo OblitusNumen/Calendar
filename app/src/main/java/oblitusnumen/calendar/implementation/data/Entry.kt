@@ -66,12 +66,7 @@ class Entry : BaseColumns {
     }
 
     fun getDates(): List<Date> {
-        dbManager.readableDatabase.rawQuery(
-            "SELECT * FROM ${Date.TABLE_NAME} WHERE ${Date.COLUMN_NAME_ENTRY_ID} = ?",
-            arrayOf(id.toString())
-        ).use { cursor ->
-            return Date.cursorToList(dbManager, cursor)
-        }
+        return Date.getAllByEntryId(dbManager, id!!)
     }
 
     private val dir: File
