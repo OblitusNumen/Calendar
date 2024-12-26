@@ -9,11 +9,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import androidx.core.app.NotificationCompat
-import oblitusnumen.calendar.MainActivity
 import oblitusnumen.calendar.R
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.getZonedFromEpochSeconds
-import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
 class NotificationBroadcastReceiver : BroadcastReceiver() {
@@ -44,8 +42,8 @@ class NotificationBroadcastReceiver : BroadcastReceiver() {
                     )
                     .build()
                 manager.notify(pendingNotification.dateHash(), notification)
-                scheduleNotification(c, ZonedDateTime.now().plusMinutes(30).toEpochSecond() * 1000)
             }
+            sharedPreferences.edit().putLong(LAST_NOTIFICATION_TIME_PREFERENCE_NAME, System.currentTimeMillis() / 1000).apply()
             dbManager.tryScheduleNotification(now)
         }
     }
@@ -55,9 +53,7 @@ class NotificationBroadcastReceiver : BroadcastReceiver() {
         const val SILENT_CHANNEL_ID = "silent_channel"
         const val LAST_NOTIFICATION_TIME_PREFERENCE_NAME = "last_notification_time"
 
-        fun scheduleNotification(c: Context, triggerAtMillis: Long, now: Long = System.currentTimeMillis() / 1000) {
-            val sharedPreferences: SharedPreferences = DbManager.getSharedPrefs(c)
-            sharedPreferences.edit().putLong(LAST_NOTIFICATION_TIME_PREFERENCE_NAME, now).apply()
+        fun scheduleNotification(c: Context, triggerAtMillis: Long) {
             val intent = Intent(c, NotificationBroadcastReceiver::class.java)
             val pendingIntent = PendingIntent.getBroadcast(
                 c,
