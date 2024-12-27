@@ -9,6 +9,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.outlined.Call
 import androidx.compose.material.icons.outlined.Notifications
@@ -32,7 +33,6 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
-import kotlin.math.roundToInt
 
 class EntryEdit(
     private val dbManager: DbManager,
@@ -61,6 +61,8 @@ class EntryEdit(
                 label = { Text("Enter event name") },
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
             )
+            var tagChoose by remember { mutableStateOf(false) }
+            if (tagChoose) tagChooseMenu({ tagChoose = false }, { tags = it })
             FlowRow(
                 Modifier.fillMaxWidth().padding(horizontal = 16.dp)
             ) {
@@ -68,13 +70,12 @@ class EntryEdit(
                     drawTag(tag)
             }
             Box(Modifier.fillMaxWidth().padding(top = 8.dp).clickable {
-                tags = tags + Tag.getOrNew(dbManager, "genTag" + (Math.random() * 100000).roundToInt())
-                // fixme show screen/menu
+                tagChoose = true
             }) {
                 Text(
                     modifier = Modifier.align(Alignment.CenterStart)
                         .padding(horizontal = 44.dp, vertical = 16.dp),
-                    text = "Add tag...",
+                    text = "Choose tags...",
                     style = MaterialTheme.typography.bodyLarge
                 )
             }
@@ -155,7 +156,8 @@ class EntryEdit(
             }
             HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
             OutlinedTextField(
-                modifier = Modifier.defaultMinSize(minHeight = 52.dp).fillMaxWidth().padding(horizontal = 12.dp).padding(bottom = 12.dp),
+                modifier = Modifier.defaultMinSize(minHeight = 52.dp).fillMaxWidth().padding(horizontal = 12.dp)
+                    .padding(bottom = 12.dp),
                 value = contents, onValueChange = {
                     contents = it
                 },
@@ -166,11 +168,107 @@ class EntryEdit(
         }
     }
 
+    @OptIn(ExperimentalLayoutApi::class)
+    @Composable
+    fun tagChooseMenu(onClose: () -> Unit, tagAcceptor: (List<Tag>) -> Unit) {
+        val allTags = dbManager.getAllTags().groupingBy { it.name }.reduce { _, accumulator, _ -> accumulator }
+        val chosenTags: MutableSet<String> = tags.map { it.name }.toMutableSet()
+        var searchTag by remember { mutableStateOf("") }
+
+        AlertDialog(
+            onDismissRequest = onClose,
+            dismissButton = {
+                TextButton(onClick = onClose) {
+                    Text("Cancel")
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    onClose()
+                    tagAcceptor(chosenTags.map {
+                        allTags.getOrElse(it) { Tag.new(dbManager, it) }
+                    })
+                }) {
+                    Text("OK")
+                }
+            },
+            text = {
+                Column {
+                    OutlinedTextField(// FIXME: ui paddings
+                        modifier = Modifier.padding(horizontal = 8.dp),
+                        value = searchTag, onValueChange = {
+                            searchTag = it
+                        },
+                        textStyle = MaterialTheme.typography.bodyLarge,
+                        keyboardOptions = KeyboardOptions(
+                            imeAction = ImeAction.Done
+                        ),
+                        label = { Text("Tag name") }
+                    )
+                    FlowRow(
+                        Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)
+                    ) {
+                        searchTag // FIXME: yet another filthy hack
+                        if (searchTag.isNotEmpty() && !chosenTags.contains(searchTag)) {
+                            drawTag(
+                                searchTag,
+                                null,
+                                false
+                            ) { if (it) chosenTags += searchTag else chosenTags -= searchTag }
+                        }
+                        for (tag in chosenTags) {
+                            drawTag(tag, allTags[tag], true) { if (it) chosenTags += tag else chosenTags -= tag }
+                        }
+                        for (tag in allTags.values) {
+                            if (!chosenTags.contains(tag.name) && tag.name.contains(
+                                    searchTag,
+                                    true
+                                ) && tag.name != searchTag
+                            ) drawTag(
+                                tag.name,
+                                tag,
+                                false
+                            ) { if (it) chosenTags += tag.name else chosenTags -= tag.name }
+                        }
+                    }
+                }
+            }
+        )
+    }
+
+    @Composable
+    private fun drawTag(name: String, tag: Tag?, chosen: Boolean, onChooseToggle: (Boolean) -> Unit) {
+        var selected by remember(name) { mutableStateOf(chosen) }
+        val bgColor = Color.Transparent //fixme tag color
+        InputChip(
+            selected,
+            {
+                selected = !selected
+                onChooseToggle(selected)
+            },
+            {
+                Text(
+                    name, style = MaterialTheme.typography.bodyLarge,
+                    color = bgColorToTextColor(bgColor)
+                )
+            },
+            modifier = Modifier.padding(horizontal = 4.dp),
+            trailingIcon = {
+                if (selected) Icon(
+                    Icons.Filled.Done, null,
+                    tint = bgColorToTextColor(bgColor)
+                )
+            },
+            colors = InputChipDefaults.inputChipColors(containerColor = bgColor),
+        )
+    }
+
     @Composable
     fun drawNotificationAddMenu(onConfirm: (Period, Boolean) -> Unit, onDismiss: () -> Unit) {
         var silent by remember { mutableStateOf(false) }
         var offsetCount by remember { mutableStateOf("1") }
         var selectedOffsetType by remember { mutableStateOf(OffsetType(Period.ONCE)) }
+
         AlertDialog(
             onDismissRequest = onDismiss,
             dismissButton = {
