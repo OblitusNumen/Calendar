@@ -3,25 +3,45 @@ package oblitusnumen.calendar.implementation.data
 import android.content.ContentValues
 import android.database.Cursor
 import android.provider.BaseColumns
+import androidx.compose.ui.graphics.Color
+import oblitusnumen.calendar.implementation.toColor
+import oblitusnumen.calendar.implementation.toInt
 
-class Tag private constructor(private val dbManager: DbManager, var name: String, id: Int? = null, var color: Int = -1) : BaseColumns {
+class Tag private constructor(private val dbManager: DbManager, var name: String, id: Int? = null, var color: Color? = null) : BaseColumns {
     var id: Int? = id
         private set
 
-    fun create() { //fixme may fail on UNIQUE violation
-        val contentValues = ContentValues()
+    fun create() { //todo may fail on UNIQUE violation
+        val contentValues = getContentValues()
         contentValues.put(COLUMN_NAME_ID, null as Int?)
-        contentValues.put(COLUMN_NAME_NAME, name)
-        contentValues.put(COLUMN_NAME_COLOR, color)
         id = dbManager.writableDatabase.insert(TABLE_NAME, null, contentValues).toInt()
     }
 
-    fun update() { //fixme value update may fail
-        throw UnsupportedOperationException("Not yet implemented")
+    private fun getContentValues(): ContentValues {
+        val contentValues = ContentValues()
+        contentValues.put(COLUMN_NAME_NAME, name)
+        contentValues.put(COLUMN_NAME_COLOR, color.toInt())
+        return contentValues
     }
 
-    fun delete(cascade: Boolean = false) { //fixme full checks. ask for cascade. set id to -1
-        throw UnsupportedOperationException("Not yet implemented")
+    fun update() { //todo value update may fail
+        dbManager.writableDatabase.update(TABLE_NAME, getContentValues(), "$COLUMN_NAME_ID = ?", arrayOf(id.toString()))
+    }
+
+    fun deleteCascade() { // TODO: use transaction
+        dbManager.writableDatabase.delete(EntryTagLinks.TABLE_NAME, "${EntryTagLinks.COLUMN_NAME_TAG_ID} = ?", arrayOf(id.toString()))
+        dbManager.writableDatabase.delete(TABLE_NAME, "$COLUMN_NAME_ID = ?", arrayOf(id.toString()))
+        id = null
+    }
+
+    fun createIfNotExists() {
+        if (id == null) create()
+    }
+
+    fun set(name: String, color: Color) {
+        this.name = name
+        this.color = color
+        update()
     }
 
     companion object {
@@ -47,7 +67,7 @@ class Tag private constructor(private val dbManager: DbManager, var name: String
                     Tag(
                         dbManager, cursor.getString(idxName),
                         cursor.getInt(idxId),
-                        cursor.getInt(idxColor)
+                        cursor.getInt(idxColor).toColor()
                     )
                 )
             return tags

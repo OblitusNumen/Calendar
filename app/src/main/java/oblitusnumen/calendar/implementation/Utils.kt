@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
@@ -16,6 +17,9 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.util.*
 
+fun Int.toColor(): Color? = if (this == -1) null else Color(this or 0xFF000000.toInt())
+
+fun Color?.toInt(): Int = if (this == null) -1 else (this.toArgb() and 0xFFFFFF)
 
 fun rmRecursively(file: File) {
     if (file.isDirectory) {

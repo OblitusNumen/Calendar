@@ -237,7 +237,7 @@ class EntryEdit(
     }
 
     @Composable
-    private fun drawTag(name: String, tag: Tag?, chosen: Boolean, onChooseToggle: (Boolean) -> Unit) {
+    fun drawTag(name: String, tag: Tag?, chosen: Boolean, onChooseToggle: (Boolean) -> Unit) {
         var selected by remember(name) { mutableStateOf(chosen) }
         val bgColor = Color.Transparent //fixme tag color
         InputChip(
@@ -644,7 +644,7 @@ class EntryEdit(
                 Text("save")
             }
             Button(onClick = {
-                entry.delete()
+                entry.deleteCascade()
                 backPress()
             }, modifier = Modifier.align(Alignment.Top)) {
                 Text("delete")

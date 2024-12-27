@@ -126,6 +126,25 @@ class DbManager(private val context: Context) :
         }
     }
 
+    fun getAllTagsWithEntryCount(): Map<Tag, Int> {
+        "SELECT t.*, count(l.entryId) FROM tags as t left JOIN entryTagLinks as l ON l.tagId = t.id group by t.id;"
+        readableDatabase.rawQuery("SELECT t.*, count(l.${EntryTagLinks.COLUMN_NAME_ENTRY_ID}) as \"entryCount\" " +
+                "FROM ${Tag.TABLE_NAME} as t " +
+                "LEFT JOIN ${EntryTagLinks.TABLE_NAME} as l " +
+                "ON l.${EntryTagLinks.COLUMN_NAME_TAG_ID} = t.${Tag.COLUMN_NAME_ID} " +
+                "GROUP BY t.${Tag.COLUMN_NAME_ID}", arrayOf()).use { cursor ->
+                    val result = HashMap<Tag, Int>()
+            val tags = Tag.cursorToList(this, cursor)
+            val entryCountIdx = cursor.getColumnIndex("entryCount")
+            cursor.moveToFirst()
+            for (t in tags) {
+                result[t] = cursor.getInt(entryCountIdx)
+                cursor.moveToNext()
+            }
+            return result
+        }
+    }
+
     private fun getAllNotifications(): List<Notification> {
         readableDatabase.rawQuery("SELECT * FROM ${Notification.TABLE_NAME}", arrayOf()).use { cursor ->
             return Notification.cursorToList(this, cursor)

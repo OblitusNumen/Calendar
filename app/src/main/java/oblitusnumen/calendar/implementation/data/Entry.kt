@@ -73,7 +73,7 @@ class Entry : BaseColumns {
     private val contentsFile: File
         get() = File(dir, CONTENTS_FILENAME)
 
-    fun delete() { // FIXME: check refs or delete cascade. Use transactions
+    fun deleteCascade() { // FIXME: Use transactions
         dbManager.writableDatabase.execSQL(
             "DELETE FROM ${EntryTagLinks.TABLE_NAME} WHERE ${EntryTagLinks.COLUMN_NAME_ENTRY_ID} = ?",
             arrayOf(id.toString())
@@ -125,7 +125,7 @@ class Entry : BaseColumns {
         }
         for (t in tags) {
             if (!tagsOld.containsKey(t.id)) {
-                t.create()
+                t.createIfNotExists()
                 addTag(t.id!!)
             }
         }

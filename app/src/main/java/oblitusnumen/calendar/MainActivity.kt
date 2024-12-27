@@ -147,9 +147,10 @@ class MainActivity : ComponentActivity() {
             }
 
             composable(route = NavRoutes.Tags.route) {
-                val tagsTab = viewModel { TagsTab(dbManager) }
+                val tagsTab = viewModel { TagsTab(dbManager) { /*fixme transition to editTag*/ } }
                 Scaffold(
-                    bottomBar = { drawBottomBar(navController) }) {
+                    bottomBar = { drawBottomBar(navController) },
+                    floatingActionButton = { tagsTab.functionButton() }) {
                     tagsTab.compose()
                 }
             }
