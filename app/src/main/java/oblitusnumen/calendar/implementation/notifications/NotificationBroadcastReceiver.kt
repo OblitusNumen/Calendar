@@ -12,11 +12,13 @@ import androidx.core.app.NotificationCompat
 import oblitusnumen.calendar.R
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.getZonedFromEpochSeconds
+import oblitusnumen.calendar.implementation.log
 import java.time.format.DateTimeFormatter
 
 class NotificationBroadcastReceiver : BroadcastReceiver() {
     override fun onReceive(c: Context, intent: Intent) {
         DbManager(c).use { dbManager ->
+            log("NotificationBroadcastReceiver RECEIVED INTENT")
             val now = System.currentTimeMillis() / 1000 + 10// fixing possible early invocation
             val sharedPreferences: SharedPreferences = DbManager.getSharedPrefs(c)
             val pendingNotifications = dbManager.getPendingNotificationsInRange(
@@ -27,13 +29,14 @@ class NotificationBroadcastReceiver : BroadcastReceiver() {
             )
             val manager = c.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             for (pendingNotification in pendingNotifications) {
+                log("NotificationBroadcastReceiver SENDING_NOTIFICATION " + pendingNotification.notification.entryId + ":" + pendingNotification.notification.offset)
                 val notification = NotificationCompat.Builder(
                     c,
                     if (pendingNotification.notification.sound) NORMAL_CHANNEL_ID else SILENT_CHANNEL_ID
                 )
                     .setSmallIcon(R.drawable.ic_launcher_foreground)
                     .setContentTitle(pendingNotification.date.getDesc())
-                    .setContentText(// FIXME: format
+                    .setContentText(// FIXME: format, missed events
                         "Upcoming event in ${pendingNotification.notification.offset.data} ${pendingNotification.notification.offset.modifier}\n(at ${
                             getZonedFromEpochSeconds(
                                 pendingNotification.eventDateTime
@@ -54,6 +57,9 @@ class NotificationBroadcastReceiver : BroadcastReceiver() {
         const val LAST_NOTIFICATION_TIME_PREFERENCE_NAME = "last_notification_time"
 
         fun scheduleNotification(c: Context, triggerAtMillis: Long) {
+            log("NotificationBroadcastReceiver RESCHEDULING_NOTIFICATION AT ${triggerAtMillis / 1000} " +
+                    "T=${System.currentTimeMillis() / 1000} " +
+                    "D=${(triggerAtMillis - System.currentTimeMillis()) / 1000}")
             val intent = Intent(c, NotificationBroadcastReceiver::class.java)
             val pendingIntent = PendingIntent.getBroadcast(
                 c,
