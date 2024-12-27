@@ -1,6 +1,7 @@
 package oblitusnumen.calendar.ui.model.tab
 
-import androidx.compose.foundation.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -28,7 +29,9 @@ class EntriesTab(
 
     @Composable
     fun compose(modifier: Modifier) {
-        val entries = remember { dbManager.getEntries() }
+        val entries = remember {// TODO: maybe sort by netx date
+            dbManager.getEntries().sortedBy { it.name }
+        }
         LazyColumn(modifier) {
             items(entries) {
                 drawEntry(it)
