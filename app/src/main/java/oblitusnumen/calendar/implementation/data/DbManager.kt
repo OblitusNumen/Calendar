@@ -4,16 +4,24 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
+import androidx.compose.ui.graphics.Color
 import oblitusnumen.calendar.implementation.defaultZoneId
 import oblitusnumen.calendar.implementation.getZonedFromEpochSeconds
 import oblitusnumen.calendar.implementation.notifications.NotificationBroadcastReceiver.Companion.scheduleNotification
 import oblitusnumen.calendar.implementation.notifications.PendingNotification
+import oblitusnumen.calendar.implementation.toColor
+import oblitusnumen.calendar.implementation.toInt
 import java.io.File
 import java.util.*
 
 class DbManager(private val context: Context) :
     SQLiteOpenHelper(context, DB_NAME, null, DATABASE_VERSION) {
     val filesDir: File = context.filesDir
+    var defaultTagColor: Color = getSharedPrefs(context).getInt(DEFAULT_COLOR_PREF_NAME, -1).toColor() ?: Color.Gray
+        set(color) {
+            getSharedPrefs(context).edit().putInt(DEFAULT_COLOR_PREF_NAME, color.toInt()).apply()
+            field = color
+        }
 
     init {
         if (!filesDir.exists() && !filesDir.mkdirs())
@@ -39,7 +47,8 @@ class DbManager(private val context: Context) :
             for (date in dates) {
                 val nextTime = date.getNext(fromO)
                 if (nextTime != null) {
-                    val nnt = notification.offset.getTime(nextTime.withZoneSameInstant(defaultZoneId()), -1).toEpochSecond()
+                    val nnt =
+                        notification.offset.getTime(nextTime.withZoneSameInstant(defaultZoneId()), -1).toEpochSecond()
                     if (notificationTime == null || notificationTime > nnt) notificationTime = nnt
                 }
             }
@@ -127,13 +136,14 @@ class DbManager(private val context: Context) :
     }
 
     fun getAllTagsWithEntryCount(): Map<Tag, Int> {
-        "SELECT t.*, count(l.entryId) FROM tags as t left JOIN entryTagLinks as l ON l.tagId = t.id group by t.id;"
-        readableDatabase.rawQuery("SELECT t.*, count(l.${EntryTagLinks.COLUMN_NAME_ENTRY_ID}) as \"entryCount\" " +
-                "FROM ${Tag.TABLE_NAME} as t " +
-                "LEFT JOIN ${EntryTagLinks.TABLE_NAME} as l " +
-                "ON l.${EntryTagLinks.COLUMN_NAME_TAG_ID} = t.${Tag.COLUMN_NAME_ID} " +
-                "GROUP BY t.${Tag.COLUMN_NAME_ID}", arrayOf()).use { cursor ->
-                    val result = HashMap<Tag, Int>()
+        readableDatabase.rawQuery(
+            "SELECT t.*, count(l.${EntryTagLinks.COLUMN_NAME_ENTRY_ID}) as \"entryCount\" " +
+                    "FROM ${Tag.TABLE_NAME} as t " +
+                    "LEFT JOIN ${EntryTagLinks.TABLE_NAME} as l " +
+                    "ON l.${EntryTagLinks.COLUMN_NAME_TAG_ID} = t.${Tag.COLUMN_NAME_ID} " +
+                    "GROUP BY t.${Tag.COLUMN_NAME_ID}", arrayOf()
+        ).use { cursor ->
+            val result = HashMap<Tag, Int>()
             val tags = Tag.cursorToList(this, cursor)
             val entryCountIdx = cursor.getColumnIndex("entryCount")
             cursor.moveToFirst()
@@ -152,7 +162,10 @@ class DbManager(private val context: Context) :
     }
 
     fun getEntryById(id: Int): Entry? {
-        readableDatabase.rawQuery("SELECT * FROM ${Entry.TABLE_NAME} WHERE ${Entry.COLUMN_NAME_ID} = ?", arrayOf(id.toString())).use { cursor ->
+        readableDatabase.rawQuery(
+            "SELECT * FROM ${Entry.TABLE_NAME} WHERE ${Entry.COLUMN_NAME_ID} = ?",
+            arrayOf(id.toString())
+        ).use { cursor ->
             val entries = Entry.cursorToList(this, cursor)
             return if (entries.isEmpty()) null else entries[0]
         }
@@ -166,7 +179,8 @@ class DbManager(private val context: Context) :
 
     companion object {
         const val DATABASE_VERSION: Int = 1
-        const val SHARED_PREFERENCES_NAME: String = "calendar_preferences"
+        private const val SHARED_PREFERENCES_NAME: String = "calendar_preferences"
+        private const val DEFAULT_COLOR_PREF_NAME: String = "default_tag_color"
         const val DB_NAME: String = "entries.db"
         private const val SQL_CREATE_ENTRIES =
             "CREATE TABLE IF NOT EXISTS ${Entry.TABLE_NAME} (" +

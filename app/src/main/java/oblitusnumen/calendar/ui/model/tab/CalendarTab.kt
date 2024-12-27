@@ -97,7 +97,7 @@ class CalendarTab(
                     zonedDateTime(date.plusWeeks(1)).toEpochSecond()
                 )
             while (date.month.value == monthValue) {
-                displayDay(blockW, now, 3, date, dates)
+                displayDay(blockW, now, 3, date, dates)// TODO: maxElements setting
                 if (date.dayOfWeek.value == 7) break
                 date = date.plusDays(1)
             }

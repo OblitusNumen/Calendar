@@ -239,7 +239,7 @@ class EntryEdit(
     @Composable
     fun drawTag(name: String, tag: Tag?, chosen: Boolean, onChooseToggle: (Boolean) -> Unit) {
         var selected by remember(name) { mutableStateOf(chosen) }
-        val bgColor = Color.Transparent //fixme tag color
+        val bgColor = tag?.getColorOrDefault() ?: dbManager.defaultTagColor
         InputChip(
             selected,
             {
@@ -259,7 +259,7 @@ class EntryEdit(
                     tint = bgColorToTextColor(bgColor)
                 )
             },
-            colors = InputChipDefaults.inputChipColors(containerColor = bgColor),
+            colors = InputChipDefaults.inputChipColors(containerColor = bgColor, selectedContainerColor = bgColor),
         )
     }
 
@@ -613,7 +613,7 @@ class EntryEdit(
 
     @Composable
     fun drawTag(tag: Tag) {
-        val bgColor = Color.Transparent //fixme tag color
+        val bgColor = tag.getColorOrDefault()
         InputChip(
             false,
             { tags = tags - tag },

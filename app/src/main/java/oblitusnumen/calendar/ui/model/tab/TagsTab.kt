@@ -25,7 +25,6 @@ import oblitusnumen.calendar.implementation.toInt
 class TagsTab(private val dbManager: DbManager, private val editTag: (Int) -> Unit) : ViewModel() {
     private var newTagEditShown by mutableStateOf(false)
 
-    // TODO:
     @OptIn(ExperimentalFoundationApi::class)
     @Composable
     fun compose() {
@@ -56,7 +55,7 @@ class TagsTab(private val dbManager: DbManager, private val editTag: (Int) -> Un
                     Icon(
                         Icons.Filled.Star, null,
                         Modifier.align(Alignment.CenterVertically).padding(8.dp),
-                        tag.color ?: Color.Green // FIXME: tag colors
+                        tag.getColorOrDefault()
                     )
                     Text(
                         modifier = Modifier.weight(1.0f).padding(end = 8.dp).align(Alignment.CenterVertically),
@@ -134,8 +133,7 @@ class TagsTab(private val dbManager: DbManager, private val editTag: (Int) -> Un
         var hasError: Boolean by remember { mutableStateOf(tag.name == "") }
         var error = "Enter tag name"
         var name by remember { mutableStateOf(tag.name) }
-        val defaultColor: Color = Color.Gray
-        var color by remember { mutableStateOf(tag.color ?: defaultColor) }
+        var color by remember { mutableStateOf(tag.getColorOrDefault()) }
         AlertDialog(
             onDismissRequest = onClose,
             dismissButton = {
@@ -191,7 +189,7 @@ class TagsTab(private val dbManager: DbManager, private val editTag: (Int) -> Un
                         Box(
                             Modifier.align(Alignment.CenterVertically).background(color, CircleShape)
                                 .border(0.dp, color, CircleShape).size(48.dp).padding(horizontal = 8.dp)
-                        )// FIXME: tag color
+                        )
                     }
                     if (hasError) Text(error, color = Color.Red)//errortext
                     colorPicker(color) { color = it }

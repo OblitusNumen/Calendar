@@ -11,6 +11,8 @@ class Tag private constructor(private val dbManager: DbManager, var name: String
     var id: Int? = id
         private set
 
+    fun getColorOrDefault(): Color = color ?: dbManager.defaultTagColor
+
     fun create() { //todo may fail on UNIQUE violation
         val contentValues = getContentValues()
         contentValues.put(COLUMN_NAME_ID, null as Int?)

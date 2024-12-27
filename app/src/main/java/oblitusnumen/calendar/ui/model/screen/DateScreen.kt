@@ -103,7 +103,7 @@ class DateScreen(
                         .padding(bottom = 6.5.dp)
                 ) {
                     for (tag in tags) {
-                        drawTag(tag.name, Color.Green) //fixme tag.color
+                        drawTag(tag.name, tag.getColorOrDefault())
                     }
                 }
             }
