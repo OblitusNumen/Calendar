@@ -22,19 +22,16 @@ import oblitusnumen.calendar.implementation.data.Entry
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
-class EntriesTab(
-    private val dbManager: DbManager,
-    private val editEntry: (Int) -> Unit
-) : ViewModel() {
+class EntriesTab(private val dbManager: DbManager) : ViewModel() {
 
     @Composable
-    fun compose(modifier: Modifier) {
+    fun compose(editEntry: (Int) -> Unit, modifier: Modifier) {
         val entries = remember {// TODO: maybe sort by netx date
             dbManager.getEntries().sortedBy { it.name }
         }
         LazyColumn(modifier) {
             items(entries) {
-                drawEntry(it)
+                drawEntry(it, editEntry)
             }
         }
     }
@@ -56,7 +53,7 @@ class EntriesTab(
 
     @OptIn(ExperimentalLayoutApi::class)
     @Composable
-    fun drawEntry(entry: Entry) {
+    fun drawEntry(entry: Entry, editEntry: (Int) -> Unit) {
         val tags = entry.getTags()
         Column(
             Modifier.padding(2.dp).fillMaxWidth()

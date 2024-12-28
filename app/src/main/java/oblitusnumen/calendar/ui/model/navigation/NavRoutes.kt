@@ -5,6 +5,9 @@ import androidx.compose.material.icons.outlined.Call
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.ThumbUp
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavController
+import java.time.LocalDate
 
 sealed class NavRoutes(private val path: String, val route: String = path) {
     data object Calendar : NavRoutes("calendar")
@@ -12,10 +15,28 @@ sealed class NavRoutes(private val path: String, val route: String = path) {
     data object Entries : NavRoutes("entries")
     data object ThatDayDetails : NavRoutes("thatDayDetails", route = "thatDayDetails/{date}") {
         val date = "date"
+
+        fun navHere(navController: NavController, date: LocalDate) {
+            navController.navigate(withArgs(date.toEpochDay().toString()))
+        }
+
+        fun getArgs(navBackStackEntry: NavBackStackEntry): LocalDate? {
+            val thatDayText = navBackStackEntry.arguments?.getString(date)
+            return if (thatDayText == null) null else LocalDate.ofEpochDay(thatDayText.toLong())
+        }
     }
 
     data object EntryDetails : NavRoutes("entryDetails", route = "entryDetails/{entry}") {
         val entry = "entry"
+
+        fun navHere(navController: NavController, entryId: Int) {
+            navController.navigate(withArgs(entryId.toString()))
+        }
+
+        fun getArgs(navBackStackEntry: NavBackStackEntry): Int? {
+            val entry = navBackStackEntry.arguments?.getString(NavRoutes.EntryDetails.entry)
+            return entry?.toInt()
+        }
     }
 
     // build navigation path (for screen navigation)
@@ -49,6 +70,10 @@ sealed class NavRoutes(private val path: String, val route: String = path) {
             for (r in getTopLevelRoutes())
                 if (r.route.route == route) return true
             return false
+        }
+
+        fun backPress(navController: NavController) {
+            navController.navigateUp()
         }
     }
 }

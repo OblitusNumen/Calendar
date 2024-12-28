@@ -57,8 +57,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             CalendarTheme {
                 calendarViewModel = viewModel { CalendarViewModel(DbManager(this@MainActivity)) }
-                calendarViewModel!!.navController = rememberNavController()
-                navGraph(calendarViewModel!!.navController!!, calendarViewModel!!.dbManager)
+                navGraph(rememberNavController(), calendarViewModel!!.dbManager)
             }
         }
     }
@@ -71,16 +70,15 @@ class MainActivity : ComponentActivity() {
             startDestination = NavRoutes.Calendar.route
         ) {
             composable(route = NavRoutes.Calendar.route) {
-                val calendarTab = viewModel {
-                    CalendarTab(dbManager, { date ->
-                        navController.navigate(NavRoutes.ThatDayDetails.withArgs(date.toEpochDay().toString()))
-                    }, { navController.navigate(NavRoutes.EntryDetails.withArgs("-1")) })
-                }
+                val calendarTab = viewModel { CalendarTab(dbManager) }
                 Scaffold(
                     topBar = { calendarTab.topBar() },
                     bottomBar = { drawBottomBar(navController) },
-                    floatingActionButton = { calendarTab.functionButton() }) {
+                    floatingActionButton = {
+                        calendarTab.functionButton { NavRoutes.EntryDetails.navHere(navController, -1) }
+                    }) {
                     calendarTab.compose(
+                        { NavRoutes.ThatDayDetails.navHere(navController, it) },
                         Modifier.absolutePadding(//seems like a hack
                             PADDING, 50.dp,
                             PADDING, 50.dp
@@ -90,19 +88,15 @@ class MainActivity : ComponentActivity() {
             }
 
             composable(route = NavRoutes.ThatDayDetails.route) { navBackStackEntry ->
-                val thatDayText = navBackStackEntry.arguments?.getString(NavRoutes.ThatDayDetails.date)
-                val thatDay = LocalDate.ofEpochDay(thatDayText?.toLong() ?: 0)
-                val dateScreen = viewModel {
-                    DateScreen(
-                        thatDay,
-                        dbManager,
-                        { navController.navigate(NavRoutes.EntryDetails.withArgs(it.toString())) },
-                        { navController.navigateUp() })
-                }
+                val thatDay = NavRoutes.ThatDayDetails.getArgs(navBackStackEntry) ?: LocalDate.now()
+                val dateScreen = viewModel { DateScreen(thatDay, dbManager) }
                 Scaffold(
-                    topBar = { dateScreen.topBar() },
-                    floatingActionButton = { dateScreen.functionButton() }) {
+                    topBar = { dateScreen.topBar { NavRoutes.backPress(navController) } },
+                    floatingActionButton = {
+                        dateScreen.functionButton { NavRoutes.EntryDetails.navHere(navController, it) }
+                    }) {
                     dateScreen.compose(
+                        { NavRoutes.EntryDetails.navHere(navController, it) },
                         Modifier.absolutePadding(//seems like a hack
                             PADDING, 50.dp,
                             PADDING, 50.dp
@@ -112,15 +106,11 @@ class MainActivity : ComponentActivity() {
             }
 
             composable(route = NavRoutes.EntryDetails.route) { navBackStackEntry ->
-                val entry = navBackStackEntry.arguments?.getString(NavRoutes.EntryDetails.entry)
-                val entryId = entry?.toInt() ?: -1
+                val entryId = NavRoutes.EntryDetails.getArgs(navBackStackEntry)
                 val entryEdit = viewModel {
-                    EntryEdit(
-                        dbManager,
-                        if (entryId < 0) Entry.new(dbManager) else dbManager.getEntryById(entryId)!!
-                    ) { navController.navigateUp() }
+                    EntryEdit(dbManager, dbManager.getEntryById(entryId ?: -1) ?: Entry.new(dbManager))
                 }
-                Scaffold(topBar = { entryEdit.topBar() }) {
+                Scaffold(topBar = { entryEdit.topBar { NavRoutes.backPress(navController) } }) {
                     entryEdit.compose(
                         Modifier.absolutePadding(//seems like a hack
                             PADDING, 50.dp,
@@ -131,14 +121,12 @@ class MainActivity : ComponentActivity() {
             }
 
             composable(route = NavRoutes.Entries.route) {
-                val entriesTab = viewModel {
-                    EntriesTab(dbManager) {
-                        navController.navigate(NavRoutes.EntryDetails.withArgs(it.toString()))
-                    }
-                }
-                Scaffold(topBar = { entriesTab.topBar() },
+                val entriesTab = viewModel { EntriesTab(dbManager) }
+                Scaffold(
+                    topBar = { entriesTab.topBar() },
                     bottomBar = { drawBottomBar(navController) }) {
                     entriesTab.compose(
+                        { NavRoutes.EntryDetails.navHere(navController, it) },
                         Modifier.absolutePadding(//seems like a hack
                             PADDING, 50.dp,
                             PADDING, 50.dp
@@ -193,9 +181,7 @@ class MainActivity : ComponentActivity() {
         super.onDestroy()
     }
 
-    class CalendarViewModel(val dbManager: DbManager) : ViewModel() {
-        var navController: NavHostController? = null
-    }
+    class CalendarViewModel(val dbManager: DbManager) : ViewModel()
 }
 
 @Composable

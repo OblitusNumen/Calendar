@@ -36,8 +36,7 @@ import java.time.format.DateTimeFormatter
 
 class EntryEdit(
     private val dbManager: DbManager,
-    private val entry: Entry,
-    private val backPress: () -> Unit
+    private val entry: Entry
 ) : ViewModel() {
     private var entryName by mutableStateOf(TextFieldValue(entry.name))
     private var tags: List<Tag> by mutableStateOf(entry.getTags().sortedBy { it.name })
@@ -635,7 +634,7 @@ class EntryEdit(
     }
 
     @Composable
-    fun topBar() {// TODO: confirm
+    fun topBar(backPress: () -> Unit) {// TODO: confirm
         Row {
             BackButton(backPress)
             Button(onClick = {

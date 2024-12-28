@@ -26,13 +26,11 @@ import java.time.format.DateTimeFormatter
 
 class DateScreen(
     private val day: LocalDate,
-    private val dbManager: DbManager,
-    private val editEntry: (Int) -> Unit,
-    private val backPress: () -> Unit
+    private val dbManager: DbManager
 ) : ViewModel() {
 
     @Composable
-    fun compose(modifier: Modifier = Modifier) {
+    fun compose(editEntry: (Int) -> Unit, modifier: Modifier = Modifier) {
         val dates = remember {
             val begin = zonedDateTime(day)
             dbManager.getDates(
@@ -42,13 +40,13 @@ class DateScreen(
         }
         LazyColumn(modifier) {
             items(dates) {
-                drawEntry(it)
+                drawEntry(it, editEntry)
             }
         }
     }
 
     @Composable
-    fun functionButton() {
+    fun functionButton(editEntry: (Int) -> Unit) {
         FloatingActionButton(onClick = { editEntry(-1) }) {
             Icon(Icons.Filled.Add, "add event")
         }
@@ -71,8 +69,8 @@ class DateScreen(
 
     @OptIn(ExperimentalLayoutApi::class)
     @Composable
-    fun drawEntry(date: Date) { //todo maybe show desc too?
-        val entry = date.entry!!
+    fun drawEntry(date: Date, editEntry: (Int) -> Unit) { //todo maybe show desc too?
+        val entry = date.entry
         val tags = entry.getTags()
         Column(
             Modifier.padding(2.dp).fillMaxWidth()
@@ -111,7 +109,7 @@ class DateScreen(
     }
 
     @Composable
-    fun topBar() {
+    fun topBar(backPress: () -> Unit) {
         Row {
             BackButton(backPress)
             Text("Date $day")

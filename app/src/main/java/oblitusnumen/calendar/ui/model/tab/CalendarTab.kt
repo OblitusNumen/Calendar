@@ -32,17 +32,13 @@ import oblitusnumen.calendar.implementation.zonedDateTime
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
-class CalendarTab(
-    private val dbManager: DbManager,
-    private val toThatDayInfo: (LocalDate) -> Unit,
-    private val newEntry: () -> Unit
-) : ViewModel() {
+class CalendarTab(private val dbManager: DbManager) : ViewModel() {
     private var calendarLazyListState: LazyListState? = null
     private var evtHeight: Dp = 0.dp
     private val LIST_CENTER: LocalDate = LocalDate.of(1970, 1, 1)
 
     @Composable
-    fun compose(modifier: Modifier = Modifier) {
+    fun compose(toThatDayInfo: (LocalDate) -> Unit, modifier: Modifier = Modifier) {
         evtHeight = measureTextLine(MaterialTheme.typography.bodySmall) + 4.dp
         Column(modifier) {
             Row {
@@ -70,7 +66,8 @@ class CalendarTab(
                     } else {
                         displayWeek(
                             mon.monthValue,
-                            mon.plusDays(7 * (monthItemIndex - 1) - (mon.dayOfWeek.value - 1).toLong())
+                            mon.plusDays(7 * (monthItemIndex - 1) - (mon.dayOfWeek.value - 1).toLong()),
+                            toThatDayInfo
                         )
                     }
                 })
@@ -82,7 +79,7 @@ class CalendarTab(
         (Int.MAX_VALUE / 2 + ChronoUnit.MONTHS.between(LIST_CENTER, now) * 7).toInt()
 
     @Composable
-    fun displayWeek(monthValue: Int, date0: LocalDate) {
+    fun displayWeek(monthValue: Int, date0: LocalDate, toThatDayInfo: (LocalDate) -> Unit) {
         var date = date0
         val now = LocalDate.now()
         val blockW = getWidthPartIncludePadding(7f)
@@ -97,7 +94,7 @@ class CalendarTab(
                     zonedDateTime(date.plusWeeks(1)).toEpochSecond()
                 )
             while (date.month.value == monthValue) {
-                displayDay(blockW, now, 3, date, dates)// TODO: maxElements setting
+                displayDay(blockW, now, 3, date, dates, toThatDayInfo)// TODO: maxElements setting
                 if (date.dayOfWeek.value == 7) break
                 date = date.plusDays(1)
             }
@@ -110,7 +107,8 @@ class CalendarTab(
         now: LocalDate,
         maxElements: Int,
         then: LocalDate,
-        dates: List<Date>
+        dates: List<Date>,
+        toThatDayInfo: (LocalDate) -> Unit
     ) {
         val begin = zonedDateTime(then)
         val startOfDayCache = begin.toEpochSecond()
@@ -160,7 +158,7 @@ class CalendarTab(
     }
 
     @Composable
-    fun functionButton() {
+    fun functionButton(newEntry: () -> Unit) {
         FloatingActionButton(onClick = newEntry) {
             Icon(Icons.Filled.Add, "add event")
         }
