@@ -23,6 +23,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import oblitusnumen.calendar.implementation.data.DbManager
+import oblitusnumen.calendar.implementation.data.Entry
 import oblitusnumen.calendar.implementation.notifications.NotificationBroadcastReceiver
 import oblitusnumen.calendar.ui.model.navigation.NavRoutes
 import oblitusnumen.calendar.ui.model.screen.DateScreen
@@ -116,7 +117,7 @@ class MainActivity : ComponentActivity() {
                 val entryEdit = viewModel {
                     EntryEdit(
                         dbManager,
-                        if (entryId < 0) dbManager.createEntry() else dbManager.getEntryById(entryId)!!
+                        if (entryId < 0) Entry.new(dbManager) else dbManager.getEntryById(entryId)!!
                     ) { navController.navigateUp() }
                 }
                 Scaffold(topBar = { entryEdit.topBar() }) {

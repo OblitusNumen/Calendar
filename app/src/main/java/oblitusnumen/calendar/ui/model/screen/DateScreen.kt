@@ -72,7 +72,7 @@ class DateScreen(
     @OptIn(ExperimentalLayoutApi::class)
     @Composable
     fun drawEntry(date: Date) { //todo maybe show desc too?
-        val entry = date.entry
+        val entry = date.entry!!
         val tags = entry.getTags()
         Column(
             Modifier.padding(2.dp).fillMaxWidth()

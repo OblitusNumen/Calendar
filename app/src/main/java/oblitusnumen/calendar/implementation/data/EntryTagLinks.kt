@@ -8,7 +8,7 @@ class EntryTagLinks : BaseColumns {
         const val TABLE_NAME: String = "entryTagLinks"
         const val COLUMN_NAME_ENTRY_ID: String = "entryId"
         const val COLUMN_NAME_TAG_ID: String = "tagId"
-        
+
         fun create(dbManager: DbManager, entryId: Int, tagId: Int) {
             dbManager.writableDatabase.execSQL(
                 "INSERT OR IGNORE INTO $TABLE_NAME ($COLUMN_NAME_ENTRY_ID, $COLUMN_NAME_TAG_ID) VALUES (?, ?)",

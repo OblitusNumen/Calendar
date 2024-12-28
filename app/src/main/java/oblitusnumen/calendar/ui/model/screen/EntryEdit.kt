@@ -114,7 +114,7 @@ class EntryEdit(
                 }
                 notifications = (notifications + Notification(
                     dbManager,
-                    entry.id!!,
+                    entry.id,
                     offset,
                     sound
                 )).sortedBy { it.offset.secondsApproximation() }
@@ -639,12 +639,12 @@ class EntryEdit(
         Row {
             BackButton(backPress)
             Button(onClick = {
-                entry.set(entryName.text, tags, dates, notifications, contents.text)
+                entry.set(entryName.text, tags, dates, notifications, contents.text)// FIXME: catch exception
             }, modifier = Modifier.align(Alignment.Top)) {
                 Text("save")
             }
             Button(onClick = {
-                entry.deleteCascade()
+                entry.deleteCascade()// FIXME: catch exception
                 backPress()
             }, modifier = Modifier.align(Alignment.Top)) {
                 Text("delete")

@@ -16,7 +16,7 @@ class Date : BaseColumns {
     private val dbManager: DbManager?
     var id: Int? = null
         private set
-    private var entryId: Int
+    internal var entryId: Int?
     private var desc: String
     var start: Long
         private set
@@ -32,7 +32,7 @@ class Date : BaseColumns {
         private set
 
     val entry: Entry
-        get() = dbManager!!.getEntryById(entryId)!!
+        get() = dbManager!!.getEntryById(entryId!!)!!
 
     internal constructor(
         dbManager: DbManager?,
@@ -70,7 +70,7 @@ class Date : BaseColumns {
         period: Period
     ) {
         this.dbManager = dbManager
-        this.entryId = entry.id!!
+        this.entryId = entry.id
         this.desc = desc
         this.start = time.toEpochSecond()
         this.duration = duration

@@ -10,6 +10,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Dp
 import java.io.File
+import java.io.IOException
 import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.LocalDate
@@ -28,7 +29,7 @@ fun rmRecursively(file: File) {
             rmRecursively(listFile)
         }
     }
-    if (!file.delete()) throw RuntimeException("could not delete file $file")
+    if (!file.delete()) throw IOException("could not delete file $file")
 }
 
 fun getZonedFromEpochSeconds(epochSeconds: Long): ZonedDateTime {

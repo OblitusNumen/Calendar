@@ -4,6 +4,7 @@ import android.content.ContentValues
 import android.database.Cursor
 import android.provider.BaseColumns
 import androidx.compose.ui.graphics.Color
+import androidx.core.database.sqlite.transaction
 import oblitusnumen.calendar.implementation.toColor
 import oblitusnumen.calendar.implementation.toInt
 
@@ -13,7 +14,7 @@ class Tag private constructor(private val dbManager: DbManager, var name: String
 
     fun getColorOrDefault(): Color = color ?: dbManager.defaultTagColor
 
-    fun create() { //todo may fail on UNIQUE violation
+    private fun create() { //todo may fail on UNIQUE violation
         val contentValues = getContentValues()
         contentValues.put(COLUMN_NAME_ID, null as Int?)
         id = dbManager.writableDatabase.insert(TABLE_NAME, null, contentValues).toInt()
@@ -26,14 +27,24 @@ class Tag private constructor(private val dbManager: DbManager, var name: String
         return contentValues
     }
 
-    fun update() { //todo value update may fail
+    private fun update() { //todo value update may fail
         dbManager.writableDatabase.update(TABLE_NAME, getContentValues(), "$COLUMN_NAME_ID = ?", arrayOf(id.toString()))
     }
 
-    fun deleteCascade() { // TODO: use transaction
-        dbManager.writableDatabase.delete(EntryTagLinks.TABLE_NAME, "${EntryTagLinks.COLUMN_NAME_TAG_ID} = ?", arrayOf(id.toString()))
-        dbManager.writableDatabase.delete(TABLE_NAME, "$COLUMN_NAME_ID = ?", arrayOf(id.toString()))
+    fun deleteCascade() {
+        dbManager.writableDatabase.transaction {
+            dbManager.writableDatabase.delete(
+                EntryTagLinks.TABLE_NAME,
+                "${EntryTagLinks.COLUMN_NAME_TAG_ID} = ?",
+                arrayOf(id.toString())
+            )
+            delete()
+        }
         id = null
+    }
+
+    private fun delete() {
+        dbManager.writableDatabase.delete(TABLE_NAME, "$COLUMN_NAME_ID = ?", arrayOf(id.toString()))
     }
 
     fun createIfNotExists() {

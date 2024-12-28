@@ -26,6 +26,16 @@ class DbManager(private val context: Context) :
     init {
         if (!filesDir.exists() && !filesDir.mkdirs())
             throw RuntimeException("could not create directory for data: $filesDir")
+        val entries: List<Entry>
+        readableDatabase.rawQuery(
+            "SELECT * FROM ${Entry.TABLE_NAME} WHERE ${Entry.COLUMN_NAME_STATE} != ?",
+            arrayOf(Entry.STATE_NORMAL.toString())
+        ).use { cursor ->
+            entries = Entry.cursorToList(this, cursor)
+        }
+        for (entry in entries) {
+            entry.fixup()
+        }
     }
 
     fun tryScheduleNotification(now: Long = System.currentTimeMillis() / 1000) {
@@ -38,10 +48,10 @@ class DbManager(private val context: Context) :
         val dateCache: MutableMap<Int, List<Date>> = mutableMapOf()
         for (notification in getAllNotifications()) {
             val fromO = notification.offset.getTime(getZonedFromEpochSeconds(timeStamp), 1).toEpochSecond() //15us
-            val dates = dateCache.computeIfAbsent(notification.entryId) {
+            val dates = dateCache.computeIfAbsent(notification.entryId!!) {
                 Date.getAllByEntryId(
                     this,
-                    notification.entryId
+                    notification.entryId!!
                 )
             }
             for (date in dates) {
@@ -62,10 +72,10 @@ class DbManager(private val context: Context) :
         for (notification in getAllNotifications()) {
             val fromO = notification.offset.getTime(getZonedFromEpochSeconds(from), 1).toEpochSecond()
             val toO = notification.offset.getTime(getZonedFromEpochSeconds(to), 1).toEpochSecond()
-            val dates = dateCache.computeIfAbsent(notification.entryId) {
+            val dates = dateCache.computeIfAbsent(notification.entryId!!) {
                 Date.getAllByEntryId(
                     this,
-                    notification.entryId
+                    notification.entryId!!
                 )
             }
             for (date in dates) {
@@ -96,10 +106,6 @@ class DbManager(private val context: Context) :
         notifications.clear()
         notifications.addAll(dedupeMap.values)
         notifications.sort()
-    }
-
-    fun createEntry(): Entry { // fixme wtf is this doing here
-        return Entry(this)
     }
 
     override fun onCreate(sqLiteDatabase: SQLiteDatabase) {
@@ -185,7 +191,8 @@ class DbManager(private val context: Context) :
         private const val SQL_CREATE_ENTRIES =
             "CREATE TABLE IF NOT EXISTS ${Entry.TABLE_NAME} (" +
                     "${Entry.COLUMN_NAME_ID} INTEGER PRIMARY KEY AUTOINCREMENT," +
-                    "${Entry.COLUMN_NAME_NAME} TEXT NOT NULL);"
+                    "${Entry.COLUMN_NAME_NAME} TEXT NOT NULL," +
+                    "${Entry.COLUMN_NAME_STATE} INTEGER NOT NULL);"
         private const val SQL_CREATE_TAGS =
             "CREATE TABLE IF NOT EXISTS ${Tag.TABLE_NAME} (" +
                     "${Tag.COLUMN_NAME_ID} INTEGER PRIMARY KEY AUTOINCREMENT," +

@@ -7,7 +7,7 @@ import android.provider.BaseColumns
 
 class Notification (
     private val dbManager: DbManager,
-    var entryId: Int,
+    var entryId: Int?,
     var offset: Period,
     var sound: Boolean = true
 ) : BaseColumns {
