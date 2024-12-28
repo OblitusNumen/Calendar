@@ -75,7 +75,7 @@ class MainActivity : ComponentActivity() {
                     topBar = { calendarTab.topBar() },
                     bottomBar = { drawBottomBar(navController) },
                     floatingActionButton = {
-                        calendarTab.functionButton { NavRoutes.EntryDetails.navHere(navController, -1) }
+                        calendarTab.functionButton { NavRoutes.EntryEdit.navHere(navController, null) }
                     }) {
                     calendarTab.compose(
                         { NavRoutes.ThatDayDetails.navHere(navController, it) },
@@ -93,10 +93,10 @@ class MainActivity : ComponentActivity() {
                 Scaffold(
                     topBar = { dateScreen.topBar { NavRoutes.backPress(navController) } },
                     floatingActionButton = {
-                        dateScreen.functionButton { NavRoutes.EntryDetails.navHere(navController, it) }
+                        dateScreen.functionButton { NavRoutes.EntryEdit.navHere(navController, it) }
                     }) {
                     dateScreen.compose(
-                        { NavRoutes.EntryDetails.navHere(navController, it) },
+                        { NavRoutes.EntryEdit.navHere(navController, it) },
                         Modifier.absolutePadding(//seems like a hack
                             PADDING, 50.dp,
                             PADDING, 50.dp
@@ -105,8 +105,8 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            composable(route = NavRoutes.EntryDetails.route) { navBackStackEntry ->
-                val entryId = NavRoutes.EntryDetails.getArgs(navBackStackEntry)
+            composable(route = NavRoutes.EntryEdit.route) { navBackStackEntry ->
+                val entryId = NavRoutes.EntryEdit.getArgs(navBackStackEntry)
                 val entryEdit = viewModel {
                     EntryEdit(dbManager, dbManager.getEntryById(entryId ?: -1) ?: Entry.new(dbManager))
                 }
@@ -120,13 +120,23 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
+            composable(route = NavRoutes.EntryDetails.route) { navBackStackEntry ->
+                val entryId = NavRoutes.EntryDetails.getArgs(navBackStackEntry)
+                /*val entryDetails = viewModel {
+                    EntryDetails(dbManager, dbManager.getEntryById(entryId ?: -1) ?: Entry.new(dbManager))
+                }*/
+                Scaffold(topBar = { /*entryDetails.topBar { NavRoutes.backPress(navController) }*/ }) {
+                    //entryDetails.compose()
+                }
+            }
+
             composable(route = NavRoutes.Entries.route) {
                 val entriesTab = viewModel { EntriesTab(dbManager) }
                 Scaffold(
                     topBar = { entriesTab.topBar() },
                     bottomBar = { drawBottomBar(navController) }) {
                     entriesTab.compose(
-                        { NavRoutes.EntryDetails.navHere(navController, it) },
+                        { NavRoutes.EntryEdit.navHere(navController, it) },
                         Modifier.absolutePadding(//seems like a hack
                             PADDING, 50.dp,
                             PADDING, 50.dp

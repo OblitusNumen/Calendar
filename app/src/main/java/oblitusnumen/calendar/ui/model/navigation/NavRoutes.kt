@@ -26,15 +26,28 @@ sealed class NavRoutes(private val path: String, val route: String = path) {
         }
     }
 
-    data object EntryDetails : NavRoutes("entryDetails", route = "entryDetails/{entry}") {
+    data object EntryEdit : NavRoutes("entryEdit", route = "entryEdit/{entry}") {
         val entry = "entry"
 
-        fun navHere(navController: NavController, entryId: Int) {
-            navController.navigate(withArgs(entryId.toString()))
+        fun navHere(navController: NavController, entryId: Int?) {
+            navController.navigate(if (entryId != null) withArgs(entryId.toString()) else withArgs())
         }
 
         fun getArgs(navBackStackEntry: NavBackStackEntry): Int? {
-            val entry = navBackStackEntry.arguments?.getString(NavRoutes.EntryDetails.entry)
+            val entry = navBackStackEntry.arguments?.getString(NavRoutes.EntryEdit.entry)
+            return entry?.toInt()
+        }
+    }
+
+    data object EntryDetails : NavRoutes("entryDetails", route = "entryDetails/{entry}") {
+        val entry = "entry"
+
+        fun navHere(navController: NavController, entryId: Int?) {
+            navController.navigate(if (entryId != null) withArgs(entryId.toString()) else withArgs())
+        }
+
+        fun getArgs(navBackStackEntry: NavBackStackEntry): Int? {
+            val entry = navBackStackEntry.arguments?.getString(NavRoutes.EntryEdit.entry)
             return entry?.toInt()
         }
     }
