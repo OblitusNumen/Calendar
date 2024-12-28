@@ -267,7 +267,10 @@ class Date : BaseColumns {
         if (timesRepeat < 0)
             throw IllegalArgumentException("timesRepeat must not be negative")
         try {
-            if (start > END_ENDLESS_EXPECT - (timesRepeat - 1) * period.secondsApproximation())
+            if (timesRepeat > Period.MAX_PERIOD_COUNT ||
+                period.secondsApproximation() > END_ENDLESS_THRESHOLD ||
+                start + (timesRepeat - 1) * period.secondsApproximation() > END_ENDLESS_EXPECT
+            )
                 throw IllegalArgumentException("end overflow")
         } catch (e: ArithmeticException) {
             throw IllegalArgumentException("end overflow")
@@ -424,8 +427,8 @@ class Date : BaseColumns {
         const val COLUMN_NAME_PERIOD: String = "period"
         const val COLUMN_NAME_TIME_ZONE: String = "timeZone"
         const val COLUMN_NAME_REMOVED: String = "exceptionRules"
-        const val END_ENDLESS_EXPECT: Long = 18014398509481984L //2^54
-        const val END_ENDLESS_THRESHOLD: Long = 9007199254740992L //2^53
+        const val END_ENDLESS_EXPECT: Long = 281474976710656L //2^48
+        const val END_ENDLESS_THRESHOLD: Long = 140737488355328L //2^47
 
         fun cursorToList(
             dbManager: DbManager,

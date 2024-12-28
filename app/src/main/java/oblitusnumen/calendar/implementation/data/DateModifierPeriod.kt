@@ -14,8 +14,8 @@ class Period {
     constructor(modifier: Char, data: Long) {
         verify(modifier)
         this.modifier = modifier
-        if (data < 0)
-            throw IllegalArgumentException("period cannot be negative")
+        if (data < 0 || data > MAX_PERIOD_COUNT)
+            throw IllegalArgumentException("Invalid period")
         if (modifier != WEEKDAY) {
             if (data == 0L)
                 this.data = 1
@@ -93,5 +93,6 @@ class Period {
         const val WD_SAT: Long = 32
         const val WD_SUN: Long = 64
         const val WD_ALL: Long = 127
+        const val MAX_PERIOD_COUNT = 4294967296L // 2^32, a little more than END_ENDLESS_EXPECT / 1day
     }
 }
