@@ -69,13 +69,10 @@ class TagsTab(private val dbManager: DbManager, private val editTag: (Int) -> Un
                         text = tagsWithEntryCount[tag].toString() + " event",
                         style = MaterialTheme.typography.bodyLarge,
                     )
-                    Box(Modifier.size(48.dp).align(Alignment.CenterVertically).clickable {
+                    IconButton(modifier = Modifier.size(48.dp).align(Alignment.CenterVertically), onClick = {
                         editShown = true
                     }) {
-                        Icon(
-                            Icons.Filled.Edit, null,
-                            Modifier.align(Alignment.Center).padding(8.dp)
-                        )
+                        Icon(Icons.Filled.Edit, null)
                     }
                 }
             }
