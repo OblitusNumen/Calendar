@@ -32,12 +32,11 @@ class Entry private constructor(private val dbManager: DbManager, id: Int? = nul
         }
     }
 
-    private fun tryUpdateContents(contents: String): Boolean {// FIXME: atomic saves
+    private fun tryUpdateContents(contents: String) {// FIXME: atomic saves
         try {
             FileOutputStream(contentsFile).use { fos ->
                 fos.write(contents.toByteArray())
             }
-            return true
         } catch (e: IOException) {
             throw IOException("could not save contents for entry $id", e)
         }
