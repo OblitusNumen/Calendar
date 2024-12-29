@@ -73,3 +73,9 @@ fun measureTextLine(style: TextStyle): Dp {
     }
     return with(LocalDensity.current) { linePx.toDp() }
 }
+
+fun mult_frac(x: Long, numer: Long, denom: Long): Long {
+    val quot = (x) / (denom)
+    val rem = (x) % (denom)
+    return (quot * (numer)) + ((rem * (numer)) / (denom))
+}

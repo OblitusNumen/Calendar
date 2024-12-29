@@ -4,12 +4,12 @@ import android.content.ContentValues
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.provider.BaseColumns
+import oblitusnumen.calendar.implementation.mult_frac
 import org.jetbrains.annotations.TestOnly
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
-import java.util.ArrayList
 import kotlin.math.min
 
 class Date : BaseColumns {
@@ -202,10 +202,14 @@ class Date : BaseColumns {
     }
 
     private fun getZonedDateTimeInRange(start: Long, finish: Long): ZonedDateTime? { //any(?) in range
-        if (finish <= this.start) return null
+        if (finish <= this.start || timesRepeat == 0L) return null
         if (this.end == this.start) return if (this.start >= start) getZoneDateTime(0) else null
-        val period = (this.end - this.start) / timesRepeat
-        val idx = min((timesRepeat - 1), ((finish - this.start) / period))
+        val periodExpect = (this.end - this.start) / (timesRepeat - 1)
+        val idxExpect = (finish - this.start) / periodExpect
+        //mult_frac will overflow with period 1D after a few million years, but who cares about that
+        val timeEst = mult_frac(this.end - this.start, idxExpect, timesRepeat) + this.start
+        val idxDiff = (timeEst - start) / periodExpect
+        val idx = min((timesRepeat - 1), idxExpect - idxDiff)
         val zdtIdx = getZoneDateTime(idx)
         val time = zdtIdx.toEpochSecond()
         if (time in start..<finish) return zdtIdx

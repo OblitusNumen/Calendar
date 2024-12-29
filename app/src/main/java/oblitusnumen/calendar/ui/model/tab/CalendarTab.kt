@@ -36,6 +36,7 @@ class CalendarTab(private val dbManager: DbManager) : ViewModel() {
     private var calendarLazyListState: LazyListState? = null
     private var evtHeight: Dp = 0.dp
     private val LIST_CENTER: LocalDate = LocalDate.of(1970, 1, 1)
+    private val LIST_LEN = 420168000 * 2 // ~5M years, should be enough and nobody will see my bugs at dates above that
 
     @Composable
     fun compose(toThatDayInfo: (LocalDate) -> Unit, modifier: Modifier = Modifier) {
@@ -56,8 +57,8 @@ class CalendarTab(private val dbManager: DbManager) : ViewModel() {
             LazyColumn(
                 state = calendarLazyListState!!
             ) {
-                items(Int.MAX_VALUE, itemContent = {
-                    val offset = it - Int.MAX_VALUE / 2
+                items(LIST_LEN, itemContent = {
+                    val offset = it - LIST_LEN / 2
                     val monthItemIndex = if (offset < 0) 6 + offset % 7 else offset % 7
                     val monthIdx = if (offset < 0) offset / 7 - 1 else offset / 7
                     val mon = LIST_CENTER.plusMonths(monthIdx.toLong()).withDayOfMonth(1)
@@ -76,7 +77,7 @@ class CalendarTab(private val dbManager: DbManager) : ViewModel() {
     }
 
     private fun getNowItemIndex(now: LocalDate) =
-        (Int.MAX_VALUE / 2 + ChronoUnit.MONTHS.between(LIST_CENTER, now) * 7).toInt()
+        (LIST_LEN / 2 + ChronoUnit.MONTHS.between(LIST_CENTER, now) * 7).toInt()
 
     @Composable
     fun displayWeek(monthValue: Int, date0: LocalDate, toThatDayInfo: (LocalDate) -> Unit) {
