@@ -79,3 +79,8 @@ fun mult_frac(x: Long, numer: Long, denom: Long): Long {
     val rem = (x) % (denom)
     return (quot * (numer)) + ((rem * (numer)) / (denom))
 }
+
+fun LocalDate.toWeekNumber(): Long {
+    val v = toEpochDay() + 3
+    return if (v >= 0) (v / 7) else (v / 7 - 1)
+}

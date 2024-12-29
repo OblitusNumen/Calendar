@@ -1,28 +1,27 @@
 package oblitusnumen.calendar.implementation.data
 
+import oblitusnumen.calendar.implementation.toWeekNumber
+import java.time.LocalDate
 import java.time.ZonedDateTime
 
 class Period {
     val modifier: Char
-    val data: Long
+    private val data: Long
 
     constructor() {
         modifier = ONCE
-        data = 0
+        data = 1
     }
 
-    constructor(modifier: Char, data: Long) {
+    @JvmOverloads
+    constructor(modifier: Char, count: Long, weekdayDays: Long = 0) {
         verify(modifier)
         this.modifier = modifier
-        if (data < 0 || data > MAX_PERIOD_COUNT)
+        if (count <= 0 || count > MAX_PERIOD_COUNT)
             throw IllegalArgumentException("Invalid period")
-        if (modifier != WEEKDAY) {
-            if (data == 0L)
-                this.data = 1
-            else
-                this.data = data
-        } else
-            this.data = data and WD_ALL
+        if (modifier == WEEKDAY && weekdayDays == 0L)
+            throw IllegalArgumentException("Weekdays cannot be empty")
+        this.data = count or ((weekdayDays and WD_ALL) shl 32)
     }
 
     constructor(period: String) {
@@ -40,13 +39,22 @@ class Period {
             ONCE -> start
             MINUTE -> start.plusMinutes(idx * data)
             HOUR -> start.plusHours(idx * data)
-            DAY -> start.plusDays(idx * data)
+            DAY, WEEKDAY -> start.plusDays(idx * data)
             WEEK -> start.plusWeeks(idx * data)
             MONTH -> start.plusMonths(idx * data)
             YEAR -> start.plusYears(idx * data)
-            WEEKDAY -> start.plusDays(idx) //todo invalid indexes do exist. should check for them
             else -> start
         }
+    }
+
+    fun verifyWeekday(start: LocalDate, test: LocalDate): Boolean {
+        if (modifier != WEEKDAY)
+            throw IllegalStateException("Not a weekday")
+        if (!testWeekdayIdx(test.dayOfWeek.value))
+            return false
+        val firstWeekIdx = start.toWeekNumber()
+        val weekIdx = test.toWeekNumber()
+        return (weekIdx - firstWeekIdx) % getCount() == 0L
     }
 
     private fun verify(modifier: Char) {
@@ -72,6 +80,28 @@ class Period {
             YEAR -> 86400 * 365 * data
             else -> 0
         }
+    }
+
+    fun getCount(): Long {
+        return data and 0xFFFFFFFFL
+    }
+
+    fun getWeekdays(): Long {
+        if (modifier != WEEKDAY)
+            throw IllegalArgumentException("Not a weekday")
+        return (data shr 32) and WD_ALL
+    }
+
+    fun testWeekday(day: Long): Boolean {
+        if (modifier != WEEKDAY)
+            throw IllegalArgumentException("Not a weekday")
+        return (getWeekdays() and day) != 0L
+    }
+
+    fun testWeekdayIdx(dayIdx: Int): Boolean {
+        if (modifier != WEEKDAY)
+            throw IllegalArgumentException("Not a weekday")
+        return (getWeekdays() and (1L shl (dayIdx - 1))) != 0L
     }
 
     @Suppress("unused")

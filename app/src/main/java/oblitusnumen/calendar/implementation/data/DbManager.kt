@@ -47,7 +47,7 @@ class DbManager(private val context: Context) :
         var notificationTime: Long? = null
         val dateCache: MutableMap<Int, List<Date>> = mutableMapOf()
         for (notification in getAllNotifications()) {
-            val fromO = notification.offset.getTime(getZonedFromEpochSeconds(timeStamp), 1).toEpochSecond() //15us
+            val fromO = notification.offset.getTime(getZonedFromEpochSeconds(timeStamp), 1).toEpochSecond()
             val dates = dateCache.computeIfAbsent(notification.entryId!!) {
                 Date.getAllByEntryId(
                     this,

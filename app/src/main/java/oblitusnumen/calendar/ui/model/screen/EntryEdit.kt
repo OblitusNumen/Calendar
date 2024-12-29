@@ -132,7 +132,7 @@ class EntryEdit(
                     Text(
                         modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp)
                             .weight(1f),
-                        text = "${notification.offset.data} ${notification.offset.modifier} before",// FIXME: text
+                        text = "${notification.offset.getCount()} ${notification.offset.modifier} before",// FIXME: text
                         style = MaterialTheme.typography.bodyLarge
                     )
                     IconButton(
@@ -334,7 +334,7 @@ class EntryEdit(
         val textStart = (if (date.isPeriodic) "from " else "") +
                 date.getFirstZoneDateTime().format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm"))
         val textPeriod: String = if (date.isPeriodic)
-            "every " + date.period.data.toString() + " " + PeriodType(date.period.modifier).toString() +
+            "every " + date.period.getCount().toString() + " " + PeriodType(date.period.modifier).toString() +
                     if (date.isEndless) "" else
                         " until " + date.getLastZoneDateTime().format(DateTimeFormatter.ofPattern("dd MMM yyyy"))
         else
@@ -433,7 +433,7 @@ class EntryEdit(
 
     @Composable
     fun periodSelectorDialog(onConfirm: () -> Unit, onDismiss: () -> Unit, date: Date) {
-        var periodCount by remember { mutableStateOf(if (date.period.modifier == Period.ONCE) "1" else date.period.data.toString()) }
+        var periodCount by remember { mutableStateOf(if (date.period.modifier == Period.ONCE) "1" else date.period.getCount().toString()) }
         var selectedPeriod by remember { mutableStateOf(PeriodType(date.period.modifier)) }
         var selectedMillis by
         remember {

@@ -3,10 +3,32 @@ package oblitusnumen.calendar.implementation.data;
 import junit.framework.TestCase;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
+import static org.junit.Assert.assertThrows;
+
 public class DateTest extends TestCase {
+    public void testPeriod() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            new Period(Period.WEEKDAY, 1);
+        });
+        Period period = new Period(Period.WEEKDAY, 2, Period.WD_MON | Period.WD_FRI);
+        assertTrue(period.testWeekday(Period.WD_MON));
+        assertFalse(period.testWeekday(Period.WD_TUE));
+        assertEquals(Period.WD_MON | Period.WD_FRI, period.getWeekdays());
+        assertEquals(period.toString(), new Period(period.toString()).toString());
+        assertTrue(period.testWeekdayIdx(1));
+        assertFalse(period.testWeekdayIdx(2));
+        LocalDate start = LocalDate.of(2024, 12, 29);
+        assertFalse(period.verifyWeekday(start, start));
+        assertFalse(period.verifyWeekday(start, start.plusDays(1)));
+        assertFalse(period.verifyWeekday(start, start.plusDays(2)));
+        assertTrue(period.verifyWeekday(start, start.plusDays(8)));
+        assertFalse(period.verifyWeekday(start, start.plusDays(10)));
+    }
+
     public void testDateExceptionRules() {
         ExceptionRules exceptionRules = new ExceptionRules();
         assertEquals(0, exceptionRules.exceptionDatesCount());
