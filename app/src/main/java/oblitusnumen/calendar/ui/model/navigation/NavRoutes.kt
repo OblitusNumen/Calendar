@@ -30,12 +30,13 @@ sealed class NavRoutes(private val path: String, val route: String = path) {
         val entry = "entry"
 
         fun navHere(navController: NavController, entryId: Int?) {
-            navController.navigate(if (entryId != null) withArgs(entryId.toString()) else withArgs())
+            navController.navigate(if (entryId != null) withArgs(entryId.toString()) else withArgs("-1"))
         }
 
         fun getArgs(navBackStackEntry: NavBackStackEntry): Int? {
             val entry = navBackStackEntry.arguments?.getString(NavRoutes.EntryEdit.entry)
-            return entry?.toInt()
+            val entryId = entry?.toInt()
+            return if (entryId == null || entryId < 0) null else entryId
         }
     }
 
@@ -43,12 +44,13 @@ sealed class NavRoutes(private val path: String, val route: String = path) {
         val entry = "entry"
 
         fun navHere(navController: NavController, entryId: Int?) {
-            navController.navigate(if (entryId != null) withArgs(entryId.toString()) else withArgs())
+            navController.navigate(if (entryId != null) withArgs(entryId.toString()) else withArgs("-1"))
         }
 
         fun getArgs(navBackStackEntry: NavBackStackEntry): Int? {
             val entry = navBackStackEntry.arguments?.getString(NavRoutes.EntryEdit.entry)
-            return entry?.toInt()
+            val entryId = entry?.toInt()
+            return if (entryId == null || entryId < 0) null else entryId
         }
     }
 
