@@ -10,7 +10,12 @@ import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
 
-class Entry private constructor(private val dbManager: DbManager, id: Int? = null, var name: String = "", private var state: Int = STATE_NEW) : BaseColumns {
+class Entry private constructor(
+    private val dbManager: DbManager,
+    id: Int? = null,
+    var name: String = "",
+    private var state: Int = STATE_NEW
+) : BaseColumns {
     var id: Int? = id
         private set
 

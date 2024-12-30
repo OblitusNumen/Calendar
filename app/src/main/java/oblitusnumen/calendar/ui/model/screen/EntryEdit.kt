@@ -41,7 +41,8 @@ class EntryEdit(
     private var entryName by mutableStateOf(TextFieldValue(entry.name))
     private var tags: List<Tag> by mutableStateOf(entry.getTags().sortedBy { it.name })
     private var dates: List<Date> by mutableStateOf(entry.getDates().sortedBy { it.start })
-    private var notifications: List<Notification> by mutableStateOf(entry.getNotifications().sortedBy { it.offset.secondsApproximation() })
+    private var notifications: List<Notification> by mutableStateOf(
+        entry.getNotifications().sortedBy { it.offset.secondsApproximation() })
     private var contents by mutableStateOf(TextFieldValue(entry.getContents()))  // FIXME: this should be List<Content>
     private var dateTimePicker = DateTimePicker()
 
@@ -433,7 +434,14 @@ class EntryEdit(
 
     @Composable
     fun periodSelectorDialog(onConfirm: () -> Unit, onDismiss: () -> Unit, date: Date) {
-        var periodCount by remember { mutableStateOf(if (date.period.modifier == Period.ONCE) "1" else date.period.getCount().toString()) }
+        var periodCount by remember {
+            mutableStateOf(
+                if (date.period.modifier == Period.ONCE)
+                    "1"
+                else
+                    date.period.getCount().toString()
+            )
+        }
         var selectedPeriod by remember { mutableStateOf(PeriodType(date.period.modifier)) }
         var selectedMillis by
         remember {
@@ -451,13 +459,20 @@ class EntryEdit(
         }
         val isWeekday: Boolean = date.period.modifier == Period.WEEKDAY
         val dayOfWeek = date.getFirstZoneDateTime().dayOfWeek.value
-        val monSelected = remember { mutableStateOf(if (isWeekday) date.period.testWeekday(Period.WD_MON) else dayOfWeek == 1) }
-        val tueSelected = remember { mutableStateOf(if (isWeekday) date.period.testWeekday(Period.WD_TUE) else dayOfWeek == 2) }
-        val wedSelected = remember { mutableStateOf(if (isWeekday) date.period.testWeekday(Period.WD_WED) else dayOfWeek == 3) }
-        val thuSelected = remember { mutableStateOf(if (isWeekday) date.period.testWeekday(Period.WD_THU) else dayOfWeek == 4) }
-        val friSelected = remember { mutableStateOf(if (isWeekday) date.period.testWeekday(Period.WD_FRI) else dayOfWeek == 5) }
-        val satSelected = remember { mutableStateOf(if (isWeekday) date.period.testWeekday(Period.WD_SAT) else dayOfWeek == 6) }
-        val sunSelected = remember { mutableStateOf(if (isWeekday) date.period.testWeekday(Period.WD_SUN) else dayOfWeek == 7) }
+        val monSelected =
+            remember { mutableStateOf(if (isWeekday) date.period.testWeekday(Period.WD_MON) else dayOfWeek == 1) }
+        val tueSelected =
+            remember { mutableStateOf(if (isWeekday) date.period.testWeekday(Period.WD_TUE) else dayOfWeek == 2) }
+        val wedSelected =
+            remember { mutableStateOf(if (isWeekday) date.period.testWeekday(Period.WD_WED) else dayOfWeek == 3) }
+        val thuSelected =
+            remember { mutableStateOf(if (isWeekday) date.period.testWeekday(Period.WD_THU) else dayOfWeek == 4) }
+        val friSelected =
+            remember { mutableStateOf(if (isWeekday) date.period.testWeekday(Period.WD_FRI) else dayOfWeek == 5) }
+        val satSelected =
+            remember { mutableStateOf(if (isWeekday) date.period.testWeekday(Period.WD_SAT) else dayOfWeek == 6) }
+        val sunSelected =
+            remember { mutableStateOf(if (isWeekday) date.period.testWeekday(Period.WD_SUN) else dayOfWeek == 7) }
         AlertDialog(
             onDismissRequest = onDismiss,
             dismissButton = {
@@ -548,7 +563,9 @@ class EntryEdit(
                             drawWeekdayButton(sunSelected, "Sun")
                         }
                     }
-                    HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp).padding(top = 8.dp))
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp).padding(top = 8.dp)
+                    )
                     //end variant selection
                     //endless radiobutton
                     Row(

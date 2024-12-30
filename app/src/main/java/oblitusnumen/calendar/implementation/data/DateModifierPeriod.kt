@@ -66,7 +66,8 @@ class Period {
             modifier != WEEK &&
             modifier != MONTH &&
             modifier != YEAR &&
-            modifier != WEEKDAY)
+            modifier != WEEKDAY
+        )
             throw IllegalArgumentException("Bad modifier $modifier")
     }
 

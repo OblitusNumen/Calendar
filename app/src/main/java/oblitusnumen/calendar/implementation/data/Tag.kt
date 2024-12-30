@@ -8,7 +8,12 @@ import androidx.core.database.sqlite.transaction
 import oblitusnumen.calendar.implementation.toColor
 import oblitusnumen.calendar.implementation.toInt
 
-class Tag private constructor(private val dbManager: DbManager, var name: String, id: Int? = null, var color: Color? = null) : BaseColumns {
+class Tag private constructor(
+    private val dbManager: DbManager,
+    var name: String,
+    id: Int? = null,
+    var color: Color? = null
+) : BaseColumns {
     var id: Int? = id
         private set
 

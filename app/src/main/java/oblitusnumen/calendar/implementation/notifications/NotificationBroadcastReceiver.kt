@@ -46,7 +46,8 @@ class NotificationBroadcastReceiver : BroadcastReceiver() {
                     .build()
                 manager.notify(pendingNotification.dateHash(), notification)
             }
-            sharedPreferences.edit().putLong(LAST_NOTIFICATION_TIME_PREFERENCE_NAME, System.currentTimeMillis() / 1000).apply()
+            sharedPreferences.edit().putLong(LAST_NOTIFICATION_TIME_PREFERENCE_NAME, System.currentTimeMillis() / 1000)
+                .apply()
             dbManager.tryScheduleNotification(now)
         }
     }

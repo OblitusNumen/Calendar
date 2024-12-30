@@ -243,7 +243,11 @@ class Date : BaseColumns {
         return toLocalDate().toEpochDay()
     }
 
-    private fun verifyParams(start: Long = this.start, timesRepeat: Long = this.timesRepeat, period: Period = this.period) {
+    private fun verifyParams(
+        start: Long = this.start,
+        timesRepeat: Long = this.timesRepeat,
+        period: Period = this.period
+    ) {
         if (timesRepeat < 0)
             throw IllegalArgumentException("timesRepeat must not be negative")
         try {

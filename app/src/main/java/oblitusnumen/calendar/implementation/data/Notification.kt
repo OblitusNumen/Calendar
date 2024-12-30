@@ -5,7 +5,7 @@ import android.database.Cursor
 import android.provider.BaseColumns
 
 
-class Notification (
+class Notification(
     private val dbManager: DbManager,
     var entryId: Int?,
     var offset: Period,
