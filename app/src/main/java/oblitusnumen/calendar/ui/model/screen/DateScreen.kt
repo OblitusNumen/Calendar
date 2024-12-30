@@ -1,19 +1,16 @@
 package oblitusnumen.calendar.ui.model.screen
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -32,18 +29,24 @@ class DateScreen(
     private val day: LocalDate,
     private val dbManager: DbManager
 ) : ViewModel() {
+    private var dates: List<Date>? = null
+    private var updated by mutableStateOf(false)
+
+    private fun loadDates() {
+        val begin = zonedDateTime(day)
+        dates = dbManager.getDates(
+            zonedDateTime(day).toEpochSecond(),
+            zonedDateTime(day.plusDays(1)).toEpochSecond()
+        ).filter { date -> date.forDay(begin) != null }.sortedBy { it.forDay(begin) }
+        updated = !updated
+    }
 
     @Composable
     fun compose(editEntry: (Int) -> Unit, modifier: Modifier = Modifier) {
-        val dates = remember {
-            val begin = zonedDateTime(day)
-            dbManager.getDates(
-                zonedDateTime(day).toEpochSecond(),
-                zonedDateTime(day.plusDays(1)).toEpochSecond()
-            ).filter { date -> date.forDay(begin) != null }.sortedBy { it.forDay(begin) }
-        }
+        remember { loadDates() }
+        updated
         LazyColumn(modifier) {
-            items(dates) {
+            items(dates!!) {
                 drawEntry(it, editEntry)
             }
         }
@@ -71,17 +74,18 @@ class DateScreen(
         )
     }
 
-    @OptIn(ExperimentalLayoutApi::class)
+    @OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
     @Composable
     fun drawEntry(date: Date, editEntry: (Int) -> Unit) { //todo maybe show desc too?
         val entry = date.entry
         val tags = entry.getTags()
+        var excludeDateShown by remember { mutableStateOf(false) }
         Column(
             Modifier.padding(2.dp).fillMaxWidth()
                 .background(
                     MaterialTheme.colorScheme.primaryContainer,
                     shape = RoundedCornerShape(10.dp)
-                ).clickable(onClick = { editEntry(entry.id!!) })
+                ).combinedClickable(onLongClick = { excludeDateShown = true }, onClick = { editEntry(entry.id!!) })
         ) {
             Row(Modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 8.dp)) {
                 Text(
@@ -109,7 +113,35 @@ class DateScreen(
                     }
                 }
             }
+            if (excludeDateShown) excludeDate(date, entry.name) { excludeDateShown = false }
         }
+    }
+
+    @Composable
+    fun excludeDate(date: Date, entryName: String, onClose: () -> Unit) {
+        AlertDialog(
+            onDismissRequest = onClose,
+            dismissButton = {
+                TextButton(onClick = onClose) {
+                    Text("Cancel")
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    date.addExceptions(day)
+                    date.update()
+                    onClose()
+                    loadDates()
+                }) {
+                    Text("OK")
+                }
+            },
+            text = {
+                Column {
+                    Text("Exclude $day from $entryName?")
+                }
+            }
+        )
     }
 
     @Composable
