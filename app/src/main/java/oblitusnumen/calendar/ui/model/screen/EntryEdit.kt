@@ -442,20 +442,22 @@ class EntryEdit(
                     .toEpochDay() * 86_400_000
             )
         }
-        var occurrencesCount by remember { mutableStateOf(if (date.isEndless) "1" else "${date.timesRepeat}") }
+        var occurrencesCount by remember { mutableStateOf(if (date.isEndless) "1" else "${date.getTimesRepeatUI()}") }
         var endVariantSelectedOption by remember {
             mutableStateOf(
                 if (date.isEndless) DateSequenceEndVariant.ENDLESS
                 else DateSequenceEndVariant.BY_DATE
             )
         }
-        /*val monSelected = remember { mutableStateOf(false) }
-        val tueSelected = remember { mutableStateOf(false) }
-        val wedSelected = remember { mutableStateOf(false) }
-        val thuSelected = remember { mutableStateOf(false) }
-        val friSelected = remember { mutableStateOf(false) }
-        val satSelected = remember { mutableStateOf(false) }
-        val sunSelected = remember { mutableStateOf(false) }*/
+        val isWeekday: Boolean = date.period.modifier == Period.WEEKDAY
+        val dayOfWeek = date.getFirstZoneDateTime().dayOfWeek.value
+        val monSelected = remember { mutableStateOf(if (isWeekday) date.period.testWeekday(Period.WD_MON) else dayOfWeek == 1) }
+        val tueSelected = remember { mutableStateOf(if (isWeekday) date.period.testWeekday(Period.WD_TUE) else dayOfWeek == 2) }
+        val wedSelected = remember { mutableStateOf(if (isWeekday) date.period.testWeekday(Period.WD_WED) else dayOfWeek == 3) }
+        val thuSelected = remember { mutableStateOf(if (isWeekday) date.period.testWeekday(Period.WD_THU) else dayOfWeek == 4) }
+        val friSelected = remember { mutableStateOf(if (isWeekday) date.period.testWeekday(Period.WD_FRI) else dayOfWeek == 5) }
+        val satSelected = remember { mutableStateOf(if (isWeekday) date.period.testWeekday(Period.WD_SAT) else dayOfWeek == 6) }
+        val sunSelected = remember { mutableStateOf(if (isWeekday) date.period.testWeekday(Period.WD_SUN) else dayOfWeek == 7) }
         AlertDialog(
             onDismissRequest = onDismiss,
             dismissButton = {
@@ -465,7 +467,26 @@ class EntryEdit(
             },
             confirmButton = {
                 TextButton(onClick = {
-                    date.setPeriod(Period(selectedPeriod.id, periodCount.toLong()))
+                    date.setPeriod(
+                        if (selectedPeriod.id == Period.WEEKDAY) {
+                            val weekdayDays = (if (monSelected.value) Period.WD_MON else 0) +
+                                    (if (tueSelected.value) Period.WD_TUE else 0) +
+                                    (if (wedSelected.value) Period.WD_WED else 0) +
+                                    (if (thuSelected.value) Period.WD_THU else 0) +
+                                    (if (friSelected.value) Period.WD_FRI else 0) +
+                                    (if (satSelected.value) Period.WD_SAT else 0) +
+                                    (if (sunSelected.value) Period.WD_SUN else 0)
+                            Period(
+                                selectedPeriod.id,
+                                periodCount.toLong(),
+                                if (weekdayDays == 0L)
+                                    Period.dayOfWeekIndexToEnum(date.getFirstZoneDateTime().dayOfWeek.value)
+                                else
+                                    weekdayDays
+                            )
+                        } else
+                            Period(selectedPeriod.id, periodCount.toLong())
+                    )
                     if (date.isPeriodic) {
                         when (endVariantSelectedOption) {
                             DateSequenceEndVariant.ENDLESS -> date.makeEndless()
@@ -477,7 +498,7 @@ class EntryEdit(
                             )
 
                             DateSequenceEndVariant.OCCURRENCES -> {
-                                date.setTimesRepeat(if (occurrencesCount.isEmpty()) 1 else occurrencesCount.toLong())
+                                date.setTimesRepeatUI(if (occurrencesCount.isEmpty()) 1 else occurrencesCount.toLong())
                             }
                         }
                     }
@@ -516,15 +537,17 @@ class EntryEdit(
                             Modifier.padding(horizontal = 8.dp).width(150.dp)
                         )
                     }
-                    /*Row {
-                        drawWeekdayButton(monSelected, "Mon")
-                        drawWeekdayButton(tueSelected, "Tue")
-                        drawWeekdayButton(wedSelected, "Wed")
-                        drawWeekdayButton(thuSelected, "Thu")
-                        drawWeekdayButton(friSelected, "Fri")
-                        drawWeekdayButton(satSelected, "Sat")
-                        drawWeekdayButton(sunSelected, "Sun")
-                    }*/
+                    if (selectedPeriod.id == Period.WEEKDAY) {
+                        Row {
+                            drawWeekdayButton(monSelected, "Mon")
+                            drawWeekdayButton(tueSelected, "Tue")
+                            drawWeekdayButton(wedSelected, "Wed")
+                            drawWeekdayButton(thuSelected, "Thu")
+                            drawWeekdayButton(friSelected, "Fri")
+                            drawWeekdayButton(satSelected, "Sat")
+                            drawWeekdayButton(sunSelected, "Sun")
+                        }
+                    }
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp).padding(top = 8.dp))
                     //end variant selection
                     //endless radiobutton
@@ -684,11 +707,10 @@ data class PeriodType(val id: Char) {
         return when (id) {
             Period.ONCE -> "ounce"
             Period.DAY -> "day"
-            Period.WEEK -> "week"
-            Period.WEEKDAY -> "weekday"
+            Period.WEEKDAY -> "week"
             Period.MONTH -> "month"
             Period.YEAR -> "year"
-            else -> "once"
+            else -> throw IllegalStateException()
         }
     }
 
@@ -697,8 +719,7 @@ data class PeriodType(val id: Char) {
             val list = mutableListOf<PeriodType>()
             list.add(PeriodType(Period.ONCE))
             list.add(PeriodType(Period.DAY))
-            //list.add(PeriodType(Period.WEEKDAY))
-            list.add(PeriodType(Period.WEEK))
+            list.add(PeriodType(Period.WEEKDAY))
             list.add(PeriodType(Period.MONTH))
             list.add(PeriodType(Period.YEAR))
             return list

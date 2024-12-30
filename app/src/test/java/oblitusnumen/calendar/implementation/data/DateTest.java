@@ -10,6 +10,39 @@ import java.time.ZonedDateTime;
 import static org.junit.Assert.assertThrows;
 
 public class DateTest extends TestCase {
+    public void testNextClosestRawForWeekdays() {
+        Date date = new Date(null, 0, 0, "", ZonedDateTime.parse("2024-12-09T09:00:00Z").toEpochSecond(),
+                0, ZonedDateTime.parse("2024-12-09T09:00:00Z").toEpochSecond(), 100,
+                new Period(Period.WEEKDAY, 3, Period.WD_MON + Period.WD_WED + Period.WD_FRI + Period.WD_SUN).toString(),
+                "UTC", "");
+        date.makeEndless();
+        assertEquals(ZonedDateTime.parse("2024-12-09T09:00:00Z").toEpochSecond(),
+                date.getNextClosestForTesting(ZonedDateTime.parse("2024-12-09T08:59:59Z").toEpochSecond()).toEpochSecond());
+        assertEquals(ZonedDateTime.parse("2024-12-09T09:00:00Z").toEpochSecond(),
+                date.getNextClosestForTesting(ZonedDateTime.parse("2024-12-09T09:00:00Z").toEpochSecond()).toEpochSecond());
+        assertEquals(ZonedDateTime.parse("2024-12-11T09:00:00Z").toEpochSecond(),
+                date.getNextClosestForTesting(ZonedDateTime.parse("2024-12-09T09:00:01Z").toEpochSecond()).toEpochSecond());
+        assertEquals(ZonedDateTime.parse("2024-12-30T09:00:00Z").toEpochSecond(),
+                date.getNextClosestForTesting(ZonedDateTime.parse("2024-12-15T09:00:01Z").toEpochSecond()).toEpochSecond());
+        assertEquals(ZonedDateTime.parse("2024-12-30T09:00:00Z").toEpochSecond(),
+                date.getNextClosestForTesting(ZonedDateTime.parse("2024-12-20T08:00:01Z").toEpochSecond()).toEpochSecond());
+        assertEquals(ZonedDateTime.parse("2024-12-13T09:00:00Z").toEpochSecond(),
+                date.getNextClosestForTesting(ZonedDateTime.parse("2024-12-11T18:00:00Z").toEpochSecond()).toEpochSecond());
+        assertEquals(ZonedDateTime.parse("2024-12-11T09:00:00Z").toEpochSecond(),
+                date.getNextClosestForTesting(ZonedDateTime.parse("2024-12-10T09:00:00Z").toEpochSecond()).toEpochSecond());
+        date.setPeriod(new Period(Period.WEEKDAY, 3, Period.WD_MON + Period.WD_WED + Period.WD_FRI));
+        assertEquals(ZonedDateTime.parse("2024-12-30T09:00:00Z").toEpochSecond(),
+                date.getNextClosestForTesting(ZonedDateTime.parse("2024-12-14T09:00:01Z").toEpochSecond()).toEpochSecond());
+        assertEquals(ZonedDateTime.parse("2024-12-30T09:00:00Z").toEpochSecond(),
+                date.getNextClosestForTesting(ZonedDateTime.parse("2024-12-20T08:00:01Z").toEpochSecond()).toEpochSecond());
+        date.setPeriod(new Period(Period.WEEKDAY, 3, Period.WD_MON + Period.WD_WED + Period.WD_THU + Period.WD_FRI));
+        date.setTimesRepeatUI(2);
+        assertNull(date.getNextClosestForTesting(ZonedDateTime.parse("2024-12-11T18:00:00Z").toEpochSecond()));
+        // FIXME: 12/30/24 fails as end is badly stored
+        assertEquals(ZonedDateTime.parse("2024-12-11T09:00:00Z").toEpochSecond(),
+                date.getNextClosestForTesting(ZonedDateTime.parse("2024-12-11T08:00:00Z").toEpochSecond()).toEpochSecond());
+    }
+
     public void testPeriod() {
         assertThrows(IllegalArgumentException.class, () -> {
             new Period(Period.WEEKDAY, 1);
@@ -89,15 +122,15 @@ public class DateTest extends TestCase {
         Date date = new Date(null, 0, 0, "", 0, 0, 0, numberOfDated,
                 new Period(Period.WEEK, 1).toString(), "UTC", "");
         assertEquals("", date.getExceptionRules().toString());
-        date.setTimesRepeat(50);
-        assertEquals(50, date.getTimesRepeat());
+        date.setTimesRepeatUI(50);
+        assertEquals(50, date.getTimesRepeatForTesting());
         assertFalse(date.isEmpty());
         assertFalse(date.isEndless());
         date.makeEndless();
         assertFalse(date.isEmpty());
         assertTrue(date.isEndless());
-        date.setTimesRepeat(50);
-        assertEquals(50, date.getTimesRepeat());
+        date.setTimesRepeatUI(50);
+        assertEquals(50, date.getTimesRepeatForTesting());
         assertFalse(date.isEmpty());
         assertFalse(date.isEndless());
     }
@@ -122,10 +155,10 @@ public class DateTest extends TestCase {
 
     public void testForDayAtPeriod() {
         ZonedDateTime time = new Date(null, 0, 0, "", 0, 0, 0, 10, new Period(Period.DAY, 1).toString(), "UTC", "")
-                .fixEnd().forDay(ZonedDateTime.of(1970, 1, 1, 14, 0, 0, 0, ZoneId.of("UTC")));
+                .fixEndForTesting().forDay(ZonedDateTime.of(1970, 1, 1, 14, 0, 0, 0, ZoneId.of("UTC")));
         assertNotNull(time);
         time = new Date(null, 0, 0, "", 0, 0, 0, 10, new Period(Period.DAY, 1).toString(), "UTC", "")
-                .fixEnd().forDay(ZonedDateTime.of(1970, 1, 1, 14, 0, 0, 0, ZoneId.of("UTC")).plusDays(5));
+                .fixEndForTesting().forDay(ZonedDateTime.of(1970, 1, 1, 14, 0, 0, 0, ZoneId.of("UTC")).plusDays(5));
         assertNotNull(time);
         time = new Date(null, 0, 0, "", 0, 0, 0, 10, new Period(Period.DAY, 1).toString(), "UTC", "")
                 .forDay(ZonedDateTime.of(1970, 1, 1, 0, 0, 1, 0, ZoneId.of("UTC")).plusDays(9));
@@ -134,10 +167,10 @@ public class DateTest extends TestCase {
                 .forDay(ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneId.of("UTC")));
         assertNotNull(time);
         time = new Date(null, 0, 0, "", 0, 0, 0, 10, new Period(Period.MONTH, 1).toString(), "UTC", "")
-                .fixEnd().forDay(ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneId.of("UTC")).plusMonths(5));
+                .fixEndForTesting().forDay(ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneId.of("UTC")).plusMonths(5));
         assertNotNull(time);
         time = new Date(null, 0, 0, "", 0, 0, 0, 10, new Period(Period.MONTH, 1).toString(), "UTC", "")
-                .fixEnd().forDay(ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneId.of("UTC")).plusMonths(9));
+                .fixEndForTesting().forDay(ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneId.of("UTC")).plusMonths(9));
         assertNotNull(time);
     }
 
@@ -161,13 +194,13 @@ public class DateTest extends TestCase {
 
     public void testFixExceptionList() {
         Date date = new Date(null, 0, 0, "", 0, 0, 0, 80,
-                new Period(Period.DAY, 1).toString(), "UTC", "").fixEnd();
-        date.addExceptions(date.getZDT(1).toLocalDate(), date.getZDT(100).toLocalDate());
-        assertEquals(80, date.getTimesRepeat());
+                new Period(Period.DAY, 1).toString(), "UTC", "").fixEndForTesting();
+        date.addExceptions(date.getZDTForTesting(1).toLocalDate(), date.getZDTForTesting(100).toLocalDate());
+        assertEquals(80, date.getTimesRepeatForTesting());
         date.fixExceptionList();
         assertEquals("1_79", date.getExceptionRules().toString());
-        date.setTimesRepeat(50);
-        assertEquals(50, date.getTimesRepeat());
+        date.setTimesRepeatUI(50);
+        assertEquals(50, date.getTimesRepeatForTesting());
         assertFalse(date.isEmpty());
         assertFalse(date.isEndless());
         date.fixExceptionList();
@@ -178,42 +211,42 @@ public class DateTest extends TestCase {
         int numberOfDated = 50;
         Date date = new Date(null, 0, 0, "", 0, 0, 0, numberOfDated,
                 new Period(Period.WEEK, 1).toString(), "UTC", "");
-        date.addExceptions(date.getZDT(5).toLocalDate(), date.getZDT(23).toLocalDate());
-        assertEquals(50, date.getTimesRepeat());
+        date.addExceptions(date.getZDTForTesting(5).toLocalDate(), date.getZDTForTesting(23).toLocalDate());
+        assertEquals(50, date.getTimesRepeatForTesting());
         assertEquals("35_161", date.getExceptionRules().toString());
-        date.addExceptions(date.getZDT(20).toLocalDate(), date.getZDT(23).toLocalDate());
-        assertEquals(50, date.getTimesRepeat());
+        date.addExceptions(date.getZDTForTesting(20).toLocalDate(), date.getZDTForTesting(23).toLocalDate());
+        assertEquals(50, date.getTimesRepeatForTesting());
         assertEquals("35_161", date.getExceptionRules().toString());
         date = new Date(null, 0, 0, "", 0, 0, 0, numberOfDated,
                 new Period(Period.MONTH, 1).toString(), "UTC", "");
-        date.addExceptions(date.getZDT(3).toLocalDate(), date.getZDT(12).toLocalDate());
+        date.addExceptions(date.getZDTForTesting(3).toLocalDate(), date.getZDTForTesting(12).toLocalDate());
         assertEquals("90_365", date.getExceptionRules().toString());
     }
 
     public void testFixRanges() {
         int numberOfDated = 50;
         Date date = new Date(null, 0, 0, "", 0, 0, 0, numberOfDated,
-                new Period(Period.WEEK, 1).toString(), "UTC", "").fixEnd();
-        date.addExceptions(date.getZDT(0).toLocalDate(), date.getZDT(50).toLocalDate());
+                new Period(Period.WEEK, 1).toString(), "UTC", "").fixEndForTesting();
+        date.addExceptions(date.getZDTForTesting(0).toLocalDate(), date.getZDTForTesting(50).toLocalDate());
         date.fixDateRange();
         date.fixExceptionList();
-        assertEquals(0, date.getTimesRepeat());
+        assertEquals(0, date.getTimesRepeatForTesting());
         assertTrue(date.isEmpty());
         assertEquals("", date.getExceptionRules().toString());
         date = new Date(null, 0, 0, "", 0, 0, 0, numberOfDated,
-                new Period(Period.WEEK, 1).toString(), "UTC", "").fixEnd();
-        date.addExceptions(date.getZDT(0).toLocalDate(), date.getZDT(4).toLocalDate());
-        date.addExceptions(date.getZDT(40).toLocalDate(), date.getZDT(49).toLocalDate());
-        date.addExceptions(date.getZDT(21).toLocalDate(), date.getZDT(24).toLocalDate());
-        assertEquals(50, date.getTimesRepeat());
+                new Period(Period.WEEK, 1).toString(), "UTC", "").fixEndForTesting();
+        date.addExceptions(date.getZDTForTesting(0).toLocalDate(), date.getZDTForTesting(4).toLocalDate());
+        date.addExceptions(date.getZDTForTesting(40).toLocalDate(), date.getZDTForTesting(49).toLocalDate());
+        date.addExceptions(date.getZDTForTesting(21).toLocalDate(), date.getZDTForTesting(24).toLocalDate());
+        assertEquals(50, date.getTimesRepeatForTesting());
         date.fixDateRange();
-        assertEquals(35, date.getTimesRepeat());
+        assertEquals(35, date.getTimesRepeatForTesting());
         date.fixDateRange();
-        assertEquals(35, date.getTimesRepeat());
+        assertEquals(35, date.getTimesRepeatForTesting());
         assertFalse(date.isEmpty());
         date.fixExceptionList();
         assertEquals("147_168", date.getExceptionRules().toString());
-        date.addExceptions(date.getZDT(0).toLocalDate(), date.getZDT(34).toLocalDate());
+        date.addExceptions(date.getZDTForTesting(0).toLocalDate(), date.getZDTForTesting(34).toLocalDate());
         date.fixDateRange();
         assertTrue(date.isEmpty());
     }
@@ -222,26 +255,6 @@ public class DateTest extends TestCase {
         ZonedDateTime time = new Date(null, 0, 0, "", 0, 0, 0, 100, new Period().toString(), "UTC", "")
                 .forDay(ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneId.of("UTC")));
         assertNotNull(time);
-    }
-
-    public void testForDayIndexAtPeriod() {
-        ZonedDateTime utc = ZonedDateTime.of(1970, 1, 1, 14, 0, 0, 0, ZoneId.of("UTC"));
-        long time = new Date(null, 0, 0, "", 0, 0, 0, 10, new Period(Period.DAY, 1).toString(), "UTC", "")
-                .fixEnd().getZonedDateTimeIndex(utc.toEpochSecond(), utc.toEpochSecond() + 86400);
-        assertEquals(1, time);
-        time = new Date(null, 0, 0, "", 0, 0, 0, 10, new Period(Period.DAY, 1).toString(), "UTC", "")
-                .fixEnd().getZonedDateTimeIndex(utc.plusDays(5).toEpochSecond(), utc.plusDays(6).toEpochSecond());
-        assertEquals(6, time);
-        utc = ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneId.of("UTC"));
-        time = new Date(null, 0, 0, "", 0, 0, 0, 10, new Period(Period.MONTH, 1).toString(), "UTC", "")
-                .getZonedDateTimeIndex(utc.toEpochSecond(), utc.plusDays(1).toEpochSecond());
-        assertEquals(0, time);
-        time = new Date(null, 0, 0, "", 0, 0, 0, 10, new Period(Period.MONTH, 1).toString(), "UTC", "")
-                .fixEnd().getZonedDateTimeIndex(utc.plusMonths(5).toEpochSecond(), utc.plusMonths(5).plusDays(1).toEpochSecond());
-        assertEquals(5, time);
-        time = new Date(null, 0, 0, "", 0, 0, 0, 10, new Period(Period.MONTH, 1).toString(), "UTC", "")
-                .fixEnd().getZonedDateTimeIndex(utc.plusMonths(9).toEpochSecond(), utc.plusMonths(9).plusDays(1).toEpochSecond());
-        assertEquals(9, time);
     }
 
     public void testTZKievFromMoscowDay() {
@@ -269,33 +282,9 @@ public class DateTest extends TestCase {
                 2024-11-08T23:59:59+03:00[Europe/Moscow]
                 2024-11-09T23:59:59+03:00[Europe/Moscow]
                 """.split("\n");
-        String[] test2 = """
-                8765
-                8766
-                8767
-                8768
-                8769
-                8770
-                8771
-                8772
-                8773
-                8774
-                8775
-                8776
-                8777
-                8778
-                8779
-                8780
-                8781
-                8782
-                8783
-                8784
-                8785
-                8786
-                """.split("\n");
         ZonedDateTime utc = ZonedDateTime.ofInstant(Instant.ofEpochSecond(1729458000 - 86400), ZoneId.of("Europe/Moscow"));
         Date date = new Date(null, 0, 0, "", 972071999, 0, 0, 10950,
-                new Period(Period.DAY, 1).toString(), "Europe/Kiev", "").fixEnd();
+                new Period(Period.DAY, 1).toString(), "Europe/Kiev", "").fixEndForTesting();
         for (int i = -1; i < 21; i++) {
             ZonedDateTime time = date.forDay(utc.plusDays(i));
             System.out.println(utc.plusDays(i));
@@ -349,7 +338,7 @@ public class DateTest extends TestCase {
                 """.split("\n");
         ZonedDateTime utc = ZonedDateTime.ofInstant(Instant.ofEpochSecond(1729458000 - 86400), ZoneId.of("Europe/Moscow"));
         Date date = new Date(null, 0, 0, "", 972071999, 0, 0, 10950,
-                new Period(Period.DAY, 3).toString(), "Europe/Kiev", "").fixEnd();
+                new Period(Period.DAY, 3).toString(), "Europe/Kiev", "").fixEndForTesting();
         for (int i = -1; i < 21; i++) {
             ZonedDateTime time = date.forDay(utc.plusDays(i));
             System.out.println(utc.plusDays(i));
@@ -401,33 +390,9 @@ public class DateTest extends TestCase {
                 2024-11-09T22:59:59+02:00[Europe/Kiev]
                 2024-11-10T22:59:59+02:00[Europe/Kiev]
                 """.split("\n");
-        String[] test2 = """
-                8766
-                8767
-                8768
-                8769
-                8770
-                8771
-                8772
-                8773
-                8774
-                8775
-                8776
-                8777
-                8778
-                8779
-                8780
-                8781
-                8782
-                8783
-                8784
-                8785
-                8786
-                8787
-                """.split("\n");
         ZonedDateTime utc = ZonedDateTime.ofInstant(Instant.ofEpochSecond(1729458000), ZoneId.of("Europe/Kiev"));
         Date date = new Date(null, 0, 0, "", 972071999, 0, 0, 10950,
-                new Period(Period.DAY, 1).toString(), "Europe/Moscow", "").fixEnd();
+                new Period(Period.DAY, 1).toString(), "Europe/Moscow", "").fixEndForTesting();
         for (int i = -1; i < 21; i++) {
             ZonedDateTime time = date.forDay(utc.plusDays(i));
             System.out.println(utc.plusDays(i));
@@ -505,7 +470,7 @@ public class DateTest extends TestCase {
                 """.split("\n");
         ZonedDateTime utc = ZonedDateTime.ofInstant(Instant.ofEpochSecond(1729458000 - 86400), ZoneId.of("Europe/Moscow"));
         Date date = new Date(null, 0, 0, "", 972071999, 0, 0, 10950,
-                new Period(Period.MONTH, 1).toString(), "Europe/Kiev", "").fixEnd();
+                new Period(Period.MONTH, 1).toString(), "Europe/Kiev", "").fixEndForTesting();
         for (int i = -1; i < 21; i++) {
             ZonedDateTime time = date.forDay(utc.plusMonths(i));
             System.out.println(utc.plusMonths(i));
@@ -513,7 +478,7 @@ public class DateTest extends TestCase {
                 assertNotNull(time);
                 System.out.println(time.withZoneSameInstant(ZoneId.of("Europe/Moscow")).toString());
                 assertEquals(test[i + 1], time.withZoneSameInstant(ZoneId.of("Europe/Moscow")).toString());
-                assertEquals(test2[i + 1], date.getZonedDateTimeIndex(utc.plusMonths(i).toEpochSecond(), utc.plusMonths(i).plusDays(1).toEpochSecond()) + "");
+                assertEquals(date.getZDTForTesting(Long.parseLong(test2[i + 1])), date.anyInRange(utc.plusMonths(i).toEpochSecond(), utc.plusMonths(i).plusDays(1).toEpochSecond()));
             } else {
                 if (time != null) System.out.println(time.withZoneSameInstant(ZoneId.of("Europe/Moscow")).toString());
                 assertNull(time);
@@ -583,7 +548,7 @@ public class DateTest extends TestCase {
                 """.split("\n");
         ZonedDateTime utc = ZonedDateTime.ofInstant(Instant.ofEpochSecond(1729458000 - 86400), ZoneId.of("Europe/Kiev"));
         Date date = new Date(null, 0, 0, "", 972071999, 0, 0, 10950,
-                new Period(Period.MONTH, 1).toString(), "Europe/Moscow", "").fixEnd();
+                new Period(Period.MONTH, 1).toString(), "Europe/Moscow", "").fixEndForTesting();
         for (int i = -1; i < 21; i++) {
             ZonedDateTime time = date.forDay(utc.plusMonths(i));
             System.out.println(utc.plusMonths(i));
@@ -591,7 +556,7 @@ public class DateTest extends TestCase {
                 assertNotNull(time);
                 System.out.println(time.withZoneSameInstant(ZoneId.of("Europe/Kiev")).toString());
                 assertEquals(test[i + 1], time.withZoneSameInstant(ZoneId.of("Europe/Kiev")).toString());
-                assertEquals(test2[i + 1], date.getZonedDateTimeIndex(utc.plusMonths(i).toEpochSecond(), utc.plusMonths(i).plusDays(1).toEpochSecond()) + "");
+                assertEquals(date.getZDTForTesting(Long.parseLong(test2[i + 1])), date.anyInRange(utc.plusMonths(i).toEpochSecond(), utc.plusMonths(i).plusDays(1).toEpochSecond()));
             } else {
                 if (time != null) System.out.println(time.withZoneSameInstant(ZoneId.of("Europe/Kiev")).toString());
                 assertNull(time);

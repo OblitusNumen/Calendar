@@ -5,6 +5,7 @@ import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.provider.BaseColumns
 import oblitusnumen.calendar.implementation.mult_frac
+import oblitusnumen.calendar.implementation.toWeekNumber
 import org.jetbrains.annotations.TestOnly
 import java.time.Instant
 import java.time.LocalDate
@@ -22,8 +23,7 @@ class Date : BaseColumns {
         private set
     private var duration: Long
     private var end: Long = 0
-    var timesRepeat: Long = 1
-        private set
+    private var timesRepeat: Long = 1
     var period: Period
         private set
     var zoneId: ZoneId
@@ -168,7 +168,7 @@ class Date : BaseColumns {
     }
 
     fun getAllInRange(start: Long, end: Long): List<ZonedDateTime> {
-        val dates: MutableList<ZonedDateTime> = ArrayList<ZonedDateTime>()
+        val dates: MutableList<ZonedDateTime> = ArrayList()
         var curStart = start
         while (true) {
             val nextClosestRaw = getNextClosestRaw(curStart) ?: break
@@ -178,27 +178,6 @@ class Date : BaseColumns {
             curStart = epochSecond + 1
         }
         return dates
-    }
-
-    @TestOnly
-    fun getZonedDateTimeIndex(start: Long, finish: Long): Long { //any(?) in range. still used by tests
-        if (finish <= this.start) return -1
-        if (this.end == this.start) return if (this.start >= start) 0 else -1
-        val period = (this.end - this.start) / timesRepeat
-        val idx = min((timesRepeat - 1), ((finish - this.start) / period))
-        val time = getZoneDateTime(idx).toEpochSecond()
-        if (time in start..<finish) return idx
-        if (time >= finish && idx > 1) {
-            val timeM1 = getZoneDateTime(idx - 1).toEpochSecond()
-            return if (timeM1 >= finish || timeM1 < start) -1
-            else idx - 1
-        }
-        if (time < start && idx < timesRepeat - 1) {
-            val timeP1 = getZoneDateTime(idx + 1).toEpochSecond()
-            return if (timeP1 < start || timeP1 >= finish) -1
-            else idx + 1
-        }
-        return -1
     }
 
     private fun getZonedDateTimeInRange(start: Long, finish: Long): ZonedDateTime? { //any(?) in range
@@ -235,22 +214,19 @@ class Date : BaseColumns {
         return anyInRange(startOfDay.toEpochSecond(), startOfDay.plusDays(1).toEpochSecond())
     }
 
-    fun anyInRange(start: Long, finish: Long): ZonedDateTime? {
+    fun anyInRange(start: Long, finish: Long): ZonedDateTime? {// FIXME: measure performance (weekdays especially)
         val zonedDateTime = getZonedDateTimeInRange(start, finish)
-        if (zonedDateTime == null || exceptionRules.containsDate(zonedDateTime.toEpochDays())) return null
+        if (zonedDateTime == null || exceptionRules.containsDate(zonedDateTime.toEpochDays()) ||
+            (period.modifier == Period.WEEKDAY && !period.verifyWeekday(// FIXME: works wacky for cases when more than one event in range
+                getFirstZoneDateTime().toLocalDate(),
+                zonedDateTime.toLocalDate()
+            ))
+        ) return null
         return zonedDateTime
-    }
-
-    private fun getTime(idx: Long): Long {
-        return getZoneDateTime(idx).toEpochSecond()
     }
 
     fun getDesc(): String {
         return desc.ifEmpty { entry.name }
-    }
-
-    fun exists(): Boolean {
-        return id != null
     }
 
     fun setDesc(desc: String) {
@@ -281,10 +257,63 @@ class Date : BaseColumns {
         }
     }
 
-    fun setTimesRepeat(timesRepeat: Long) {
+    fun getTimesRepeatUI(): Long {
+        if (period.modifier == Period.WEEKDAY) {
+            val firstDay = getFirstZoneDateTime().toLocalDate()
+            val wholePeriods = timesRepeat / (period.getCount() * 7)
+            val eventsPerWeek = period.getEventsPerWeek()
+            var timesRepeatCumulative = wholePeriods * eventsPerWeek
+            var leftoverDays = (timesRepeat % (period.getCount() * 7)).toInt()
+            if (leftoverDays == 0) {
+                return timesRepeatCumulative
+            } else {
+                var then = firstDay.plusDays(period.getCount() * 7)
+                while (true) {
+                    if (period.verifyWeekday(firstDay, then)) {
+                        timesRepeatCumulative++
+                    }
+                    leftoverDays--
+                    if (leftoverDays == 0) break
+                    then = then.plusDays(1)
+                }
+                return timesRepeatCumulative
+            }
+        } else
+            return timesRepeat
+    }
+
+    fun setTimesRepeatUI(timesRepeat: Long) {
+        if (period.modifier == Period.WEEKDAY) {
+            val firstDay = getFirstZoneDateTime().toLocalDate()
+            val eventsPerWeek = period.getEventsPerWeek()
+            val eventsInFirstWeek =
+                (period.getWeekdays() shr (firstDay.dayOfWeek.value - 1)).countOneBits()
+            var wholeWeeksCount = timesRepeat / eventsPerWeek * period.getCount()
+            var leftoverEvents = (timesRepeat % eventsPerWeek).toInt()
+            if (eventsPerWeek == eventsInFirstWeek && leftoverEvents == 0)
+                setTimesRepeat((wholeWeeksCount - period.getCount() + 1) * 7 - firstDay.dayOfWeek.value + 1)
+            else {
+                if (leftoverEvents == 0) {
+                    wholeWeeksCount -= period.getCount()
+                    leftoverEvents = eventsPerWeek
+                }
+                var then = firstDay.plusDays(wholeWeeksCount * 7)
+                while (true) {
+                    while (!period.verifyWeekday(firstDay, then)) then = then.plusDays(1)
+                    if (--leftoverEvents == 0) break
+                    then = then.plusDays(1)
+                }
+                setRange(startOfDayEnd = then.atStartOfDay(zoneId))
+            }
+        } else {
+            setTimesRepeat(timesRepeat)
+        }
+    }
+
+    private fun setTimesRepeat(timesRepeat: Long) {
         verifyParams(timesRepeat = timesRepeat)
         this.timesRepeat = timesRepeat
-        this.end = getTime(timesRepeat - 1)
+        this.end = getZoneDateTime(timesRepeat - 1).toEpochSecond()
     }
 
     fun setPeriod(period: Period) {
@@ -295,7 +324,7 @@ class Date : BaseColumns {
         }
         verifyParams(period = period)
         this.period = period
-        this.end = getTime(timesRepeat - 1)
+        this.end = getZoneDateTime(timesRepeat - 1).toEpochSecond()
     }
 
     fun addExceptions(dateStart: LocalDate, dateEnd: LocalDate = dateStart) {
@@ -310,11 +339,11 @@ class Date : BaseColumns {
         if (startOfDayStart != null) {
             zoneId = startOfDayStart.zone
             val start = startOfDayStart.toEpochSecond()
-            verifyParams(start = start)
             if (isEndless) {
                 this.start = start
                 makeEndless()
             } else {
+                verifyParams(start = start)
                 val end = getLastZoneDateTime()
                 this.start = start
                 if (period.modifier == Period.ONCE)
@@ -324,13 +353,13 @@ class Date : BaseColumns {
             }
         }
         if (startOfDayEnd != null) {
-            val end = startOfDayEnd.plusDays(1).toEpochSecond() - 1
+            val startOfDayAfterEnd = startOfDayEnd.plusDays(1)
+            val end = startOfDayAfterEnd.toEpochSecond() - 1
             var expectedCount = (end - start) / period.secondsApproximation() + 1
             verifyParams(timesRepeat = expectedCount)
-            while (getZoneDateTime(expectedCount) < startOfDayEnd.plusDays(1))
-                expectedCount += (end - getZoneDateTime(expectedCount).toEpochSecond()) / period.secondsApproximation() + 1
-            if (getZoneDateTime(expectedCount - 1) > startOfDayEnd.plusDays(1))
-                expectedCount--
+            while (getZoneDateTime(expectedCount - 1) < startOfDayAfterEnd)
+                expectedCount += (end - getZoneDateTime(expectedCount - 1).toEpochSecond()) / period.secondsApproximation() + 1
+            expectedCount--
             if (expectedCount < 0)
                 expectedCount = 0
             setTimesRepeat(expectedCount)
@@ -338,14 +367,20 @@ class Date : BaseColumns {
     }
 
     @TestOnly
+    fun getTimesRepeatForTesting() = timesRepeat
+
+    @TestOnly
+    fun getNextClosestForTesting(fromEpochSecond: Long) = getNextClosestRaw(fromEpochSecond)
+
+    @TestOnly
     @Deprecated("For use only in bad testing data")
-    fun fixEnd(): Date {
+    fun fixEndForTesting(): Date {
         setTimesRepeat(timesRepeat)
         return this
     }
 
     @TestOnly
-    fun getZDT(i: Long): ZonedDateTime {
+    fun getZDTForTesting(i: Long): ZonedDateTime {
         return getZoneDateTime(i)
     }
 
@@ -358,41 +393,79 @@ class Date : BaseColumns {
         )
     }
 
-    private fun getNextClosestRaw(time: Long): ZonedDateTime? {
-        if (time > end || timesRepeat <= 0)
+    private fun getNextClosestRaw(fromEpochSecond: Long): ZonedDateTime? {
+        if (fromEpochSecond > end || timesRepeat <= 0)
             return null
-        if (time <= start)
+        if (fromEpochSecond <= start)
             return getFirstZoneDateTime()
+        if (period.modifier == Period.WEEKDAY) {
+            val firstLocal = getFirstZoneDateTime().toLocalDate()
+            val weekNumberFirst = firstLocal.toWeekNumber()
+            val start = Instant.ofEpochSecond(fromEpochSecond).atZone(zoneId)
+            val startDay = start.toLocalDate()
+            var then = startDay
+            val weekNumberStart = then.toWeekNumber()
+            val weeksDiff = weekNumberStart - weekNumberFirst
+            if (weeksDiff % period.getCount() == 0L) {//chosen start is in valid week
+                if (period.verifyWeekday(firstLocal, then)) {//check that day
+                    val thatDay = getZoneDateTime(then.toEpochDay() - firstLocal.toEpochDay())
+                    if (fromEpochSecond <= thatDay.toEpochSecond()) {
+                        return thatDay
+                    }
+                }
+                //check until end of that week
+                while (true) {
+                    then = then.plusDays(1)
+                    if (then.toWeekNumber() != weekNumberStart) break
+                    if (period.verifyWeekday(firstLocal, then)) {
+                        val validEvent = getZoneDateTime(then.toEpochDay() - firstLocal.toEpochDay())
+                        return if (validEvent.toEpochSecond() > end) null else validEvent
+                    }
+                }
+            }
+            //set to next valid week
+            then = firstLocal.plusWeeks((weeksDiff / period.getCount() + 1) * period.getCount())
+            //set then to start of week
+            then = then.minusDays(then.dayOfWeek.value - 1L)
+            //check until end of that week
+            while (true) {
+                if (period.verifyWeekday(firstLocal, then)) {
+                    val validEvent = getZoneDateTime(then.toEpochDay() - firstLocal.toEpochDay())
+                    return if (validEvent.toEpochSecond() > end) null else validEvent
+                }
+                then = then.plusDays(1)
+            }
+        }
         val period = (end - start) / (timesRepeat - 1)
-        val idx = min((timesRepeat - 1), ((time - start) / period))
+        val idx = min((timesRepeat - 1), ((fromEpochSecond - start) / period))
         val zoneDateTime = getZoneDateTime(idx)
         val evt = zoneDateTime.toEpochSecond()
-        if (evt < time) {
+        if (evt < fromEpochSecond) {
             val zoneDateTimeP1 = getZoneDateTime(idx + 1)
             val evtNext = zoneDateTimeP1.toEpochSecond()
-            return if (evtNext >= time && idx < timesRepeat) zoneDateTimeP1 else null
+            return if (evtNext >= fromEpochSecond && idx < timesRepeat) zoneDateTimeP1 else null
         }
         if (idx == 0L) return getFirstZoneDateTime()
         val zoneDateTimeM1 = getZoneDateTime(idx - 1)
         val evtPrev = zoneDateTimeM1.toEpochSecond()
-        return if (evtPrev < time) zoneDateTime else zoneDateTimeM1
+        return if (evtPrev < fromEpochSecond) zoneDateTime else zoneDateTimeM1
     }
 
-    private fun getNextClosestIdxRaw(time: Long): Long {
-        if (time > end || timesRepeat <= 0)
+    private fun getNextClosestIdxRaw(fromEpochSecond: Long): Long {
+        if (fromEpochSecond > end || timesRepeat <= 0)
             return -1
-        if (time <= start)
+        if (fromEpochSecond <= start)
             return 0
         val period = (end - start) / (timesRepeat - 1)
-        val idx = min((timesRepeat - 1), ((time - start) / period))
+        val idx = min((timesRepeat - 1), ((fromEpochSecond - start) / period))
         val evt = getZoneDateTime(idx).toEpochSecond()
-        if (evt < time) {
+        if (evt < fromEpochSecond) {
             val evtNext = getZoneDateTime(idx + 1).toEpochSecond()
-            return if (evtNext >= time && idx < timesRepeat) idx + 1 else -1
+            return if (evtNext >= fromEpochSecond && idx < timesRepeat) idx + 1 else -1
         }
         if (idx == 0L) return 0
         val evtPrev = getZoneDateTime(idx - 1).toEpochSecond()
-        return if (evtPrev < time) idx else idx - 1
+        return if (evtPrev < fromEpochSecond) idx else idx - 1
     }
 
     fun fixDateRange() {
