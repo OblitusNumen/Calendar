@@ -39,7 +39,8 @@ class Period {
             ONCE -> start
             MINUTE -> start.plusMinutes(idx * data)
             HOUR -> start.plusHours(idx * data)
-            DAY, WEEKDAY -> start.plusDays(idx * data)
+            DAY -> start.plusDays(idx * data)
+            WEEKDAY -> start.plusDays(idx)
             WEEK -> start.plusWeeks(idx * data)
             MONTH -> start.plusMonths(idx * data)
             YEAR -> start.plusYears(idx * data)
@@ -74,7 +75,8 @@ class Period {
             ONCE -> 0
             MINUTE -> 60 * data
             HOUR -> 3600 * data
-            DAY, WEEKDAY -> 86400 * data
+            DAY -> 86400 * data
+            WEEKDAY -> 86400
             WEEK -> 86400 * 7 * data
             MONTH -> 86400 * 30 * data
             YEAR -> 86400 * 365 * data
@@ -101,8 +103,10 @@ class Period {
     fun testWeekdayIdx(dayIdx: Int): Boolean {
         if (modifier != WEEKDAY)
             throw IllegalArgumentException("Not a weekday")
-        return (getWeekdays() and (1L shl (dayIdx - 1))) != 0L
+        return (getWeekdays() and dayOfWeekIndexToEnum(dayIdx)) != 0L
     }
+
+    fun getEventsPerWeek() = getWeekdays().countOneBits()
 
     @Suppress("unused")
     companion object {
@@ -124,5 +128,7 @@ class Period {
         const val WD_SUN: Long = 64
         const val WD_ALL: Long = 127
         const val MAX_PERIOD_COUNT = 4294967296L // 2^32, a little more than END_ENDLESS_EXPECT / 1day
+
+        fun dayOfWeekIndexToEnum(idx: Int): Long = (1L shl (idx - 1))
     }
 }
