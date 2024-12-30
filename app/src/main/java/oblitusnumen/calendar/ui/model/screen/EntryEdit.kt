@@ -296,7 +296,7 @@ class EntryEdit(
                             modifier = Modifier.width(100.dp).padding(horizontal = 8.dp),
                             value = offsetCount, onValueChange = {
                                 try {
-                                    if (it.toLong() >= 0) offsetCount = it
+                                    if (it.toLong() >= 0 && it.length <= 3) offsetCount = it
                                 } catch (_: NumberFormatException) {
                                     if (it.isEmpty())
                                         offsetCount = it
@@ -516,7 +516,7 @@ class EntryEdit(
                             modifier = Modifier.width(100.dp).padding(horizontal = 8.dp),
                             value = periodCount, onValueChange = {
                                 try {
-                                    if (it.toLong() >= 0) periodCount = it
+                                    if (it.toLong() >= 0 && it.length <= 3) periodCount = it
                                 } catch (_: NumberFormatException) {
                                     if (it.isEmpty())
                                         periodCount = it
@@ -613,7 +613,7 @@ class EntryEdit(
                             onValueChange = {
                                 endVariantSelectedOption = DateSequenceEndVariant.OCCURRENCES
                                 try {
-                                    if (it.toLong() > 0)
+                                    if (it.toLong() > 0 && it.length <= 5)
                                         occurrencesCount = it
                                 } catch (_: NumberFormatException) {
                                     if (it.isEmpty())
