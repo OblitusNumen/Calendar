@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,6 +30,7 @@ import oblitusnumen.calendar.implementation.data.Date
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.measureTextLine
 import oblitusnumen.calendar.implementation.zonedDateTime
+import oblitusnumen.calendar.ui.model.DateTimePicker
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
@@ -171,13 +173,26 @@ class CalendarTab(private val dbManager: DbManager) : ViewModel() {
     // TODO:
     @Composable
     fun topBar() {
+        val dateTimePicker = remember { DateTimePicker() }
+        dateTimePicker.tryCompose()
         val coroutineScope = rememberCoroutineScope()
-        Button(onClick = {
-            coroutineScope.launch {
-                calendarLazyListState!!.scrollToItem(getNowItemIndex(LocalDate.now()))
+        Row {
+            Button(onClick = {
+                coroutineScope.launch {
+                    calendarLazyListState!!.scrollToItem(getNowItemIndex(LocalDate.now()))
+                }
+            }) {
+                Text("To current date")
             }
-        }) {
-            Text("to current date")
+            Button(onClick = {
+                dateTimePicker.datePick({}, {
+                    coroutineScope.launch {
+                        calendarLazyListState!!.scrollToItem(getNowItemIndex(it))
+                    }
+                })
+            }) {
+                Text("JumpToDate")
+            }
         }
     }
 }
