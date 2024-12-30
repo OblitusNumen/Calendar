@@ -27,6 +27,7 @@ import oblitusnumen.calendar.BackButton
 import oblitusnumen.calendar.implementation.bgColorToTextColor
 import oblitusnumen.calendar.implementation.convertMillisToDate
 import oblitusnumen.calendar.implementation.data.*
+import oblitusnumen.calendar.implementation.data.Period.*
 import oblitusnumen.calendar.ui.model.DateTimePicker
 import oblitusnumen.calendar.ui.model.materialSpinner
 import java.time.LocalDate
@@ -91,7 +92,7 @@ class EntryEdit(
                         ZonedDateTime.of(it, ZoneId.systemDefault()),
                         0,
                         1,
-                        Period()
+                        Once()
                     )
                 })
             }) {
@@ -133,7 +134,7 @@ class EntryEdit(
                     Text(
                         modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp)
                             .weight(1f),
-                        text = "${notification.offset.getCount()} ${notification.offset.modifier} before",// FIXME: text
+                        text = "${notification.offset.count} ${notification.offset.javaClass} before",// FIXME: text
                         style = MaterialTheme.typography.bodyLarge
                     )
                     IconButton(
@@ -267,7 +268,7 @@ class EntryEdit(
     fun drawNotificationAddMenu(onConfirm: (Period, Boolean) -> Unit, onDismiss: () -> Unit) {
         var silent by remember { mutableStateOf(false) }
         var offsetCount by remember { mutableStateOf("1") }
-        var selectedOffsetType by remember { mutableStateOf(OffsetType(Period.ONCE)) }
+        var selectedOffsetType by remember { mutableStateOf(OffsetType(Once())) }
 
         AlertDialog(
             onDismissRequest = onDismiss,
@@ -279,9 +280,9 @@ class EntryEdit(
             confirmButton = {
                 TextButton(onClick = {
                     onConfirm(
-                        if (selectedOffsetType.id == Period.ONCE) Period() else {
+                        if (selectedOffsetType.period is Once) Once() else {
                             val offset = offsetCount.toLong()
-                            if (offset > 0) Period(selectedOffsetType.id, offset) else Period()
+                            if (offset > 0) selectedOffsetType.period.updateCount(offset) else Once()
                         }, !silent
                     )
                 }) {
@@ -293,7 +294,7 @@ class EntryEdit(
                     Row {
                         //offset text field
                         OutlinedTextField(// FIXME: ui paddings
-                            enabled = selectedOffsetType.id != Period.ONCE,
+                            enabled = selectedOffsetType.period !is Once,
                             modifier = Modifier.width(100.dp).padding(horizontal = 8.dp),
                             value = offsetCount, onValueChange = {
                                 try {
@@ -335,11 +336,11 @@ class EntryEdit(
         val textStart = (if (date.isPeriodic) "from " else "") +
                 date.getFirstZoneDateTime().format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm"))
         val textPeriod: String = if (date.isPeriodic)
-            "every " + date.period.getCount().toString() + " " + PeriodType(date.period.modifier).toString() +
+            "every " + date.period.count.toString() + " " + PeriodType(date.period).toString() +
                     if (date.isEndless) "" else
                         " until " + date.getLastZoneDateTime().format(DateTimeFormatter.ofPattern("dd MMM yyyy"))
         else
-            PeriodType(date.period.modifier).toString()
+            PeriodType(date.period).toString()
         Column(Modifier.padding(bottom = 6.dp)) {
             updated// fixme this is hack...
             Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp).clickable {
@@ -436,13 +437,13 @@ class EntryEdit(
     fun periodSelectorDialog(onConfirm: () -> Unit, onDismiss: () -> Unit, date: Date) {
         var periodCount by remember {
             mutableStateOf(
-                if (date.period.modifier == Period.ONCE)
+                if (date.period is Once)
                     "1"
                 else
-                    date.period.getCount().toString()
+                    date.period.count.toString()
             )
         }
-        var selectedPeriod by remember { mutableStateOf(PeriodType(date.period.modifier)) }
+        var selectedPeriod by remember { mutableStateOf(PeriodType(date.period)) }
         var selectedMillis by
         remember {
             mutableStateOf(
@@ -457,22 +458,22 @@ class EntryEdit(
                 else DateSequenceEndVariant.BY_DATE
             )
         }
-        val isWeekday: Boolean = date.period.modifier == Period.WEEKDAY
+        val datePeriod = date.period
         val dayOfWeek = date.getFirstZoneDateTime().dayOfWeek.value
         val monSelected =
-            remember { mutableStateOf(if (isWeekday) date.period.testWeekday(Period.WD_MON) else dayOfWeek == 1) }
+            remember { mutableStateOf(if (datePeriod is Weekday) datePeriod.testWeekday(Weekday.WD_MON) else dayOfWeek == 1) }
         val tueSelected =
-            remember { mutableStateOf(if (isWeekday) date.period.testWeekday(Period.WD_TUE) else dayOfWeek == 2) }
+            remember { mutableStateOf(if (datePeriod is Weekday) datePeriod.testWeekday(Weekday.WD_TUE) else dayOfWeek == 2) }
         val wedSelected =
-            remember { mutableStateOf(if (isWeekday) date.period.testWeekday(Period.WD_WED) else dayOfWeek == 3) }
+            remember { mutableStateOf(if (datePeriod is Weekday) datePeriod.testWeekday(Weekday.WD_WED) else dayOfWeek == 3) }
         val thuSelected =
-            remember { mutableStateOf(if (isWeekday) date.period.testWeekday(Period.WD_THU) else dayOfWeek == 4) }
+            remember { mutableStateOf(if (datePeriod is Weekday) datePeriod.testWeekday(Weekday.WD_THU) else dayOfWeek == 4) }
         val friSelected =
-            remember { mutableStateOf(if (isWeekday) date.period.testWeekday(Period.WD_FRI) else dayOfWeek == 5) }
+            remember { mutableStateOf(if (datePeriod is Weekday) datePeriod.testWeekday(Weekday.WD_FRI) else dayOfWeek == 5) }
         val satSelected =
-            remember { mutableStateOf(if (isWeekday) date.period.testWeekday(Period.WD_SAT) else dayOfWeek == 6) }
+            remember { mutableStateOf(if (datePeriod is Weekday) datePeriod.testWeekday(Weekday.WD_SAT) else dayOfWeek == 6) }
         val sunSelected =
-            remember { mutableStateOf(if (isWeekday) date.period.testWeekday(Period.WD_SUN) else dayOfWeek == 7) }
+            remember { mutableStateOf(if (datePeriod is Weekday) datePeriod.testWeekday(Weekday.WD_SUN) else dayOfWeek == 7) }
         AlertDialog(
             onDismissRequest = onDismiss,
             dismissButton = {
@@ -483,24 +484,23 @@ class EntryEdit(
             confirmButton = {
                 TextButton(onClick = {
                     date.setPeriod(
-                        if (selectedPeriod.id == Period.WEEKDAY) {
-                            val weekdayDays = (if (monSelected.value) Period.WD_MON else 0) +
-                                    (if (tueSelected.value) Period.WD_TUE else 0) +
-                                    (if (wedSelected.value) Period.WD_WED else 0) +
-                                    (if (thuSelected.value) Period.WD_THU else 0) +
-                                    (if (friSelected.value) Period.WD_FRI else 0) +
-                                    (if (satSelected.value) Period.WD_SAT else 0) +
-                                    (if (sunSelected.value) Period.WD_SUN else 0)
-                            Period(
-                                selectedPeriod.id,
+                        if (selectedPeriod.period is Weekday) {
+                            val weekdayDays = (if (monSelected.value) Weekday.WD_MON else 0) +
+                                    (if (tueSelected.value) Weekday.WD_TUE else 0) +
+                                    (if (wedSelected.value) Weekday.WD_WED else 0) +
+                                    (if (thuSelected.value) Weekday.WD_THU else 0) +
+                                    (if (friSelected.value) Weekday.WD_FRI else 0) +
+                                    (if (satSelected.value) Weekday.WD_SAT else 0) +
+                                    (if (sunSelected.value) Weekday.WD_SUN else 0)
+                            Weekday(
                                 periodCount.toLong(),
                                 if (weekdayDays == 0L)
-                                    Period.dayOfWeekIndexToEnum(date.getFirstZoneDateTime().dayOfWeek.value)
+                                    Weekday.dayOfWeekIndexToEnum(date.getFirstZoneDateTime().dayOfWeek.value)
                                 else
                                     weekdayDays
                             )
                         } else
-                            Period(selectedPeriod.id, periodCount.toLong())
+                            selectedPeriod.period.updateCount(periodCount.toLong())
                     )
                     if (date.isPeriodic) {
                         when (endVariantSelectedOption) {
@@ -527,7 +527,7 @@ class EntryEdit(
                     Row {
                         //period count text field
                         OutlinedTextField(
-                            enabled = selectedPeriod.id != Period.ONCE,
+                            enabled = selectedPeriod.period !is Once,
                             modifier = Modifier.width(100.dp).padding(horizontal = 8.dp),
                             value = periodCount, onValueChange = {
                                 try {
@@ -552,7 +552,7 @@ class EntryEdit(
                             Modifier.padding(horizontal = 8.dp).width(150.dp)
                         )
                     }
-                    if (selectedPeriod.id == Period.WEEKDAY) {
+                    if (selectedPeriod.period is Weekday) {
                         Row {
                             drawWeekdayButton(monSelected, "Mon")
                             drawWeekdayButton(tueSelected, "Tue")
@@ -570,7 +570,7 @@ class EntryEdit(
                     //endless radiobutton
                     Row(
                         Modifier.fillMaxWidth().clickable {
-                            if (selectedPeriod.id != Period.ONCE) endVariantSelectedOption =
+                            if (selectedPeriod.period !is Once) endVariantSelectedOption =
                                 DateSequenceEndVariant.ENDLESS
                         }
                     ) {
@@ -578,13 +578,13 @@ class EntryEdit(
                             selected = (endVariantSelectedOption == DateSequenceEndVariant.ENDLESS),
                             onClick = { endVariantSelectedOption = DateSequenceEndVariant.ENDLESS },
                             Modifier.align(Alignment.CenterVertically),
-                            enabled = selectedPeriod.id != Period.ONCE
+                            enabled = selectedPeriod.period !is Once
                         )
                         Text(
                             "Endless",
                             Modifier.padding(vertical = 4.dp, horizontal = 16.dp).align(Alignment.CenterVertically),
                             style = MaterialTheme.typography.bodyLarge,
-                            color = if (selectedPeriod.id != Period.ONCE) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(
+                            color = if (selectedPeriod.period !is Once) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(
                                 alpha = .4F
                             )
                         )
@@ -592,7 +592,7 @@ class EntryEdit(
                     //end date radiobutton
                     Row(
                         Modifier.fillMaxWidth().clickable {
-                            if (selectedPeriod.id != Period.ONCE) endVariantSelectedOption =
+                            if (selectedPeriod.period !is Once) endVariantSelectedOption =
                                 DateSequenceEndVariant.BY_DATE
                         }
                     ) {
@@ -600,11 +600,11 @@ class EntryEdit(
                             selected = (endVariantSelectedOption == DateSequenceEndVariant.BY_DATE),
                             onClick = { endVariantSelectedOption = DateSequenceEndVariant.BY_DATE },
                             Modifier.align(Alignment.CenterVertically),
-                            enabled = selectedPeriod.id != Period.ONCE
+                            enabled = selectedPeriod.period !is Once
                         )
                         DateTimePicker.datePickerField(
                             selectedMillis, "End date",
-                            selectedPeriod.id != Period.ONCE
+                            selectedPeriod.period !is Once
                         ) {
                             endVariantSelectedOption = DateSequenceEndVariant.BY_DATE
                             selectedMillis = it
@@ -613,7 +613,7 @@ class EntryEdit(
                     //occurrences radiobutton
                     Row(
                         Modifier.fillMaxWidth().clickable {
-                            if (selectedPeriod.id != Period.ONCE) endVariantSelectedOption =
+                            if (selectedPeriod.period !is Once) endVariantSelectedOption =
                                 DateSequenceEndVariant.OCCURRENCES
                         }
                     ) {
@@ -621,10 +621,10 @@ class EntryEdit(
                             selected = (endVariantSelectedOption == DateSequenceEndVariant.OCCURRENCES),
                             onClick = { endVariantSelectedOption = DateSequenceEndVariant.OCCURRENCES },
                             Modifier.align(Alignment.CenterVertically),
-                            enabled = selectedPeriod.id != Period.ONCE
+                            enabled = selectedPeriod.period !is Once
                         )
                         OutlinedTextField(
-                            enabled = selectedPeriod.id != Period.ONCE,
+                            enabled = selectedPeriod.period !is Once,
                             modifier = Modifier.fillMaxWidth().padding(8.dp),
                             value = occurrencesCount,
                             onValueChange = {
@@ -692,53 +692,56 @@ class EntryEdit(
     }
 }
 
-data class OffsetType(val id: Char) {
+data class OffsetType(val period: Period) {
     override fun toString(): String {
-        return when (id) {
-            Period.ONCE -> "at time"
-            Period.MINUTE -> "minute"
-            Period.HOUR -> "hour"
-            Period.DAY -> "day"
-            Period.WEEK -> "week"
-            Period.MONTH -> "month"
-            else -> throw IllegalStateException()
+        return when (period) {
+            is Once -> "at time"
+            is Minute -> "minute"
+            is Hour -> "hour"
+            is Day -> "day"
+            is Week -> "week"
+            is Month -> "month"
+            is Year -> "year"
+            is Weekday -> "week"
         }
     }
 
     companion object {
         fun getAll(): List<OffsetType> {
             val list = mutableListOf<OffsetType>()
-            list.add(OffsetType(Period.ONCE))
-            list.add(OffsetType(Period.MINUTE))
-            list.add(OffsetType(Period.HOUR))
-            list.add(OffsetType(Period.DAY))
-            list.add(OffsetType(Period.WEEK))
-            list.add(OffsetType(Period.MONTH))
+            list.add(OffsetType(Once()))
+            list.add(OffsetType(Minute(1)))
+            list.add(OffsetType(Hour(1)))
+            list.add(OffsetType(Day(1)))
+            list.add(OffsetType(Week(1)))
+            list.add(OffsetType(Month(1)))
             return list
         }
     }
 }
 
-data class PeriodType(val id: Char) {
+data class PeriodType(val period: Period) {
     override fun toString(): String {
-        return when (id) {
-            Period.ONCE -> "ounce"
-            Period.DAY -> "day"
-            Period.WEEKDAY -> "week"
-            Period.MONTH -> "month"
-            Period.YEAR -> "year"
-            else -> throw IllegalStateException()
+        return when (period) {
+            is Once -> "ounce"
+            is Minute -> "minute"
+            is Hour -> "hour"
+            is Day -> "day"
+            is Week -> "week"
+            is Month -> "month"
+            is Year -> "year"
+            is Weekday -> "week"
         }
     }
 
     companion object {
         fun getAll(): List<PeriodType> {
             val list = mutableListOf<PeriodType>()
-            list.add(PeriodType(Period.ONCE))
-            list.add(PeriodType(Period.DAY))
-            list.add(PeriodType(Period.WEEKDAY))
-            list.add(PeriodType(Period.MONTH))
-            list.add(PeriodType(Period.YEAR))
+            list.add(PeriodType(Once()))
+            list.add(PeriodType(Day(1)))
+            list.add(PeriodType(Weekday(1, Weekday.WD_NONE)))
+            list.add(PeriodType(Month(1)))
+            list.add(PeriodType(Year(1)))
             return list
         }
     }

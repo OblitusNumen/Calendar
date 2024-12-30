@@ -103,7 +103,7 @@ class EntriesTab(private val dbManager: DbManager) : ViewModel() {
             {
                 dateTimePicker.dateTimePick({},
                     {
-                        Date(dbManager, entry, "", it.atZone(defaultZoneId()), 0, 1, Period()).create()
+                        Date(dbManager, entry, "", it.atZone(defaultZoneId()), 0, 1, Period.Once()).create()
                         nextDateText = getNextDateText(entry)
                     })
             }) { scheduleDialogShown = false }

@@ -52,7 +52,7 @@ class Notification(
                 notifications.add(
                     Notification(
                         dbManager, cursor.getInt(idxEntryId),
-                        Period(cursor.getString(idxOffset)),
+                        Period.decode(cursor.getString(idxOffset)),
                         cursor.getInt(idxSound) != 0
                     )
                 )

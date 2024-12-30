@@ -37,7 +37,7 @@ class NotificationBroadcastReceiver : BroadcastReceiver() {
                     .setSmallIcon(R.drawable.ic_launcher_foreground)
                     .setContentTitle(pendingNotification.date.getDesc())
                     .setContentText(// FIXME: format, missed events
-                        "Upcoming event in ${pendingNotification.notification.offset.getCount()} ${pendingNotification.notification.offset.modifier}\n(at ${
+                        "Upcoming event in ${pendingNotification.notification.offset.count} ${pendingNotification.notification.offset.javaClass}\n(at ${
                             getZonedFromEpochSeconds(
                                 pendingNotification.eventDateTime
                             ).format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm"))

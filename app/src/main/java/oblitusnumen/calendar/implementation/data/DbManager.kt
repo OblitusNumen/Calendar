@@ -47,7 +47,7 @@ class DbManager(private val context: Context) :
         var notificationTime: Long? = null
         val dateCache: MutableMap<Int, List<Date>> = mutableMapOf()
         for (notification in getAllNotifications()) {
-            val fromO = notification.offset.getTime(getZonedFromEpochSeconds(timeStamp), 1).toEpochSecond()
+            val fromO = notification.offset.addTo(getZonedFromEpochSeconds(timeStamp), 1).toEpochSecond()
             val dates = dateCache.computeIfAbsent(notification.entryId!!) {
                 Date.getAllByEntryId(
                     this,
@@ -58,7 +58,7 @@ class DbManager(private val context: Context) :
                 val nextTime = date.getNext(fromO)
                 if (nextTime != null) {
                     val nnt =
-                        notification.offset.getTime(nextTime.withZoneSameInstant(defaultZoneId()), -1).toEpochSecond()
+                        notification.offset.addTo(nextTime.withZoneSameInstant(defaultZoneId()), -1).toEpochSecond()
                     if (notificationTime == null || notificationTime > nnt) notificationTime = nnt
                 }
             }
@@ -70,8 +70,8 @@ class DbManager(private val context: Context) :
         val notifications: MutableList<PendingNotification> = ArrayList()
         val dateCache: MutableMap<Int, List<Date>> = mutableMapOf()
         for (notification in getAllNotifications()) {
-            val fromO = notification.offset.getTime(getZonedFromEpochSeconds(from), 1).toEpochSecond()
-            val toO = notification.offset.getTime(getZonedFromEpochSeconds(to), 1).toEpochSecond()
+            val fromO = notification.offset.addTo(getZonedFromEpochSeconds(from), 1).toEpochSecond()
+            val toO = notification.offset.addTo(getZonedFromEpochSeconds(to), 1).toEpochSecond()
             val dates = dateCache.computeIfAbsent(notification.entryId!!) {
                 Date.getAllByEntryId(
                     this,
@@ -84,7 +84,7 @@ class DbManager(private val context: Context) :
                         PendingNotification(
                             date,
                             notification,
-                            notification.offset.getTime(dateTime.withZoneSameInstant(defaultZoneId()), -1)
+                            notification.offset.addTo(dateTime.withZoneSameInstant(defaultZoneId()), -1)
                                 .toEpochSecond(),
                             dateTime.toEpochSecond()
                         )

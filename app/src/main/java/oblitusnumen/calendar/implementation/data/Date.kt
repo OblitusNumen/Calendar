@@ -55,7 +55,7 @@ class Date : BaseColumns {
         this.duration = duration
         this.end = end
         this.timesRepeat = timesRepeat
-        this.period = Period(period)
+        this.period = Period.decode(period)
         this.zoneId = ZoneId.of(zoneId)
         this.exceptionRules = ExceptionRules(removed)
     }
@@ -133,7 +133,7 @@ class Date : BaseColumns {
     }
 
     val isPeriodic: Boolean
-        get() = period.modifier != Period.ONCE
+        get() = period !is Period.Once
 
     val isEndless: Boolean
         get() = end > END_ENDLESS_THRESHOLD
@@ -142,7 +142,7 @@ class Date : BaseColumns {
         get() = timesRepeat <= 0
 
     private fun getZoneDateTime(idx: Long): ZonedDateTime {
-        return period.getTime(Instant.ofEpochSecond(start).atZone(zoneId), idx)
+        return period.addTo(Instant.ofEpochSecond(start).atZone(zoneId), idx)
     }
 
     fun getFirstZoneDateTime(): ZonedDateTime {
@@ -216,8 +216,9 @@ class Date : BaseColumns {
 
     fun anyInRange(start: Long, finish: Long): ZonedDateTime? {// FIXME: measure performance (weekdays especially)
         val zonedDateTime = getZonedDateTimeInRange(start, finish)
+        val period = this.period
         if (zonedDateTime == null || exceptionRules.containsDate(zonedDateTime.toEpochDays()) ||
-            (period.modifier == Period.WEEKDAY && !period.verifyWeekday(// FIXME: works wacky for cases when more than one event in range
+            (period is Period.Weekday && !period.verifyWeekday(// FIXME: works wacky for cases when more than one event in range
                 getFirstZoneDateTime().toLocalDate(),
                 zonedDateTime.toLocalDate()
             ))
@@ -234,7 +235,7 @@ class Date : BaseColumns {
     }
 
     fun makeEndless() {
-        if (period.modifier == Period.ONCE)
+        if (period is Period.Once)
             throw IllegalStateException("event without period cannot be endless")
         setTimesRepeat((END_ENDLESS_EXPECT - start) / period.secondsApproximation())
     }
@@ -262,16 +263,17 @@ class Date : BaseColumns {
     }
 
     fun getTimesRepeatUI(): Long {
-        if (period.modifier == Period.WEEKDAY) {
+        val period = this.period
+        if (period is Period.Weekday) {
             val firstDay = getFirstZoneDateTime().toLocalDate()
-            val wholePeriods = timesRepeat / (period.getCount() * 7)
-            val eventsPerWeek = period.getEventsPerWeek()
+            val wholePeriods = timesRepeat / (period.count * 7)
+            val eventsPerWeek = period.eventCountPerWeek()
             var timesRepeatCumulative = wholePeriods * eventsPerWeek
-            var leftoverDays = (timesRepeat % (period.getCount() * 7)).toInt()
+            var leftoverDays = (timesRepeat % (period.count * 7)).toInt()
             if (leftoverDays == 0) {
                 return timesRepeatCumulative
             } else {
-                var then = firstDay.plusDays(period.getCount() * 7)
+                var then = firstDay.plusDays(period.count * 7)
                 while (true) {
                     if (period.verifyWeekday(firstDay, then)) {
                         timesRepeatCumulative++
@@ -287,18 +289,19 @@ class Date : BaseColumns {
     }
 
     fun setTimesRepeatUI(timesRepeat: Long) {
-        if (period.modifier == Period.WEEKDAY) {
+        val period = this.period
+        if (period is Period.Weekday) {
             val firstDay = getFirstZoneDateTime().toLocalDate()
-            val eventsPerWeek = period.getEventsPerWeek()
+            val eventsPerWeek = period.eventCountPerWeek()
             val eventsInFirstWeek =
-                (period.getWeekdays() shr (firstDay.dayOfWeek.value - 1)).countOneBits()
-            var wholeWeeksCount = timesRepeat / eventsPerWeek * period.getCount()
+                (period.daysMask shr (firstDay.dayOfWeek.value - 1)).countOneBits()
+            var wholeWeeksCount = timesRepeat / eventsPerWeek * period.count
             var leftoverEvents = (timesRepeat % eventsPerWeek).toInt()
             if (eventsPerWeek == eventsInFirstWeek && leftoverEvents == 0)
-                setTimesRepeat((wholeWeeksCount - period.getCount() + 1) * 7 - firstDay.dayOfWeek.value + 1)
+                setTimesRepeat((wholeWeeksCount - period.count + 1) * 7 - firstDay.dayOfWeek.value + 1)
             else {
                 if (leftoverEvents == 0) {
-                    wholeWeeksCount -= period.getCount()
+                    wholeWeeksCount -= period.count
                     leftoverEvents = eventsPerWeek
                 }
                 var then = firstDay.plusDays(wholeWeeksCount * 7)
@@ -350,7 +353,7 @@ class Date : BaseColumns {
                 verifyParams(start = start)
                 val end = getLastZoneDateTime()
                 this.start = start
-                if (period.modifier == Period.ONCE)
+                if (period is Period.Once)
                     setTimesRepeat(1)
                 else
                     setRange(startOfDayEnd = end)
@@ -403,7 +406,8 @@ class Date : BaseColumns {
             return null
         if (fromEpochSecond <= start)
             return getFirstZoneDateTime()
-        if (period.modifier == Period.WEEKDAY) {
+        if (period is Period.Weekday) {
+            val period = this.period as Period.Weekday
             val firstLocal = getFirstZoneDateTime().toLocalDate()
             val weekNumberFirst = firstLocal.toWeekNumber()
             val start = Instant.ofEpochSecond(fromEpochSecond).atZone(zoneId)
@@ -411,7 +415,7 @@ class Date : BaseColumns {
             var then = startDay
             val weekNumberStart = then.toWeekNumber()
             val weeksDiff = weekNumberStart - weekNumberFirst
-            if (weeksDiff % period.getCount() == 0L) {//chosen start is in valid week
+            if (weeksDiff % period.count == 0L) {//chosen start is in valid week
                 if (period.verifyWeekday(firstLocal, then)) {//check that day
                     val thatDay = getZoneDateTime(then.toEpochDay() - firstLocal.toEpochDay())
                     if (fromEpochSecond <= thatDay.toEpochSecond()) {
@@ -429,7 +433,7 @@ class Date : BaseColumns {
                 }
             }
             //set to next valid week
-            then = firstLocal.plusWeeks((weeksDiff / period.getCount() + 1) * period.getCount())
+            then = firstLocal.plusWeeks((weeksDiff / period.count + 1) * period.count)
             //set then to start of week
             then = then.minusDays(then.dayOfWeek.value - 1L)
             //check until end of that week
