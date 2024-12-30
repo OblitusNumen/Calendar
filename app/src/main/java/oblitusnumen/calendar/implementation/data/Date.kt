@@ -359,7 +359,8 @@ class Date : BaseColumns {
             verifyParams(timesRepeat = expectedCount)
             while (getZoneDateTime(expectedCount - 1) < startOfDayAfterEnd)
                 expectedCount += (end - getZoneDateTime(expectedCount - 1).toEpochSecond()) / period.secondsApproximation() + 1
-            expectedCount--
+            while (getZoneDateTime(expectedCount - 1) >= startOfDayAfterEnd)
+                expectedCount--
             if (expectedCount < 0)
                 expectedCount = 0
             setTimesRepeat(expectedCount)
