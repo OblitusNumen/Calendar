@@ -105,6 +105,7 @@ class EntriesTab(private val dbManager: DbManager) : ViewModel() {
                     {
                         Date(dbManager, entry, "", it.atZone(defaultZoneId()), 0, 1, Period.Once()).create()
                         nextDateText = getNextDateText(entry)
+                        dbManager.tryScheduleNotification()
                     })
             }) { scheduleDialogShown = false }
     }

@@ -130,6 +130,7 @@ class DateScreen(
                 TextButton(onClick = {
                     date.addExceptions(day)
                     date.update()
+                    dbManager.tryScheduleNotification()
                     onClose()
                     loadDates()
                 }) {
