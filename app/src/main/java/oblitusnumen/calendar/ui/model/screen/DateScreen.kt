@@ -53,8 +53,8 @@ class DateScreen(
     }
 
     @Composable
-    fun functionButton(editEntry: (Int) -> Unit) {
-        FloatingActionButton(onClick = { editEntry(-1) }) {
+    fun functionButton(editEntry: () -> Unit) {
+        FloatingActionButton(onClick = editEntry) {
             Icon(Icons.Filled.Add, "add event")
         }
     }

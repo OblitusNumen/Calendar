@@ -27,6 +27,7 @@ import oblitusnumen.calendar.implementation.data.Entry
 import oblitusnumen.calendar.implementation.notifications.NotificationBroadcastReceiver
 import oblitusnumen.calendar.ui.model.navigation.NavRoutes
 import oblitusnumen.calendar.ui.model.screen.DateScreen
+import oblitusnumen.calendar.ui.model.screen.EntryDetails
 import oblitusnumen.calendar.ui.model.screen.EntryEdit
 import oblitusnumen.calendar.ui.model.tab.CalendarTab
 import oblitusnumen.calendar.ui.model.tab.EntriesTab
@@ -93,10 +94,10 @@ class MainActivity : ComponentActivity() {
                 Scaffold(
                     topBar = { dateScreen.topBar { NavRoutes.backPress(navController) } },
                     floatingActionButton = {
-                        dateScreen.functionButton { NavRoutes.EntryEdit.navHere(navController, it) }
+                        dateScreen.functionButton { NavRoutes.EntryEdit.navHere(navController, null) }
                     }) {
                     dateScreen.compose(
-                        { NavRoutes.EntryEdit.navHere(navController, it) },
+                        { NavRoutes.EntryDetails.navHere(navController, it) },
                         Modifier.absolutePadding(//seems like a hack
                             PADDING, 50.dp,
                             PADDING, 50.dp
@@ -122,11 +123,23 @@ class MainActivity : ComponentActivity() {
 
             composable(route = NavRoutes.EntryDetails.route) { navBackStackEntry ->
                 val entryId = NavRoutes.EntryDetails.getArgs(navBackStackEntry)
-                /*val entryDetails = viewModel {
-                    EntryDetails(dbManager, dbManager.getEntryById(entryId ?: -1) ?: Entry.new(dbManager))
-                }*/
-                Scaffold(topBar = { /*entryDetails.topBar { NavRoutes.backPress(navController) }*/ }) {
-                    //entryDetails.compose()
+                if (entryId == null) {
+                    NavRoutes.backPress(navController)
+                    return@composable
+                }
+                val entryDetails = viewModel { EntryDetails(dbManager, entryId) }
+                Scaffold(topBar = {
+                    entryDetails.topBar(
+                        { NavRoutes.backPress(navController) },
+                        { NavRoutes.EntryEdit.navHere(navController, it) })
+                }) {
+                    entryDetails.compose(
+                        { NavRoutes.backPress(navController) },
+                        Modifier.absolutePadding(//seems like a hack
+                            PADDING, 50.dp,
+                            PADDING, 50.dp
+                        )
+                    )
                 }
             }
 
@@ -136,7 +149,7 @@ class MainActivity : ComponentActivity() {
                     topBar = { entriesTab.topBar() },
                     bottomBar = { drawBottomBar(navController) }) {
                     entriesTab.compose(
-                        { NavRoutes.EntryEdit.navHere(navController, it) },
+                        { NavRoutes.EntryDetails.navHere(navController, it) },
                         Modifier.absolutePadding(//seems like a hack
                             PADDING, 50.dp,
                             PADDING, 50.dp
