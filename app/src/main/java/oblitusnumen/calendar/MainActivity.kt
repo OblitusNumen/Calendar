@@ -44,7 +44,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) { //fixme ask for required permissions somewhere
         super.onCreate(savedInstanceState)
         NotificationBroadcastReceiver.createNotificationChannels(this)
-        NotificationBroadcastReceiver.scheduleNotification(this, System.currentTimeMillis())
+        NotificationBroadcastReceiver().onReceive(this, null)
         /*if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val alarmManager = ContextCompat.getSystemService(context, AlarmManager::class.java)
             if (alarmManager?.canScheduleExactAlarms() == false) {

@@ -16,7 +16,7 @@ import oblitusnumen.calendar.implementation.log
 import java.time.format.DateTimeFormatter
 
 class NotificationBroadcastReceiver : BroadcastReceiver() {
-    override fun onReceive(c: Context, intent: Intent) {
+    override fun onReceive(c: Context, intent: Intent?) {
         DbManager(c).use { dbManager ->
             log("NotificationBroadcastReceiver RECEIVED INTENT")
             val now = System.currentTimeMillis() / 1000 + 10// fixing possible early invocation
@@ -46,8 +46,6 @@ class NotificationBroadcastReceiver : BroadcastReceiver() {
                     .build()
                 manager.notify(pendingNotification.dateHash(), notification)
             }
-            sharedPreferences.edit().putLong(LAST_NOTIFICATION_TIME_PREFERENCE_NAME, System.currentTimeMillis() / 1000)
-                .apply()
             dbManager.tryScheduleNotification(now)
         }
     }
@@ -58,9 +56,13 @@ class NotificationBroadcastReceiver : BroadcastReceiver() {
         const val LAST_NOTIFICATION_TIME_PREFERENCE_NAME = "last_notification_time"
 
         fun scheduleNotification(c: Context, triggerAtMillis: Long) {
-            log("NotificationBroadcastReceiver RESCHEDULING_NOTIFICATION AT ${triggerAtMillis / 1000} " +
-                    "T=${System.currentTimeMillis() / 1000} " +
-                    "D=${(triggerAtMillis - System.currentTimeMillis()) / 1000}")
+            DbManager.getSharedPrefs(c).edit()
+                .putLong(LAST_NOTIFICATION_TIME_PREFERENCE_NAME, System.currentTimeMillis() / 1000).apply()
+            log(
+                "NotificationBroadcastReceiver RESCHEDULING_NOTIFICATION AT ${triggerAtMillis / 1000} " +
+                        "T=${System.currentTimeMillis() / 1000} " +
+                        "D=${(triggerAtMillis - System.currentTimeMillis()) / 1000}"
+            )
             val intent = Intent(c, NotificationBroadcastReceiver::class.java)
             val pendingIntent = PendingIntent.getBroadcast(
                 c,
