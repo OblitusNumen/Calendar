@@ -72,6 +72,7 @@ class Entry private constructor(
         }
         delete()
         id = null
+        dbManager.tryScheduleNotification()
     }
 
     private fun delete() {
