@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Call
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.*
@@ -64,11 +65,14 @@ class EntryEdit(
             )
             var tagChoose by remember { mutableStateOf(false) }
             if (tagChoose) tagChooseMenu({ tagChoose = false }, { tags = it })
-            FlowRow(
-                Modifier.fillMaxWidth().padding(horizontal = 16.dp)
-            ) {
-                for (tag in tags)
-                    drawTag(tag)
+            Row {
+                Icon(Icons.Filled.Star, "Tags", Modifier.padding(8.dp))
+                FlowRow(
+                    Modifier.fillMaxWidth().padding(end = 16.dp)
+                ) {
+                    for (tag in tags)
+                        drawTag(tag)
+                }
             }
             Box(Modifier.fillMaxWidth().padding(top = 8.dp).clickable {
                 tagChoose = true

@@ -2,18 +2,17 @@ package oblitusnumen.calendar.ui.model.screen
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Call
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import oblitusnumen.calendar.BackButton
@@ -30,12 +29,12 @@ class EntryDetails(
     private val entryID: Int
 ) : ViewModel() {
     private var entry = dbManager.getEntryById(entryID)!!
-    private var entryName by mutableStateOf(TextFieldValue(entry.name))
+    private var entryName by mutableStateOf(entry.name)
     private var tags: List<Tag> by mutableStateOf(entry.getTags().sortedBy { it.name })
     private var dates: List<Date> by mutableStateOf(entry.getDates().sortedBy { it.start })
     private var notifications: List<Notification> by mutableStateOf(
         entry.getNotifications().sortedBy { it.offset.secondsApproximation() })
-    private var contents by mutableStateOf(TextFieldValue(entry.getContents()))  // FIXME: this should be List<Content>
+    private var contents by mutableStateOf(entry.getContents())  // FIXME: this should be List<Content>
 
     @OptIn(ExperimentalLayoutApi::class)
     @Composable
@@ -47,27 +46,27 @@ class EntryDetails(
                 return@remember false
             }
             entry = entryNullable
-            entryName = TextFieldValue(entry.name)
+            entryName = entry.name
             tags = entry.getTags().sortedBy { it.name }
             dates = entry.getDates().sortedBy { it.start }
             notifications = entry.getNotifications()
-            contents = TextFieldValue(entry.getContents())
+            contents = entry.getContents()
             return@remember true
         }
         if (!ok) return
         Column(modifier.fillMaxWidth().verticalScroll(rememberScrollState()).fillMaxHeight()) {
-            OutlinedTextField(
-                modifier = Modifier.fillMaxWidth().padding(12.dp),
-                value = entryName, onValueChange = {},
-                textStyle = MaterialTheme.typography.titleLarge,
-                label = { Text("Enter event name") },
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
-            )
-            FlowRow(
-                Modifier.fillMaxWidth().padding(horizontal = 16.dp)
-            ) {
-                for (tag in tags)
-                    drawTag(tag)
+            SelectionContainer {
+                Text(entryName, modifier = Modifier.fillMaxWidth().padding(12.dp))
+            }
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
+            Row {
+                Icon(Icons.Filled.Star, "Tags", Modifier.padding(8.dp))
+                FlowRow(
+                    Modifier.fillMaxWidth().padding(end = 16.dp)
+                ) {
+                    for (tag in tags)
+                        drawTag(tag)
+                }
             }
             HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
             for (date in dates)
@@ -88,14 +87,13 @@ class EntryDetails(
                 }
             }
             HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
-            OutlinedTextField(
-                modifier = Modifier.defaultMinSize(minHeight = 52.dp).fillMaxWidth().padding(horizontal = 12.dp)
-                    .padding(bottom = 12.dp),
-                value = contents, onValueChange = {},
-                textStyle = MaterialTheme.typography.bodyLarge,
-                label = { Text("Enter description") },
-                minLines = 5
-            )
+            Text("Description", modifier = Modifier.padding(12.dp))
+            SelectionContainer {
+                Text(contents,
+                    modifier = Modifier.defaultMinSize(minHeight = 52.dp).fillMaxWidth().padding(horizontal = 12.dp)
+                        .padding(bottom = 12.dp)
+                )
+            }
         }
     }
 

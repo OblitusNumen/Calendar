@@ -3,6 +3,7 @@ package oblitusnumen.calendar.ui.model.tab
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -13,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -38,8 +40,8 @@ class TagsTab(private val dbManager: DbManager, private val editTag: (Int) -> Un
             for (tag in tags.value) {
                 var deleteShown by remember { mutableStateOf(false) }
                 Row(
-                    Modifier.fillMaxWidth().defaultMinSize(minHeight = 48.dp)
-                        .padding(vertical = 4.dp, horizontal = 8.dp).combinedClickable(onClick = {
+                    Modifier.fillMaxWidth().defaultMinSize(minHeight = 56.dp)
+                        .padding(horizontal = 8.dp).combinedClickable(onClick = {
                             // TODO: move to entries menu
                         }, onLongClick = {
                             deleteShown = true
@@ -189,12 +191,16 @@ class TagsTab(private val dbManager: DbManager, private val editTag: (Int) -> Un
                         )
                     }
                     if (hasError) Text(error, color = Color.Red)//errortext
-                    colorPicker(color) { color = it }
-                    var value: String by remember { mutableStateOf(String.format("#%06X", color.toInt())) }
+                    val focusManager = LocalFocusManager.current
+                    colorPicker(color) {
+                        color = it
+                        focusManager.clearFocus()
+                    }
+                    var value: String by remember(color) { mutableStateOf(String.format("#%06X", color.toInt())) }
                     OutlinedTextField(// FIXME: ui paddings
                         isError = try {
                             value.substring(1).hexToInt()
-                            false
+                            value.length != 7
                         } catch (_: NumberFormatException) {
                             true
                         },
@@ -202,16 +208,20 @@ class TagsTab(private val dbManager: DbManager, private val editTag: (Int) -> Un
                         value = value, onValueChange = {
                             if (it.startsWith("#") && it.length <= 7) {
                                 value = it
-                                try {
-                                    color = it.substring(1).hexToInt().toColor()!!
-                                } catch (_: NumberFormatException) {
-                                }
                             }
                         },
                         textStyle = MaterialTheme.typography.bodyLarge,
                         keyboardOptions = KeyboardOptions(
                             imeAction = ImeAction.Done
                         ),
+                        keyboardActions = KeyboardActions(onDone = {
+                            try {
+                                if (value.length != 7) return@KeyboardActions
+                                color = value.substring(1).hexToInt().toColor()!!
+                                focusManager.clearFocus()
+                            } catch (_: NumberFormatException) {
+                            }
+                        }),
                         label = { Text("Tag name") }
                     )
                 }
