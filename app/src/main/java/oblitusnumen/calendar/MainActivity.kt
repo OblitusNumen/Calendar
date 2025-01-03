@@ -3,9 +3,11 @@ package oblitusnumen.calendar
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.absolutePadding
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -44,6 +46,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) { //fixme ask for required permissions somewhere
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         NotificationBroadcastReceiver.createNotificationChannels(this)
         NotificationBroadcastReceiver().onReceive(this, null)
         /*if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -80,9 +83,8 @@ class MainActivity : ComponentActivity() {
                     }) {
                     calendarTab.compose(
                         { NavRoutes.ThatDayDetails.navHere(navController, it) },
-                        Modifier.absolutePadding(//seems like a hack
-                            PADDING, 50.dp,
-                            PADDING, 50.dp
+                        Modifier.padding(//seems like a hack
+                            horizontal = PADDING
                         )
                     )
                 }
@@ -98,9 +100,8 @@ class MainActivity : ComponentActivity() {
                     }) {
                     dateScreen.compose(
                         { NavRoutes.EntryDetails.navHere(navController, it) },
-                        Modifier.absolutePadding(//seems like a hack
-                            PADDING, 50.dp,
-                            PADDING, 50.dp
+                        Modifier.padding(//seems like a hack
+                            horizontal = PADDING
                         )
                     )
                 }

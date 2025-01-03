@@ -8,16 +8,17 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
-import oblitusnumen.calendar.BackButton
 import oblitusnumen.calendar.implementation.bgColorToTextColor
 import oblitusnumen.calendar.implementation.data.Date
 import oblitusnumen.calendar.implementation.data.DbManager
@@ -44,10 +45,18 @@ class DateScreen(
     @Composable
     fun compose(editEntry: (Int) -> Unit, modifier: Modifier = Modifier) {
         remember { loadDates() }
+        val contentOffsetTop = with(LocalDensity.current) { WindowInsets.statusBars.getTop(LocalDensity.current).toDp() } + 64.dp
+        val contentOffsetBottom = with(LocalDensity.current) { WindowInsets.navigationBars.getBottom(LocalDensity.current).toDp() }
         updated
         LazyColumn(modifier) {
+            item {
+                Spacer(Modifier.height(contentOffsetTop))
+            }
             items(dates!!) {
                 drawEntry(it, editEntry)
+            }
+            item {
+                Spacer(Modifier.height(contentOffsetBottom))
             }
         }
     }
@@ -145,11 +154,25 @@ class DateScreen(
         )
     }
 
+    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun topBar(backPress: () -> Unit) {
-        Row {
-            BackButton(backPress)
-            Text("Date $day")
-        }
+        val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
+        CenterAlignedTopAppBar(
+            colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = .8f),
+                titleContentColor = MaterialTheme.colorScheme.primary,
+            ),
+            title = { Text("Date $day", maxLines = 1) },
+            navigationIcon = {
+                IconButton(onClick = backPress) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Localized description"
+                    )
+                }
+            },
+            scrollBehavior = scrollBehavior,
+        )
     }
 }
