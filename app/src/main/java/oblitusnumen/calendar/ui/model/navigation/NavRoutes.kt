@@ -13,6 +13,12 @@ sealed class NavRoutes(private val path: String, val route: String = path) {
     data object Calendar : NavRoutes("calendar")
     data object Tags : NavRoutes("tags")
     data object Entries : NavRoutes("entries")
+    data object Settings : NavRoutes("settings") {
+        fun navHere(navController: NavController) {
+            navController.navigate(route)
+        }
+    }
+
     data object ThatDayDetails : NavRoutes("thatDayDetails", route = "thatDayDetails/{date}") {
         val date = "date"
 

@@ -167,6 +167,19 @@ class MainActivity : ComponentActivity() {
                     tagsTab.compose()
                 }
             }
+
+            composable(route = NavRoutes.Settings.route) {
+                /*val settingsScreen = viewModel { SettingsScreen(dbManager) }
+                Scaffold(
+                    topBar = { settingsScreen.topBar() }) {
+                    settingsScreen.compose(
+                        { NavRoutes.backPress(navController) },
+                        Modifier.padding(//seems like a hack
+                            horizontal = PADDING
+                        )
+                    )
+                }*/
+            }
         }
     }
 
