@@ -93,6 +93,7 @@ class MainActivity : ComponentActivity() {
                 val dateScreen = viewModel { DateScreen(thatDay, dbManager) }
                 Scaffold(
                     topBar = { dateScreen.topBar { NavRoutes.backPress(navController) } },
+                    bottomBar = { drawBottomBar(navController) },
                     floatingActionButton = {
                         dateScreen.functionButton { NavRoutes.EntryEdit.navHere(navController, null) }
                     }) {
@@ -188,14 +189,17 @@ class MainActivity : ComponentActivity() {
                 NavigationBarItem(
                     icon = { Icon(topLevelRoute.icon, contentDescription = topLevelRoute.name) },
                     label = { Text(topLevelRoute.name) },
-                    selected = currentDestination?.route == topLevelRoute.route.route,
+                    selected = currentDestination?.route == topLevelRoute.route.route ||
+                            (topLevelRoute.route.route == NavRoutes.Calendar.route && currentDestination?.route == NavRoutes.ThatDayDetails.route),
                     onClick = {
                         navController.navigate(topLevelRoute.route.route) {
                             // Pop up to the start destination of the graph to
                             // avoid building up a large stack of destinations
                             // on the back stack as users select items
                             popUpTo(navController.graph.findStartDestination().id) {
-                                saveState = true
+                                if (currentDestination?.route != NavRoutes.ThatDayDetails.route ||
+                                    topLevelRoute.route.route != NavRoutes.Calendar.route)
+                                    saveState = true
                             }
                             // Avoid multiple copies of the same destination when
                             // reselecting the same item
