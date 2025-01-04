@@ -7,17 +7,21 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
+import kotlinx.coroutines.launch
 import oblitusnumen.calendar.implementation.bgColorToTextColor
 import oblitusnumen.calendar.implementation.data.Date
 import oblitusnumen.calendar.implementation.data.DbManager
@@ -25,6 +29,7 @@ import oblitusnumen.calendar.implementation.data.Entry
 import oblitusnumen.calendar.implementation.data.Period
 import oblitusnumen.calendar.implementation.defaultZoneId
 import oblitusnumen.calendar.ui.model.DateTimePicker
+import java.time.LocalDate
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
@@ -32,12 +37,20 @@ class EntriesTab(private val dbManager: DbManager) : ViewModel() {
 
     @Composable
     fun compose(editEntry: (Int) -> Unit, modifier: Modifier) {
+        val contentOffsetTop = with(LocalDensity.current) { WindowInsets.statusBars.getTop(LocalDensity.current).toDp() } + 64.dp
+        val contentOffsetBottom = with(LocalDensity.current) { WindowInsets.navigationBars.getBottom(LocalDensity.current).toDp() } + 80.dp
         val entries = remember {// TODO: maybe sort by netx date
             dbManager.getEntries().sortedBy { it.name }
         }
         LazyColumn(modifier) {
+            item {
+                Spacer(Modifier.height(contentOffsetTop))
+            }
             items(entries) {
                 drawEntry(it, editEntry)
+            }
+            item {
+                Spacer(Modifier.height(contentOffsetBottom))
             }
         }
     }
@@ -150,8 +163,33 @@ class EntriesTab(private val dbManager: DbManager) : ViewModel() {
         )
     }
 
+    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun topBar() {
-        Text("Entries")
+        val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
+        CenterAlignedTopAppBar(
+            colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = .9f),
+                titleContentColor = MaterialTheme.colorScheme.primary,
+            ),
+            title = { Text("Entries", maxLines = 1) },
+            navigationIcon = {
+                IconButton(onClick = { /* do something */ }) {
+                    Icon(
+                        imageVector = Icons.Filled.Settings,
+                        contentDescription = null
+                    )
+                }
+            },
+            actions = {
+                IconButton(onClick = {}) {
+                    Icon(
+                        imageVector = Icons.Filled.Search,
+                        contentDescription = null
+                    )
+                }
+            },
+            scrollBehavior = scrollBehavior,
+        )
     }
 }

@@ -160,7 +160,7 @@ class DateScreen(
         val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
         CenterAlignedTopAppBar(
             colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = .8f),
+                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = .9f),
                 titleContentColor = MaterialTheme.colorScheme.primary,
             ),
             title = { Text("Date $day", maxLines = 1) },

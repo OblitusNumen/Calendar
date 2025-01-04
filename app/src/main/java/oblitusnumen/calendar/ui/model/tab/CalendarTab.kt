@@ -177,7 +177,7 @@ class CalendarTab(private val dbManager: DbManager) : ViewModel() {
         Column {
             CenterAlignedTopAppBar(
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = .8f),
+                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = .9f),
                     titleContentColor = MaterialTheme.colorScheme.primary,
                 ),
                 title = { Text("Calendar", maxLines = 1) },
@@ -189,14 +189,6 @@ class CalendarTab(private val dbManager: DbManager) : ViewModel() {
                         )
                     }
                 },
-                /*navigationIcon = {
-                    IconButton(onClick = { /* do something */ }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Localized description"
-                        )
-                    }
-                },*/
                 actions = {
                     IconButton(onClick = {
                         dateTimePicker.datePick({}, {

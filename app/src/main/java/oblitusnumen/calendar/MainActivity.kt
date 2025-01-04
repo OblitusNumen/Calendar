@@ -151,9 +151,8 @@ class MainActivity : ComponentActivity() {
                     bottomBar = { drawBottomBar(navController) }) {
                     entriesTab.compose(
                         { NavRoutes.EntryDetails.navHere(navController, it) },
-                        Modifier.absolutePadding(//seems like a hack
-                            PADDING, 50.dp,
-                            PADDING, 50.dp
+                        Modifier.padding(//seems like a hack
+                            horizontal = PADDING
                         )
                     )
                 }
@@ -162,6 +161,7 @@ class MainActivity : ComponentActivity() {
             composable(route = NavRoutes.Tags.route) {
                 val tagsTab = viewModel { TagsTab(dbManager) { /*fixme transition to editTag*/ } }
                 Scaffold(
+                    topBar = { tagsTab.topBar() },
                     bottomBar = { drawBottomBar(navController) },
                     floatingActionButton = { tagsTab.functionButton() }) {
                     tagsTab.compose()
@@ -185,7 +185,7 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     fun drawBottomBar(navController: NavController) {
-        NavigationBar {
+        NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.9f)) {
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentDestination = navBackStackEntry?.destination
             NavRoutes.getTopLevelRoutes().forEach { topLevelRoute ->

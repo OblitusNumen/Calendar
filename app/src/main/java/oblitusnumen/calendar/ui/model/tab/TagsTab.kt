@@ -6,14 +6,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
@@ -30,6 +29,8 @@ class TagsTab(private val dbManager: DbManager, private val editTag: (Int) -> Un
     @OptIn(ExperimentalFoundationApi::class)
     @Composable
     fun compose() {
+        val contentOffsetTop = with(LocalDensity.current) { WindowInsets.statusBars.getTop(LocalDensity.current).toDp() } + 64.dp
+        val contentOffsetBottom = with(LocalDensity.current) { WindowInsets.navigationBars.getBottom(LocalDensity.current).toDp() } + 80.dp
         val tagsWithEntryCount: MutableMap<Tag, Int> = remember { dbManager.getAllTagsWithEntryCount().toMutableMap() }
         val tags: MutableState<List<Tag>> = remember {
             mutableStateOf(tagsWithEntryCount.keys.toList().sortedBy { it.name }
@@ -37,6 +38,7 @@ class TagsTab(private val dbManager: DbManager, private val editTag: (Int) -> Un
         }
         val tagNames: MutableSet<String> = remember { tags.value.map { it.name }.toMutableSet() }
         Column(Modifier.verticalScroll(ScrollState(0)).fillMaxWidth()) {
+            Spacer(Modifier.height(contentOffsetTop))
             for (tag in tags.value) {
                 var deleteShown by remember { mutableStateOf(false) }
                 Row(
@@ -78,6 +80,7 @@ class TagsTab(private val dbManager: DbManager, private val editTag: (Int) -> Un
                     }
                 }
             }
+            Spacer(Modifier.height(contentOffsetBottom))
         }
         if (newTagEditShown) editTag(tagsWithEntryCount, tags, tagNames) { newTagEditShown = false }
     }
@@ -246,5 +249,27 @@ class TagsTab(private val dbManager: DbManager, private val editTag: (Int) -> Un
         }) {
             Icon(Icons.Filled.Add, "add tag")
         }
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Composable
+    fun topBar() {
+        val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
+        CenterAlignedTopAppBar(
+            colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = .9f),
+                titleContentColor = MaterialTheme.colorScheme.primary,
+            ),
+            title = { Text("Tags", maxLines = 1) },
+            navigationIcon = {
+                IconButton(onClick = { /* do something */ }) {
+                    Icon(
+                        imageVector = Icons.Filled.Settings,
+                        contentDescription = null
+                    )
+                }
+            },
+            scrollBehavior = scrollBehavior,
+        )
     }
 }
