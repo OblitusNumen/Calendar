@@ -5,6 +5,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Call
@@ -13,9 +16,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
-import oblitusnumen.calendar.BackButton
 import oblitusnumen.calendar.implementation.bgColorToTextColor
 import oblitusnumen.calendar.implementation.convertMillisToDate
 import oblitusnumen.calendar.implementation.data.Date
@@ -39,6 +42,8 @@ class EntryDetails(
     @OptIn(ExperimentalLayoutApi::class)
     @Composable
     fun compose(backPress: () -> Unit, modifier: Modifier = Modifier) {
+        val contentOffsetTop = with(LocalDensity.current) { WindowInsets.statusBars.getTop(LocalDensity.current).toDp() } + 64.dp
+        val contentOffsetBottom = with(LocalDensity.current) { WindowInsets.navigationBars.getBottom(LocalDensity.current).toDp() }
         val ok = remember {
             val entryNullable = dbManager.getEntryById(entryID)
             if (entryNullable == null) {
@@ -55,10 +60,7 @@ class EntryDetails(
         }
         if (!ok) return
         Column(modifier.fillMaxWidth().verticalScroll(rememberScrollState()).fillMaxHeight()) {
-            SelectionContainer {
-                Text(entryName, modifier = Modifier.fillMaxWidth().padding(12.dp))
-            }
-            HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
+            Spacer(Modifier.height(contentOffsetTop))
             Row {
                 Icon(Icons.Filled.Star, "Tags", Modifier.padding(8.dp))
                 FlowRow(
@@ -94,6 +96,7 @@ class EntryDetails(
                         .padding(bottom = 12.dp)
                 )
             }
+            Spacer(Modifier.height(contentOffsetBottom))
         }
     }
 
@@ -161,21 +164,44 @@ class EntryDetails(
         )
     }
 
+    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun topBar(backPress: () -> Unit, editEntry: (Int) -> Unit) {// TODO: confirm
-        Row {
-            BackButton(backPress)
-            Button(onClick = {
-                editEntry(entryID)
-            }, modifier = Modifier.align(Alignment.Top)) {
-                Text("edit")
-            }
-            Button(onClick = {
-                entry.deleteCascade()// FIXME: catch exception
-                backPress()
-            }, modifier = Modifier.align(Alignment.Top)) {
-                Text("delete")
-            }
-        }
+        val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
+        CenterAlignedTopAppBar(
+            colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = .9f),
+                titleContentColor = MaterialTheme.colorScheme.primary,
+            ),
+            title = { Text(entryName, maxLines = 1) },
+            navigationIcon = {
+                IconButton(onClick = backPress) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = null
+                    )
+                }
+            },
+            actions = {
+                IconButton(onClick = {
+                    editEntry(entryID)
+                }) {
+                    Icon(
+                        imageVector = Icons.Filled.Edit,
+                        contentDescription = null
+                    )
+                }
+                IconButton(onClick = {
+                    entry.deleteCascade()// FIXME: catch exception
+                    backPress()
+                }) {
+                    Icon(
+                        imageVector = Icons.Filled.Delete,
+                        contentDescription = null
+                    )
+                }
+            },
+            scrollBehavior = scrollBehavior,
+        )
     }
 }

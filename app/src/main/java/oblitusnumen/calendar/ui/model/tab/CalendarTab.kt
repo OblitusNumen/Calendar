@@ -20,6 +20,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.text.style.TextAlign
@@ -29,7 +30,6 @@ import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.launch
 import oblitusnumen.calendar.MainActivity
 import oblitusnumen.calendar.R
-import oblitusnumen.calendar.getWidthPartIncludePadding
 import oblitusnumen.calendar.implementation.bgColorToTextColor
 import oblitusnumen.calendar.implementation.data.Date
 import oblitusnumen.calendar.implementation.data.DbManager
@@ -45,6 +45,11 @@ class CalendarTab(private val dbManager: DbManager) : ViewModel() {
     private val LIST_CENTER: LocalDate = LocalDate.of(1970, 1, 1)
     private val LIST_LEN = 420168000 * 2 // ~5M years, should be enough and nobody will see my bugs at dates above that
     private var contentScrollOffset: Int = 0
+
+    @Composable
+    fun getWidthPartIncludePadding(divisor: Float): Dp {
+        return LocalConfiguration.current.screenWidthDp.dp.minus(MainActivity.PADDING.times(2)).div(divisor)
+    }
 
     @Composable
     fun compose(toThatDayInfo: (LocalDate) -> Unit, modifier: Modifier = Modifier) {

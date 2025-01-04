@@ -8,10 +8,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Done
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.Call
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.*
@@ -19,12 +17,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
-import oblitusnumen.calendar.BackButton
 import oblitusnumen.calendar.implementation.bgColorToTextColor
 import oblitusnumen.calendar.implementation.convertMillisToDate
 import oblitusnumen.calendar.implementation.data.*
@@ -52,7 +50,10 @@ class EntryEdit(
     @Composable
     fun compose(modifier: Modifier = Modifier) {
         dateTimePicker.tryCompose()
+        val contentOffsetTop = with(LocalDensity.current) { WindowInsets.statusBars.getTop(LocalDensity.current).toDp() } + 64.dp
+        val contentOffsetBottom = with(LocalDensity.current) { WindowInsets.navigationBars.getBottom(LocalDensity.current).toDp() }
         Column(modifier.fillMaxWidth().verticalScroll(rememberScrollState()).fillMaxHeight()) {
+            Spacer(Modifier.height(contentOffsetTop))
             OutlinedTextField(
                 modifier = Modifier.fillMaxWidth().padding(12.dp),
                 value = entryName, onValueChange = {
@@ -170,6 +171,7 @@ class EntryEdit(
                 label = { Text("Enter description") },
                 minLines = 5
             )
+            Spacer(Modifier.height(contentOffsetBottom))
         }
     }
 
@@ -677,22 +679,36 @@ class EntryEdit(
         )
     }
 
+    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun topBar(backPress: () -> Unit) {// TODO: confirm
-        Row {
-            BackButton(backPress)
-            Button(onClick = {
-                entry.set(entryName.text, tags, dates, notifications, contents.text)// FIXME: catch exception
-            }, modifier = Modifier.align(Alignment.Top)) {
-                Text("save")
-            }
-            Button(onClick = {
-                entry.deleteCascade()// FIXME: catch exception
-                backPress()
-            }, modifier = Modifier.align(Alignment.Top)) {
-                Text("delete")
-            }
-        }
+        val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
+        CenterAlignedTopAppBar(
+            colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = .9f),
+                titleContentColor = MaterialTheme.colorScheme.primary,
+            ),
+            title = { Text("Edit event", maxLines = 1) },
+            navigationIcon = {
+                IconButton(onClick = backPress) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = null
+                    )
+                }
+            },
+            actions = {
+                IconButton(onClick = {
+                    entry.set(entryName.text, tags, dates, notifications, contents.text)// FIXME: catch exception
+                }) {
+                    Icon(
+                        imageVector = Icons.Filled.Check,
+                        contentDescription = null
+                    )
+                }
+            },
+            scrollBehavior = scrollBehavior,
+        )
     }
 }
 

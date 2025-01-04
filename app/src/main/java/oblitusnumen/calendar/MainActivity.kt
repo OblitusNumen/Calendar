@@ -5,14 +5,12 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.absolutePadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
@@ -114,9 +112,8 @@ class MainActivity : ComponentActivity() {
                 }
                 Scaffold(topBar = { entryEdit.topBar { NavRoutes.backPress(navController) } }) {
                     entryEdit.compose(
-                        Modifier.absolutePadding(//seems like a hack
-                            PADDING, 50.dp,
-                            PADDING, 50.dp
+                        Modifier.padding(//seems like a hack
+                            horizontal = PADDING
                         )
                     )
                 }
@@ -136,9 +133,8 @@ class MainActivity : ComponentActivity() {
                 }) {
                     entryDetails.compose(
                         { NavRoutes.backPress(navController) },
-                        Modifier.absolutePadding(//seems like a hack
-                            PADDING, 50.dp,
-                            PADDING, 50.dp
+                        Modifier.padding(//seems like a hack
+                            horizontal = PADDING
                         )
                     )
                 }
@@ -219,16 +215,4 @@ class MainActivity : ComponentActivity() {
     }
 
     class CalendarViewModel(val dbManager: DbManager) : ViewModel()
-}
-
-@Composable
-fun getWidthPartIncludePadding(divisor: Float): Dp {
-    return LocalConfiguration.current.screenWidthDp.dp.minus(MainActivity.PADDING.times(2)).div(divisor)
-}
-
-@Composable
-fun BackButton(backPress: () -> Unit) {
-    Button(onClick = backPress) {
-        Text("く")
-    }
 }
