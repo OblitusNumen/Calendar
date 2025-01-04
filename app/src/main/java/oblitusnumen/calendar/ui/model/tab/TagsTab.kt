@@ -2,6 +2,8 @@ package oblitusnumen.calendar.ui.model.tab
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -37,9 +39,11 @@ class TagsTab(private val dbManager: DbManager, private val editTag: (Int) -> Un
                 .sortedByDescending { tagsWithEntryCount[it] })
         }
         val tagNames: MutableSet<String> = remember { tags.value.map { it.name }.toMutableSet() }
-        Column(Modifier.verticalScroll(ScrollState(0)).fillMaxWidth()) {
-            Spacer(Modifier.height(contentOffsetTop))
-            for (tag in tags.value) {
+        LazyColumn {
+            item {
+                Spacer(Modifier.height(contentOffsetTop))
+            }
+            items(tags.value) { tag ->
                 var deleteShown by remember { mutableStateOf(false) }
                 Row(
                     Modifier.fillMaxWidth().defaultMinSize(minHeight = 56.dp)
@@ -80,7 +84,9 @@ class TagsTab(private val dbManager: DbManager, private val editTag: (Int) -> Un
                     }
                 }
             }
-            Spacer(Modifier.height(contentOffsetBottom))
+            item {
+                Spacer(Modifier.height(contentOffsetBottom))
+            }
         }
         if (newTagEditShown) editTag(tagsWithEntryCount, tags, tagNames) { newTagEditShown = false }
     }
