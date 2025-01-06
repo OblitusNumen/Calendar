@@ -22,8 +22,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import oblitusnumen.calendar.implementation.data.Date
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.Entry
+import oblitusnumen.calendar.implementation.data.Period
+import oblitusnumen.calendar.implementation.defaultZoneId
 import oblitusnumen.calendar.implementation.notifications.NotificationBroadcastReceiver
 import oblitusnumen.calendar.ui.model.navigation.NavRoutes
 import oblitusnumen.calendar.ui.model.screen.DateScreen
@@ -95,7 +98,7 @@ class MainActivity : ComponentActivity() {
                     topBar = { dateScreen.topBar { NavRoutes.backPress(navController) } },
                     bottomBar = { drawBottomBar(navController) },
                     floatingActionButton = {
-                        dateScreen.functionButton { NavRoutes.EntryEdit.navHere(navController, null) }
+                        dateScreen.functionButton { NavRoutes.EntryEdit.navHere(navController, null, thatDay) }
                     }) {
                     dateScreen.compose(
                         { NavRoutes.EntryDetails.navHere(navController, it) },
@@ -107,9 +110,26 @@ class MainActivity : ComponentActivity() {
             }
 
             composable(route = NavRoutes.EntryEdit.route) { navBackStackEntry ->
-                val entryId = NavRoutes.EntryEdit.getArgs(navBackStackEntry)
+                val entryId = NavRoutes.EntryEdit.getArgEntryId(navBackStackEntry)
+                val fromDay = NavRoutes.EntryEdit.getArgDate4new(navBackStackEntry)
                 val entryEdit = viewModel {
-                    EntryEdit(dbManager, dbManager.getEntryById(entryId ?: -1) ?: Entry.new(dbManager))
+                    var entry = dbManager.getEntryById(entryId ?: -1)
+                    var date: Date? = null
+                    if (entry == null) {
+                        entry = Entry.new(dbManager)
+                        if (fromDay != null) {
+                            date = Date(
+                                dbManager,
+                                entry,
+                                "",
+                                fromDay.atStartOfDay(defaultZoneId()),
+                                0,
+                                1,
+                                Period.Once()
+                            )
+                        }
+                    }
+                    EntryEdit(dbManager, entry, date)
                 }
                 Scaffold(topBar = { entryEdit.topBar { NavRoutes.backPress(navController) } }) {
                     entryEdit.compose(

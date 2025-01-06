@@ -36,11 +36,13 @@ import java.time.format.DateTimeFormatter
 
 class EntryEdit(
     private val dbManager: DbManager,
-    private val entry: Entry
+    private val entry: Entry,
+    fromDate: Date?
 ) : ViewModel() {
     private var entryName by mutableStateOf(TextFieldValue(entry.name))
     private var tags: List<Tag> by mutableStateOf(entry.getTags().sortedBy { it.name })
-    private var dates: List<Date> by mutableStateOf(entry.getDates().sortedBy { it.start })
+    private var dates: List<Date> by mutableStateOf(
+        (entry.getDates() + if (fromDate == null) listOf() else listOf(fromDate)).sortedBy { it.start })
     private var notifications: List<Notification> by mutableStateOf(
         entry.getNotifications().sortedBy { it.offset.secondsApproximation() })
     private var contents by mutableStateOf(TextFieldValue(entry.getContents()))  // FIXME: this should be List<Content>

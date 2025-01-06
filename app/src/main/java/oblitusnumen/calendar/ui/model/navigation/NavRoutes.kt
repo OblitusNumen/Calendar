@@ -20,7 +20,7 @@ sealed class NavRoutes(private val path: String, val route: String = path) {
     }
 
     data object ThatDayDetails : NavRoutes("thatDayDetails", route = "thatDayDetails/{date}") {
-        val date = "date"
+        private const val date = "date"
 
         fun navHere(navController: NavController, date: LocalDate) {
             navController.navigate(withArgs(date.toEpochDay().toString()))
@@ -32,30 +32,38 @@ sealed class NavRoutes(private val path: String, val route: String = path) {
         }
     }
 
-    data object EntryEdit : NavRoutes("entryEdit", route = "entryEdit/{entry}") {
-        val entry = "entry"
+    data object EntryEdit : NavRoutes("entryEdit", route = "entryEdit/{entry}/{date4new}") {
+        private const val entry = "entry"
+        private const val date4new = "date4new"
 
-        fun navHere(navController: NavController, entryId: Int?) {
-            navController.navigate(if (entryId != null) withArgs(entryId.toString()) else withArgs("-1"))
+        fun navHere(navController: NavController, entryId: Int?, date: LocalDate? = null) {
+            val eid = entryId?.toString() ?: "-1"
+            val epochDay = (date?.toEpochDay() ?: Long.MAX_VALUE).toString()
+            navController.navigate(withArgs(eid, epochDay))
         }
 
-        fun getArgs(navBackStackEntry: NavBackStackEntry): Int? {
-            val entry = navBackStackEntry.arguments?.getString(NavRoutes.EntryEdit.entry)
-            val entryId = entry?.toInt()
+        fun getArgEntryId(navBackStackEntry: NavBackStackEntry): Int? {
+            val entryText = navBackStackEntry.arguments?.getString(entry)
+            val entryId = entryText?.toInt()
             return if (entryId == null || entryId < 0) null else entryId
+        }
+
+        fun getArgDate4new(navBackStackEntry: NavBackStackEntry): LocalDate? {
+            val d4n = navBackStackEntry.arguments?.getString(date4new)?.toLong()
+            return if (d4n != null && d4n != Long.MAX_VALUE) LocalDate.ofEpochDay(d4n) else null
         }
     }
 
     data object EntryDetails : NavRoutes("entryDetails", route = "entryDetails/{entry}") {
-        val entry = "entry"
+        private const val entry = "entry"
 
         fun navHere(navController: NavController, entryId: Int?) {
             navController.navigate(if (entryId != null) withArgs(entryId.toString()) else withArgs("-1"))
         }
 
         fun getArgs(navBackStackEntry: NavBackStackEntry): Int? {
-            val entry = navBackStackEntry.arguments?.getString(NavRoutes.EntryEdit.entry)
-            val entryId = entry?.toInt()
+            val entryText = navBackStackEntry.arguments?.getString(entry)
+            val entryId = entryText?.toInt()
             return if (entryId == null || entryId < 0) null else entryId
         }
     }
