@@ -24,17 +24,14 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import oblitusnumen.calendar.implementation.bgColorToTextColor
 import oblitusnumen.calendar.implementation.convertMillisToDate
-import oblitusnumen.calendar.implementation.data.Date
-import oblitusnumen.calendar.implementation.data.DbManager
-import oblitusnumen.calendar.implementation.data.Notification
-import oblitusnumen.calendar.implementation.data.Tag
+import oblitusnumen.calendar.implementation.data.*
 import java.time.format.DateTimeFormatter
 
 class EntryDetails(
     private val dbManager: DbManager,
     private val entryID: Int
 ) : ViewModel() {
-    private var entry = dbManager.getEntryById(entryID)!!
+    private var entry = Entry.new(dbManager)
     private var entryName by mutableStateOf(entry.name.ifEmpty { "[No title]" })
     private var tags: List<Tag> by mutableStateOf(entry.getTags().sortedBy { it.name })
     private var dates: List<Date> by mutableStateOf(entry.getDates().sortedBy { it.start })
