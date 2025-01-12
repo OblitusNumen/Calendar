@@ -119,7 +119,7 @@ class MainActivity : ComponentActivity() {
             composable(route = NavRoutes.Calendar.route) {
                 val calendarTab = viewModel { CalendarTab(dbManager) }
                 Scaffold(
-                    topBar = { calendarTab.topBar() },
+                    topBar = { calendarTab.topBar { NavRoutes.Settings.navHere(navController) } },
                     bottomBar = { drawBottomBar(navController) },
                     floatingActionButton = {
                         calendarTab.functionButton { NavRoutes.EntryEdit.navHere(navController, null) }
@@ -206,7 +206,7 @@ class MainActivity : ComponentActivity() {
             composable(route = NavRoutes.Entries.route) {
                 val entriesTab = viewModel { EntriesTab(dbManager) }
                 Scaffold(
-                    topBar = { entriesTab.topBar() },
+                    topBar = { entriesTab.topBar { NavRoutes.Settings.navHere(navController) } },
                     bottomBar = { drawBottomBar(navController) }) {
                     entriesTab.compose(
                         { NavRoutes.EntryDetails.navHere(navController, it) },
@@ -220,7 +220,7 @@ class MainActivity : ComponentActivity() {
             composable(route = NavRoutes.Tags.route) {
                 val tagsTab = viewModel { TagsTab(dbManager) { /*fixme transition to editTag*/ } }
                 Scaffold(
-                    topBar = { tagsTab.topBar() },
+                    topBar = { tagsTab.topBar { NavRoutes.Settings.navHere(navController) } },
                     bottomBar = { drawBottomBar(navController) },
                     floatingActionButton = { tagsTab.functionButton() }) {
                     tagsTab.compose()
@@ -228,16 +228,15 @@ class MainActivity : ComponentActivity() {
             }
 
             composable(route = NavRoutes.Settings.route) {
-                /*val settingsScreen = viewModel { SettingsScreen(dbManager) }
+                val settingsScreen = viewModel { SettingsScreen(dbManager) }
                 Scaffold(
-                    topBar = { settingsScreen.topBar() }) {
+                    topBar = { settingsScreen.topBar { NavRoutes.backPress(navController) } }) { innerPadding ->
                     settingsScreen.compose(
-                        { NavRoutes.backPress(navController) },
                         Modifier.padding(//seems like a hack
                             horizontal = PADDING
-                        )
+                        ), innerPadding
                     )
-                }*/
+                }
             }
         }
     }

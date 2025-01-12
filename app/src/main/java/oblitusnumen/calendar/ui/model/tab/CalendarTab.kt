@@ -175,7 +175,7 @@ class CalendarTab(private val dbManager: DbManager) : ViewModel() {
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    fun topBar() {
+    fun topBar(openSettings: () -> Unit) {
         val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
         val dateTimePicker = remember { DateTimePicker() }
         val coroutineScope = rememberCoroutineScope()
@@ -188,7 +188,7 @@ class CalendarTab(private val dbManager: DbManager) : ViewModel() {
                 ),
                 title = { Text("Calendar", maxLines = 1) },
                 navigationIcon = {
-                    IconButton(onClick = { /* do something */ }) {
+                    IconButton(onClick = openSettings) {
                         Icon(
                             imageVector = Icons.Filled.Settings,
                             contentDescription = null

@@ -170,7 +170,7 @@ class EntriesTab(private val dbManager: DbManager) : ViewModel() {
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    fun topBar() {
+    fun topBar(openSettings: () -> Unit) {
         val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
         CenterAlignedTopAppBar(
             colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -179,7 +179,7 @@ class EntriesTab(private val dbManager: DbManager) : ViewModel() {
             ),
             title = { Text("Entries", maxLines = 1) },
             navigationIcon = {
-                IconButton(onClick = { /* do something */ }) {
+                IconButton(onClick = openSettings) {
                     Icon(
                         imageVector = Icons.Filled.Settings,
                         contentDescription = null

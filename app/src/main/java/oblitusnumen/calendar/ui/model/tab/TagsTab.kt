@@ -226,7 +226,7 @@ class TagsTab(private val dbManager: DbManager, private val editTag: (Int) -> Un
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    fun topBar() {
+    fun topBar(openSettings: () -> Unit) {
         val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
         CenterAlignedTopAppBar(
             colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -235,7 +235,7 @@ class TagsTab(private val dbManager: DbManager, private val editTag: (Int) -> Un
             ),
             title = { Text("Tags", maxLines = 1) },
             navigationIcon = {
-                IconButton(onClick = { /* do something */ }) {
+                IconButton(onClick = openSettings) {
                     Icon(
                         imageVector = Icons.Filled.Settings,
                         contentDescription = null
