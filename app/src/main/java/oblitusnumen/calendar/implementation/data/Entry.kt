@@ -47,6 +47,8 @@ class Entry private constructor(
         try {
             FileOutputStream(contentsFile).use { fos ->
                 fos.write(contents.toByteArray())
+                fos.flush()
+                fos.fd.sync()
             }
         } catch (e: IOException) {
             throw IOException("could not save contents for entry $id", e)
