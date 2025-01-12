@@ -55,17 +55,52 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) { //fixme ask for required permissions somewhere
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        NotificationBroadcastReceiver.createNotificationChannels(this)
-        NotificationBroadcastReceiver().onReceive(this, null)
-        /*if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val alarmManager = ContextCompat.getSystemService(context, AlarmManager::class.java)
-            if (alarmManager?.canScheduleExactAlarms() == false) {
-                Intent().also { intent ->
-                    intent.action = Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM
-                    context.startActivity(intent)
+        val requestPermissionLauncher =
+            registerForActivityResult(
+                ActivityResultContracts.RequestPermission()
+            ) { isGranted: Boolean ->
+                if (isGranted) {
+                    // Permission is granted. Continue the action or workflow in your
+                    // app.
+                    log("isGranted")
+                } else {
+                    log("not granted")
+                    // Explain to the user that the feature is unavailable because the
+                    // feature requires a permission that the user has denied. At the
+                    // same time, respect the user's decision. Don't link to system
+                    // settings in an effort to convince the user to change their
+                    // decision.
                 }
             }
-        }*/
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            when {
+                ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED -> {
+                    // You can use the API that requires the permission.
+                    log("already granted")
+                }
+                // TODO:
+                /*ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.POST_NOTIFICATIONS) -> {
+                    // In an educational UI, explain to the user why your app requires this
+                    // permission for a specific feature to behave as expected, and what
+                    // features are disabled if it's declined. In this UI, include a
+                    // "cancel" or "no, thanks" button that lets the user continue
+                    // using your app without granting the permission.
+                    //showInContextUI(...)
+                    log("shouldShowRequestPermissionRationale")
+                }*/
+                else -> {
+                    // You can directly ask for the permission.
+                    // The registered ActivityResultCallback gets the result of this request.
+                    log("requestPermissionLauncher.launch")
+                    requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
+            }
+        }
+        NotificationBroadcastReceiver.createNotificationChannels(this)
+        NotificationBroadcastReceiver().onReceive(this, null)
         setContent {
             CalendarTheme {
                 calendarViewModel = viewModel { CalendarViewModel(DbManager(this@MainActivity)) }
