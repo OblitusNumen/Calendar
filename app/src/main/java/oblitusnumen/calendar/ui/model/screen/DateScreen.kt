@@ -2,10 +2,12 @@ package oblitusnumen.calendar.ui.model.screen
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -45,8 +47,10 @@ class DateScreen(
     @Composable
     fun compose(editEntry: (Int) -> Unit, modifier: Modifier = Modifier) {
         remember { loadDates() }
-        val contentOffsetTop = with(LocalDensity.current) { WindowInsets.statusBars.getTop(LocalDensity.current).toDp() } + 64.dp
-        val contentOffsetBottom = with(LocalDensity.current) { WindowInsets.navigationBars.getBottom(LocalDensity.current).toDp() }
+        val contentOffsetTop =
+            with(LocalDensity.current) { WindowInsets.statusBars.getTop(LocalDensity.current).toDp() } + 64.dp
+        val contentOffsetBottom =
+            with(LocalDensity.current) { WindowInsets.navigationBars.getBottom(LocalDensity.current).toDp() }
         updated
         LazyColumn(modifier) {
             item {
@@ -90,16 +94,21 @@ class DateScreen(
         val tags = entry.getTags()
         var excludeDateShown by remember { mutableStateOf(false) }
         Column(
-            Modifier.padding(2.dp).fillMaxWidth()
+            Modifier.padding(2.dp).fillMaxWidth().defaultMinSize(minHeight = 64.dp)
                 .background(
                     MaterialTheme.colorScheme.primaryContainer,
                     shape = RoundedCornerShape(10.dp)
                 ).combinedClickable(onLongClick = { excludeDateShown = true }, onClick = { editEntry(entry.id!!) })
         ) {
             Row(Modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 8.dp)) {
+                Box(
+                    Modifier.padding(end = 8.dp).size(24.dp).background(entry.getColorOrDefault(), CircleShape)
+                        .border(0.dp, entry.getColorOrDefault(), CircleShape)
+                        .align(Alignment.CenterVertically)
+                )
                 Text(
-                    modifier = Modifier.weight(1.0f).padding(end = 8.dp),
-                    text = entry.name,
+                    modifier = Modifier.weight(1.0f).padding(horizontal = 8.dp).align(Alignment.CenterVertically),
+                    text = entry.name.ifEmpty { "[No title]" },
                     style = MaterialTheme.typography.headlineSmall,
                     overflow = TextOverflow.Ellipsis,
                     maxLines = 1,
@@ -122,7 +131,8 @@ class DateScreen(
                     }
                 }
             }
-            if (excludeDateShown) excludeDate(date, entry.name) { excludeDateShown = false }
+            if (excludeDateShown)
+                excludeDate(date, entry.name.ifEmpty { "[No title]" }) { excludeDateShown = false }
         }
     }
 

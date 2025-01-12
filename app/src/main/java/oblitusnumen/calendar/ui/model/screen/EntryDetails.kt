@@ -1,7 +1,10 @@
 package oblitusnumen.calendar.ui.model.screen
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -32,7 +35,7 @@ class EntryDetails(
     private val entryID: Int
 ) : ViewModel() {
     private var entry = dbManager.getEntryById(entryID)!!
-    private var entryName by mutableStateOf(entry.name)
+    private var entryName by mutableStateOf(entry.name.ifEmpty { "[No title]" })
     private var tags: List<Tag> by mutableStateOf(entry.getTags().sortedBy { it.name })
     private var dates: List<Date> by mutableStateOf(entry.getDates().sortedBy { it.start })
     private var notifications: List<Notification> by mutableStateOf(
@@ -42,8 +45,10 @@ class EntryDetails(
     @OptIn(ExperimentalLayoutApi::class)
     @Composable
     fun compose(backPress: () -> Unit, modifier: Modifier = Modifier) {
-        val contentOffsetTop = with(LocalDensity.current) { WindowInsets.statusBars.getTop(LocalDensity.current).toDp() } + 64.dp
-        val contentOffsetBottom = with(LocalDensity.current) { WindowInsets.navigationBars.getBottom(LocalDensity.current).toDp() }
+        val contentOffsetTop =
+            with(LocalDensity.current) { WindowInsets.statusBars.getTop(LocalDensity.current).toDp() } + 64.dp
+        val contentOffsetBottom =
+            with(LocalDensity.current) { WindowInsets.navigationBars.getBottom(LocalDensity.current).toDp() }
         val ok = remember {
             val entryNullable = dbManager.getEntryById(entryID)
             if (entryNullable == null) {
@@ -51,7 +56,7 @@ class EntryDetails(
                 return@remember false
             }
             entry = entryNullable
-            entryName = entry.name
+            entryName = entry.name.ifEmpty { "[No title]" }
             tags = entry.getTags().sortedBy { it.name }
             dates = entry.getDates().sortedBy { it.start }
             notifications = entry.getNotifications()
@@ -61,42 +66,70 @@ class EntryDetails(
         if (!ok) return
         Column(modifier.fillMaxWidth().verticalScroll(rememberScrollState()).fillMaxHeight()) {
             Spacer(Modifier.height(contentOffsetTop))
-            Row {
-                Icon(Icons.Filled.Star, "Tags", Modifier.padding(8.dp))
-                FlowRow(
-                    Modifier.fillMaxWidth().padding(end = 16.dp)
-                ) {
-                    for (tag in tags)
-                        drawTag(tag)
-                }
-            }
-            HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
-            for (date in dates)
-                drawDate(date)
-            HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
-            for (notification in notifications) {
-                Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp)) {
-                    Icon(
-                        if (notification.sound) Icons.Filled.Notifications else Icons.Outlined.Notifications, null,
-                        Modifier.align(Alignment.CenterVertically).padding(8.dp)
+            val color by remember { mutableStateOf(entry.getColorOrDefault()) }
+            SelectionContainer {
+                Row {
+                    Box(
+                        Modifier.padding(8.dp).background(color, CircleShape).border(0.dp, color, CircleShape)
+                            .size(24.dp).align(Alignment.CenterVertically)
                     )
                     Text(
-                        modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp)
-                            .weight(1f),
-                        text = "${notification.offset.count} ${notification.offset.javaClass.simpleName} before",// FIXME: text
-                        style = MaterialTheme.typography.bodyLarge
+                        entryName,
+                        Modifier.align(Alignment.CenterVertically).padding(4.dp),
+                        style = MaterialTheme.typography.titleLarge
                     )
                 }
             }
-            HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
-            Text("Description", modifier = Modifier.padding(12.dp))
-            SelectionContainer {
-                Text(contents,
-                    modifier = Modifier.defaultMinSize(minHeight = 52.dp).fillMaxWidth().padding(horizontal = 12.dp)
-                        .padding(bottom = 12.dp)
-                )
+            if (tags.isNotEmpty()) {
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
+                Row {
+                    Icon(Icons.Filled.Star, "Tags", Modifier.padding(8.dp))
+                    FlowRow(
+                        Modifier.fillMaxWidth().padding(end = 16.dp)
+                    ) {
+                        for (tag in tags)
+                            drawTag(tag)
+                    }
+                }
+            }
+            if (dates.isNotEmpty()) {
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
+                for (date in dates)
+                    drawDate(date)
+            }
+            if (notifications.isNotEmpty()) {
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
+                for (notification in notifications)
+                    drawNotification(notification)
+            }
+            if (contents.isNotEmpty()) {
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
+                Text("Description", modifier = Modifier.padding(12.dp))
+                SelectionContainer {
+                    Text(
+                        contents,
+                        modifier = Modifier.defaultMinSize(minHeight = 52.dp).fillMaxWidth().padding(horizontal = 12.dp)
+                            .padding(bottom = 12.dp)
+                    )
+                }
             }
             Spacer(Modifier.height(contentOffsetBottom))
+        }
+    }
+
+    @Composable
+    fun drawNotification(notification: Notification) {
+        Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp)) {
+            Icon(
+                if (notification.sound) Icons.Filled.Notifications else Icons.Outlined.Notifications, null,
+                Modifier.align(Alignment.CenterVertically).padding(8.dp)
+            )
+            Text(
+                modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp)
+                    .weight(1f),
+                text = "${notification.offset.count} ${notification.offset.javaClass.simpleName} before",// FIXME: text
+                style = MaterialTheme.typography.bodyLarge
+            )
         }
     }
 

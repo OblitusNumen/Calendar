@@ -5,25 +5,25 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.Tag
-import oblitusnumen.calendar.implementation.toColor
-import oblitusnumen.calendar.implementation.toInt
+import oblitusnumen.calendar.ui.model.colorPicker
 
 class TagsTab(private val dbManager: DbManager, private val editTag: (Int) -> Unit) : ViewModel() {
     private var newTagEditShown by mutableStateOf(false)
@@ -31,8 +31,10 @@ class TagsTab(private val dbManager: DbManager, private val editTag: (Int) -> Un
     @OptIn(ExperimentalFoundationApi::class)
     @Composable
     fun compose() {
-        val contentOffsetTop = with(LocalDensity.current) { WindowInsets.statusBars.getTop(LocalDensity.current).toDp() } + 64.dp
-        val contentOffsetBottom = with(LocalDensity.current) { WindowInsets.navigationBars.getBottom(LocalDensity.current).toDp() } + 80.dp
+        val contentOffsetTop =
+            with(LocalDensity.current) { WindowInsets.statusBars.getTop(LocalDensity.current).toDp() } + 64.dp
+        val contentOffsetBottom =
+            with(LocalDensity.current) { WindowInsets.navigationBars.getBottom(LocalDensity.current).toDp() } + 80.dp
         val tagsWithEntryCount: MutableMap<Tag, Int> = remember { dbManager.getAllTagsWithEntryCount().toMutableMap() }
         val tags: MutableState<List<Tag>> = remember {
             mutableStateOf(tagsWithEntryCount.keys.toList().sortedBy { it.name }
@@ -194,58 +196,23 @@ class TagsTab(private val dbManager: DbManager, private val editTag: (Int) -> Un
                             ),
                             label = { Text("Tag name") }
                         )
+                        var colorPickerShown by remember { mutableStateOf(false) }
                         Box(
                             Modifier.align(Alignment.CenterVertically).background(color, CircleShape)
                                 .border(0.dp, color, CircleShape).size(48.dp).padding(horizontal = 8.dp)
+                                .clickable { colorPickerShown = true }
                         )
+                        if (colorPickerShown)
+                            colorPicker(color, true) {
+                                if (it != null)
+                                    color = it
+                                colorPickerShown = false
+                            }
                     }
                     if (hasError) Text(error, color = Color.Red)//errortext
-                    val focusManager = LocalFocusManager.current
-                    colorPicker(color) {
-                        color = it
-                        focusManager.clearFocus()
-                    }
-                    var value: String by remember(color) { mutableStateOf(String.format("#%06X", color.toInt())) }
-                    OutlinedTextField(// FIXME: ui paddings
-                        isError = try {
-                            value.substring(1).hexToInt()
-                            value.length != 7
-                        } catch (_: NumberFormatException) {
-                            true
-                        },
-                        modifier = Modifier.padding(horizontal = 8.dp),
-                        value = value, onValueChange = {
-                            if (it.startsWith("#") && it.length <= 7) {
-                                value = it
-                            }
-                        },
-                        textStyle = MaterialTheme.typography.bodyLarge,
-                        keyboardOptions = KeyboardOptions(
-                            imeAction = ImeAction.Done
-                        ),
-                        keyboardActions = KeyboardActions(onDone = {
-                            try {
-                                if (value.length != 7) return@KeyboardActions
-                                color = value.substring(1).hexToInt().toColor()!!
-                                focusManager.clearFocus()
-                            } catch (_: NumberFormatException) {
-                            }
-                        }),
-                        label = { Text("Tag name") }
-                    )
                 }
             }
         )
-    }
-
-    @Composable
-    fun colorPicker(color: Color, onColorChanged: (Color) -> Unit) {// FIXME: initial color is not being set
-//        val controller = rememberColorPickerController()
-//        HsvColorPicker(
-//            modifier = Modifier.fillMaxWidth().height(450.dp).padding(10.dp),
-//            controller = controller,
-//            onColorChanged = { onColorChanged(it.color) }
-//        )
     }
 
     @Composable

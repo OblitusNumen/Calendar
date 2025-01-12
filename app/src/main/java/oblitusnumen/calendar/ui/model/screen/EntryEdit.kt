@@ -1,12 +1,9 @@
 package oblitusnumen.calendar.ui.model.screen
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -28,6 +25,7 @@ import oblitusnumen.calendar.implementation.convertMillisToDate
 import oblitusnumen.calendar.implementation.data.*
 import oblitusnumen.calendar.implementation.data.Period.*
 import oblitusnumen.calendar.ui.model.DateTimePicker
+import oblitusnumen.calendar.ui.model.colorPicker
 import oblitusnumen.calendar.ui.model.materialSpinner
 import java.time.LocalDate
 import java.time.ZoneId
@@ -40,6 +38,7 @@ class EntryEdit(
     fromDate: Date?
 ) : ViewModel() {
     private var entryName by mutableStateOf(TextFieldValue(entry.name))
+    private var color by mutableStateOf(entry.getColorOrDefault())
     private var tags: List<Tag> by mutableStateOf(entry.getTags().sortedBy { it.name })
     private var dates: List<Date> by mutableStateOf(
         (entry.getDates() + if (fromDate == null) listOf() else listOf(fromDate)).sortedBy { it.start })
@@ -52,8 +51,10 @@ class EntryEdit(
     @Composable
     fun compose(modifier: Modifier = Modifier) {
         dateTimePicker.tryCompose()
-        val contentOffsetTop = with(LocalDensity.current) { WindowInsets.statusBars.getTop(LocalDensity.current).toDp() } + 64.dp
-        val contentOffsetBottom = with(LocalDensity.current) { WindowInsets.navigationBars.getBottom(LocalDensity.current).toDp() }
+        val contentOffsetTop =
+            with(LocalDensity.current) { WindowInsets.statusBars.getTop(LocalDensity.current).toDp() } + 64.dp
+        val contentOffsetBottom =
+            with(LocalDensity.current) { WindowInsets.navigationBars.getBottom(LocalDensity.current).toDp() }
         Column(modifier.fillMaxWidth().verticalScroll(rememberScrollState()).fillMaxHeight()) {
             Spacer(Modifier.height(contentOffsetTop))
             OutlinedTextField(
@@ -64,7 +65,25 @@ class EntryEdit(
                 },
                 textStyle = MaterialTheme.typography.titleLarge,
                 label = { Text("Enter event name") },
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                trailingIcon = {
+                    var colorPickerShown by remember { mutableStateOf(false) }
+                    Row {
+                        Box(
+                            Modifier.align(Alignment.CenterVertically).padding(horizontal = 8.dp)
+                                .background(color, CircleShape).border(0.dp, color, CircleShape).size(48.dp).clickable {
+                                    colorPickerShown = true
+                                }
+                        )
+                    }
+                    if (colorPickerShown)
+                        colorPicker(color, true) {
+                            if (it != null) {
+                                color = it
+                            }
+                            colorPickerShown = false
+                        }
+                }
             )
             var tagChoose by remember { mutableStateOf(false) }
             if (tagChoose) tagChooseMenu({ tagChoose = false }, { tags = it })
@@ -701,7 +720,8 @@ class EntryEdit(
             },
             actions = {
                 IconButton(onClick = {
-                    entry.set(entryName.text, tags, dates, notifications, contents.text)// FIXME: catch exception
+                    entry.set(entryName.text, color, tags, dates, notifications, contents.text)// FIXME: catch exception
+                    backPress()
                 }) {
                     Icon(
                         imageVector = Icons.Filled.Check,

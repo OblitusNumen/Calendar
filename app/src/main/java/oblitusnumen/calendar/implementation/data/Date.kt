@@ -30,9 +30,12 @@ class Date : BaseColumns {
         private set
     var exceptionRules: ExceptionRules
         private set
-
+    private var entryCache: Entry? = null
     val entry: Entry
-        get() = dbManager!!.getEntryById(entryId!!)!!
+        get() {
+            if (entryCache == null) entryCache = dbManager!!.getEntryById(entryId!!)!!
+            return entryCache!!
+        }
 
     internal constructor(
         dbManager: DbManager?,

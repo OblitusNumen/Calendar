@@ -2,14 +2,14 @@ package oblitusnumen.calendar.ui.model.tab
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Call
-import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
@@ -21,7 +21,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
-import kotlinx.coroutines.launch
 import oblitusnumen.calendar.implementation.bgColorToTextColor
 import oblitusnumen.calendar.implementation.data.Date
 import oblitusnumen.calendar.implementation.data.DbManager
@@ -29,7 +28,6 @@ import oblitusnumen.calendar.implementation.data.Entry
 import oblitusnumen.calendar.implementation.data.Period
 import oblitusnumen.calendar.implementation.defaultZoneId
 import oblitusnumen.calendar.ui.model.DateTimePicker
-import java.time.LocalDate
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
@@ -37,8 +35,10 @@ class EntriesTab(private val dbManager: DbManager) : ViewModel() {
 
     @Composable
     fun compose(editEntry: (Int) -> Unit, modifier: Modifier) {
-        val contentOffsetTop = with(LocalDensity.current) { WindowInsets.statusBars.getTop(LocalDensity.current).toDp() } + 64.dp
-        val contentOffsetBottom = with(LocalDensity.current) { WindowInsets.navigationBars.getBottom(LocalDensity.current).toDp() } + 80.dp
+        val contentOffsetTop =
+            with(LocalDensity.current) { WindowInsets.statusBars.getTop(LocalDensity.current).toDp() } + 64.dp
+        val contentOffsetBottom =
+            with(LocalDensity.current) { WindowInsets.navigationBars.getBottom(LocalDensity.current).toDp() } + 80.dp
         val entries = remember {// TODO: maybe sort by netx date
             dbManager.getEntries().sortedBy { it.name }
         }
@@ -77,16 +77,21 @@ class EntriesTab(private val dbManager: DbManager) : ViewModel() {
         var scheduleDialogShown by remember { mutableStateOf(false) }
         var nextDateText by remember { mutableStateOf(getNextDateText(entry)) }
         Column(
-            Modifier.padding(2.dp).fillMaxWidth()
+            Modifier.padding(2.dp).fillMaxWidth().defaultMinSize(minHeight = 64.dp)
                 .background(
                     MaterialTheme.colorScheme.primaryContainer,
                     shape = RoundedCornerShape(10.dp)
                 ).combinedClickable(onLongClick = { scheduleDialogShown = true }, onClick = { editEntry(entry.id!!) })
         ) {
             Row(Modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 8.dp)) {
+                Box(
+                    Modifier.padding(end = 8.dp).size(24.dp).background(entry.getColorOrDefault(), CircleShape)
+                        .border(0.dp, entry.getColorOrDefault(), CircleShape)
+                        .align(Alignment.CenterVertically)
+                )
                 Text(
-                    modifier = Modifier.weight(1.0f).padding(end = 8.dp),
-                    text = entry.name,
+                    modifier = Modifier.weight(1.0f).padding(horizontal = 8.dp).align(Alignment.CenterVertically),
+                    text = entry.name.ifEmpty { "[No title]" },
                     style = MaterialTheme.typography.headlineSmall,
                     overflow = TextOverflow.Ellipsis,
                     maxLines = 1,
@@ -157,7 +162,7 @@ class EntriesTab(private val dbManager: DbManager) : ViewModel() {
             },
             text = {
                 Column {
-                    Text("Schedule ${entry.name} event?")
+                    Text("Schedule ${entry.name.ifEmpty { "[No title]" }} event?")
                 }
             }
         )

@@ -19,6 +19,7 @@ sealed class Period private constructor() : Comparable<Period> {
             if (count <= 0 || count > MAX_PERIOD_COUNT)
                 throw IllegalArgumentException("Invalid period count")
         }
+
         override fun toString(): String = "m$count"
         override fun addTo(start: ZonedDateTime, count: Long): ZonedDateTime = start.plusMinutes(count * this.count)
         override fun secondsApproximation(): Long = count * 60
@@ -30,6 +31,7 @@ sealed class Period private constructor() : Comparable<Period> {
             if (count <= 0 || count > MAX_PERIOD_COUNT)
                 throw IllegalArgumentException("Invalid period count")
         }
+
         override fun toString(): String = "H$count"
         override fun addTo(start: ZonedDateTime, count: Long): ZonedDateTime = start.plusHours(count * this.count)
         override fun secondsApproximation(): Long = count * 3600
@@ -41,6 +43,7 @@ sealed class Period private constructor() : Comparable<Period> {
             if (count <= 0 || count > MAX_PERIOD_COUNT)
                 throw IllegalArgumentException("Invalid period count")
         }
+
         override fun toString(): String = "D$count"
         override fun addTo(start: ZonedDateTime, count: Long): ZonedDateTime = start.plusDays(count * this.count)
         override fun secondsApproximation(): Long = count * 86400
@@ -52,6 +55,7 @@ sealed class Period private constructor() : Comparable<Period> {
             if (count <= 0 || count > MAX_PERIOD_COUNT)
                 throw IllegalArgumentException("Invalid period count")
         }
+
         override fun toString(): String = "W$count"
         override fun addTo(start: ZonedDateTime, count: Long): ZonedDateTime = start.plusWeeks(count * this.count)
         override fun secondsApproximation(): Long = count * 86400 * 7
@@ -63,6 +67,7 @@ sealed class Period private constructor() : Comparable<Period> {
             if (count <= 0 || count > MAX_PERIOD_COUNT)
                 throw IllegalArgumentException("Invalid period count")
         }
+
         override fun toString(): String = "M$count"
         override fun addTo(start: ZonedDateTime, count: Long): ZonedDateTime = start.plusMonths(count * this.count)
         override fun secondsApproximation(): Long = count * 86400 * 30
@@ -74,6 +79,7 @@ sealed class Period private constructor() : Comparable<Period> {
             if (count <= 0 || count > MAX_PERIOD_COUNT)
                 throw IllegalArgumentException("Invalid period count")
         }
+
         override fun toString(): String = "Y$count"
         override fun addTo(start: ZonedDateTime, count: Long): ZonedDateTime = start.plusYears(count * this.count)
         override fun secondsApproximation(): Long = count * 86400 * 365
@@ -85,8 +91,11 @@ sealed class Period private constructor() : Comparable<Period> {
             if (count <= 0 || count > MAX_PERIOD_COUNT || daysMask > WD_ALL)
                 throw IllegalArgumentException("Invalid period arguments")
         }
+
         override fun toString(): String = "w${daysMask.toString().padStart(3, '0')}|$count"
-        override fun addTo(start: ZonedDateTime, count: Long): ZonedDateTime = start.plusDays(count) //count is not in periods but days here
+        override fun addTo(start: ZonedDateTime, count: Long): ZonedDateTime =
+            start.plusDays(count) //count is not in periods but days here
+
         override fun secondsApproximation(): Long = 86400
         override fun updateCount(count: Long): Period = Weekday(count, daysMask)
         fun eventCountPerWeek() = daysMask.countOneBits()
@@ -141,7 +150,7 @@ sealed class Period private constructor() : Comparable<Period> {
         return secondsApproximation().compareTo(other.secondsApproximation())
     }
 
-    companion object{
+    companion object {
         const val MAX_PERIOD_COUNT = 4294967296L
 
         fun decode(string: String): Period {
@@ -154,7 +163,7 @@ sealed class Period private constructor() : Comparable<Period> {
                 'M' -> Month(string.substring(1).toLong())
                 'Y' -> Year(string.substring(1).toLong())
                 'w' -> Weekday(string.substring(5).toLong(), string.substring(1, 4).toLong())
-                else-> throw IllegalArgumentException("Invalid period: $string")
+                else -> throw IllegalArgumentException("Invalid period: $string")
             }
         }
     }

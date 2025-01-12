@@ -57,7 +57,8 @@ class CalendarTab(private val dbManager: DbManager) : ViewModel() {
                 with(LocalDensity.current) { 92.dp.toPx().toInt() })
         evtHeight = measureTextLine(MaterialTheme.typography.bodySmall) + 4.dp
         val now = LocalDate.now()
-        if (calendarLazyListState == null) calendarLazyListState = rememberLazyListState(getNowItemIndex(now), contentScrollOffset)
+        if (calendarLazyListState == null)
+            calendarLazyListState = rememberLazyListState(getNowItemIndex(now), contentScrollOffset)
         LazyColumn(
             state = calendarLazyListState!!,
             modifier = modifier
@@ -140,8 +141,8 @@ class CalendarTab(private val dbManager: DbManager) : ViewModel() {
             )
             repeat(if (evtOverflow) maxElements - 1 else eventDates.count()) {
                 drawEvtInDay(
-                    Color.Green,
-                    eventDates[it].getDesc()
+                    eventDates[it].entry.getColorOrDefault(),
+                    eventDates[it].getDesc().ifEmpty { "[No title]" }
                 ) //fixme get color from Date. should cache these vals in Date
             }
             if (evtOverflow)

@@ -1,9 +1,13 @@
 package oblitusnumen.calendar
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -13,6 +17,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -27,11 +32,13 @@ import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.Entry
 import oblitusnumen.calendar.implementation.data.Period
 import oblitusnumen.calendar.implementation.defaultZoneId
+import oblitusnumen.calendar.implementation.log
 import oblitusnumen.calendar.implementation.notifications.NotificationBroadcastReceiver
 import oblitusnumen.calendar.ui.model.navigation.NavRoutes
 import oblitusnumen.calendar.ui.model.screen.DateScreen
 import oblitusnumen.calendar.ui.model.screen.EntryDetails
 import oblitusnumen.calendar.ui.model.screen.EntryEdit
+import oblitusnumen.calendar.ui.model.screen.SettingsScreen
 import oblitusnumen.calendar.ui.model.tab.CalendarTab
 import oblitusnumen.calendar.ui.model.tab.EntriesTab
 import oblitusnumen.calendar.ui.model.tab.TagsTab
@@ -218,7 +225,8 @@ class MainActivity : ComponentActivity() {
                             // on the back stack as users select items
                             popUpTo(navController.graph.findStartDestination().id) {
                                 if (currentDestination?.route != NavRoutes.ThatDayDetails.route ||
-                                    topLevelRoute.route.route != NavRoutes.Calendar.route)
+                                    topLevelRoute.route.route != NavRoutes.Calendar.route
+                                )
                                     saveState = true
                             }
                             // Avoid multiple copies of the same destination when

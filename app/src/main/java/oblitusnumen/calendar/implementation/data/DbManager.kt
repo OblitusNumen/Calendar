@@ -17,9 +17,15 @@ import java.util.*
 class DbManager(private val context: Context) :
     SQLiteOpenHelper(context, DB_NAME, null, DATABASE_VERSION) {
     val filesDir: File = context.filesDir
-    var defaultTagColor: Color = getSharedPrefs(context).getInt(DEFAULT_COLOR_PREF_NAME, -1).toColor() ?: Color.Gray
+    var defaultEntryColor: Color =
+        getSharedPrefs(context).getInt(DEFAULT_ENTRY_COLOR_PREF_NAME, -1).toColor() ?: Color.Gray
         set(color) {
-            getSharedPrefs(context).edit().putInt(DEFAULT_COLOR_PREF_NAME, color.toInt()).apply()
+            getSharedPrefs(context).edit().putInt(DEFAULT_ENTRY_COLOR_PREF_NAME, color.toInt()).apply()
+            field = color
+        }
+    var defaultTagColor: Color = getSharedPrefs(context).getInt(DEFAULT_TAG_COLOR_PREF_NAME, -1).toColor() ?: Color.Gray
+        set(color) {
+            getSharedPrefs(context).edit().putInt(DEFAULT_TAG_COLOR_PREF_NAME, color.toInt()).apply()
             field = color
         }
 
@@ -186,13 +192,15 @@ class DbManager(private val context: Context) :
     companion object {
         const val DATABASE_VERSION: Int = 1
         private const val SHARED_PREFERENCES_NAME: String = "calendar_preferences"
-        private const val DEFAULT_COLOR_PREF_NAME: String = "default_tag_color"
+        private const val DEFAULT_ENTRY_COLOR_PREF_NAME: String = "default_entry_color"
+        private const val DEFAULT_TAG_COLOR_PREF_NAME: String = "default_tag_color"
         const val DB_NAME: String = "entries.db"
         private const val SQL_CREATE_ENTRIES =
             "CREATE TABLE IF NOT EXISTS ${Entry.TABLE_NAME} (" +
                     "${Entry.COLUMN_NAME_ID} INTEGER PRIMARY KEY AUTOINCREMENT," +
+                    "${Entry.COLUMN_NAME_STATE} INTEGER NOT NULL," +
                     "${Entry.COLUMN_NAME_NAME} TEXT NOT NULL," +
-                    "${Entry.COLUMN_NAME_STATE} INTEGER NOT NULL);"
+                    "${Entry.COLUMN_NAME_COLOR} INTEGER NOT NULL);"
         private const val SQL_CREATE_TAGS =
             "CREATE TABLE IF NOT EXISTS ${Tag.TABLE_NAME} (" +
                     "${Tag.COLUMN_NAME_ID} INTEGER PRIMARY KEY AUTOINCREMENT," +
@@ -219,6 +227,23 @@ class DbManager(private val context: Context) :
                     "${Notification.COLUMN_NAME_ENTRY_ID} INTEGER NOT NULL," +
                     "${Notification.COLUMN_NAME_TIME_OFFSET} VARCHAR(18) NOT NULL," +
                     "${Notification.COLUMN_NAME_SOUND} INT NOT NULL);"
+        private const val SATURATION = .5f
+        private const val VALUE = .8f
+        val presetColors: List<Color> = listOf(
+            Color.hsv(0f, SATURATION, this.VALUE),
+            Color.hsv(30f, SATURATION, this.VALUE),
+            Color.hsv(60f, SATURATION, this.VALUE),
+            Color.hsv(90f, SATURATION, this.VALUE),
+            Color.hsv(120f, SATURATION, this.VALUE),
+            Color.hsv(150f, SATURATION, this.VALUE),
+            Color.hsv(180f, SATURATION, this.VALUE),
+            Color.hsv(210f, SATURATION, this.VALUE),
+            Color.hsv(240f, SATURATION, this.VALUE),
+            Color.hsv(270f, SATURATION, this.VALUE),
+            Color.hsv(300f, SATURATION, this.VALUE),
+            Color.hsv(330f, SATURATION, this.VALUE),
+            Color.Gray
+        )
 
         fun getSharedPrefs(context: Context): SharedPreferences {
             return context.getSharedPreferences(SHARED_PREFERENCES_NAME, Context.MODE_PRIVATE)

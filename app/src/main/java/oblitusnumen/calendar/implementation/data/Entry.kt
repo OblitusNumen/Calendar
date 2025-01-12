@@ -3,8 +3,11 @@ package oblitusnumen.calendar.implementation.data
 import android.content.ContentValues
 import android.database.Cursor
 import android.provider.BaseColumns
+import androidx.compose.ui.graphics.Color
 import androidx.core.database.sqlite.transaction
 import oblitusnumen.calendar.implementation.rmRecursively
+import oblitusnumen.calendar.implementation.toColor
+import oblitusnumen.calendar.implementation.toInt
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -13,11 +16,14 @@ import java.io.IOException
 class Entry private constructor(
     private val dbManager: DbManager,
     id: Int? = null,
+    private var state: Int = STATE_NEW,
     var name: String = "",
-    private var state: Int = STATE_NEW
+    var color: Color? = null
 ) : BaseColumns {
     var id: Int? = id
         private set
+
+    fun getColorOrDefault(): Color = color ?: dbManager.defaultEntryColor
 
     private fun create() {
         val contentValues = getContentValues()
@@ -101,8 +107,9 @@ class Entry private constructor(
 
     private fun getContentValues(): ContentValues {
         val contentValues = ContentValues()
-        contentValues.put(COLUMN_NAME_NAME, name)
         contentValues.put(COLUMN_NAME_STATE, state)
+        contentValues.put(COLUMN_NAME_NAME, name)
+        contentValues.put(COLUMN_NAME_COLOR, color.toInt())
         return contentValues
     }
 
@@ -157,6 +164,7 @@ class Entry private constructor(
     @Throws(IOException::class)
     fun set(
         name: String,
+        color: Color?,
         tags: Iterable<Tag>,
         dates: Iterable<Date>,
         notifications: Iterable<Notification>,
@@ -171,8 +179,9 @@ class Entry private constructor(
         tryUpdateContents(contents)
         dbManager.writableDatabase.transaction {
             //setting entry
-            this@Entry.name = name
             this@Entry.state = STATE_NORMAL
+            this@Entry.name = name
+            this@Entry.color = color
             update()
 
             //setting tags
@@ -229,8 +238,9 @@ class Entry private constructor(
     companion object {
         const val TABLE_NAME: String = "entries"
         const val COLUMN_NAME_ID: String = "id"
-        const val COLUMN_NAME_NAME: String = "name"
         const val COLUMN_NAME_STATE: String = "state"
+        const val COLUMN_NAME_NAME: String = "name"
+        const val COLUMN_NAME_COLOR: String = "color"
         const val STATE_NORMAL: Int = 0
         const val STATE_NEW: Int = 1
         const val STATE_UPDATING: Int = 2
@@ -247,10 +257,19 @@ class Entry private constructor(
         ): MutableList<Entry> {
             val entries: MutableList<Entry> = ArrayList()
             val idxId = cursor.getColumnIndex(COLUMN_NAME_ID)
-            val idxName = cursor.getColumnIndex(COLUMN_NAME_NAME)
             val idxState = cursor.getColumnIndex(COLUMN_NAME_STATE)
+            val idxName = cursor.getColumnIndex(COLUMN_NAME_NAME)
+            val idxColor = cursor.getColumnIndex(COLUMN_NAME_COLOR)
             while (cursor.moveToNext())
-                entries.add(Entry(dbManager, cursor.getInt(idxId), cursor.getString(idxName), cursor.getInt(idxState)))
+                entries.add(
+                    Entry(
+                        dbManager,
+                        cursor.getInt(idxId),
+                        cursor.getInt(idxState),
+                        cursor.getString(idxName),
+                        cursor.getInt(idxColor).toColor()
+                    )
+                )
             return entries
         }
     }
