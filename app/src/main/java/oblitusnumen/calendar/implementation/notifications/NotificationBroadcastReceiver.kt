@@ -57,9 +57,7 @@ class NotificationBroadcastReceiver : BroadcastReceiver() {
         const val SILENT_CHANNEL_ID = "silent_channel"
         const val LAST_NOTIFICATION_TIME_PREFERENCE_NAME = "last_notification_time"
 
-        fun scheduleNotification(c: Context, triggerAtMillis: Long, lastNotificationTimeSeconds: Long) {
-            DbManager.getSharedPrefs(c).edit()
-                .putLong(LAST_NOTIFICATION_TIME_PREFERENCE_NAME, lastNotificationTimeSeconds).apply()
+        fun scheduleNotification(c: Context, triggerAtMillis: Long) {
             log(
                 "NotificationBroadcastReceiver RESCHEDULING_NOTIFICATION AT ${triggerAtMillis / 1000} " +
                         "T=${System.currentTimeMillis() / 1000} " +

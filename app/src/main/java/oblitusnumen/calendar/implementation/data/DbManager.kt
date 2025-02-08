@@ -7,6 +7,7 @@ import android.database.sqlite.SQLiteOpenHelper
 import androidx.compose.ui.graphics.Color
 import oblitusnumen.calendar.implementation.defaultZoneId
 import oblitusnumen.calendar.implementation.getZonedFromEpochSeconds
+import oblitusnumen.calendar.implementation.notifications.NotificationBroadcastReceiver.Companion.LAST_NOTIFICATION_TIME_PREFERENCE_NAME
 import oblitusnumen.calendar.implementation.notifications.NotificationBroadcastReceiver.Companion.scheduleNotification
 import oblitusnumen.calendar.implementation.notifications.PendingNotification
 import oblitusnumen.calendar.implementation.toColor
@@ -46,7 +47,9 @@ class DbManager(private val context: Context) :
 
     fun tryScheduleNotification(now: Long = System.currentTimeMillis() / 1000) {
         val nextNotificationTime = getNextNotificationTime(now)
-        if (nextNotificationTime != null) scheduleNotification(context, nextNotificationTime * 1000, now)
+        getSharedPrefs(context).edit().putLong(LAST_NOTIFICATION_TIME_PREFERENCE_NAME, now).apply()
+        if (nextNotificationTime != null)
+            scheduleNotification(context, nextNotificationTime * 1000)
     }
 
     private fun getNextNotificationTime(timeStamp: Long): Long? {
