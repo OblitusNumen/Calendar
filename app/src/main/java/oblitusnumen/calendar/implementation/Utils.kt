@@ -1,5 +1,6 @@
 package oblitusnumen.calendar.implementation
 
+import android.content.Context
 import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -14,6 +15,7 @@ import java.io.IOException
 import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.util.*
@@ -53,8 +55,16 @@ fun log(o: Any) {
     log("calendar", o)
 }
 
+var logfile: File? = null
+fun setLogFile(c: Context) {
+    if (logfile == null)
+        logfile = File(c.getFilesDir(), "logfile.log")
+}
+
 fun log(tag: String?, o: Any) {
     Log.v(tag, o.toString())
+    if (logfile != null)
+        logfile!!.appendText("[${LocalDateTime.now()}] $tag: $o\n")
 }
 
 private fun colorToLuminance(color: Color): Double {

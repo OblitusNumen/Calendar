@@ -13,12 +13,14 @@ import oblitusnumen.calendar.R
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.getZonedFromEpochSeconds
 import oblitusnumen.calendar.implementation.log
+import oblitusnumen.calendar.implementation.setLogFile
 import java.time.format.DateTimeFormatter
 
 class NotificationBroadcastReceiver : BroadcastReceiver() {
     override fun onReceive(c: Context, intent: Intent?) {
+        setLogFile(c)
+        log("NotificationBroadcastReceiver RECEIVED INTENT: ${intent?.action}")
         DbManager(c).use { dbManager ->
-            log("NotificationBroadcastReceiver RECEIVED INTENT")
             val now = System.currentTimeMillis() / 1000 + 10// fixing possible early invocation
             val sharedPreferences: SharedPreferences = DbManager.getSharedPrefs(c)
             val pendingNotifications = dbManager.getPendingNotificationsInRange(
@@ -64,6 +66,7 @@ class NotificationBroadcastReceiver : BroadcastReceiver() {
                         "D=${(triggerAtMillis - System.currentTimeMillis()) / 1000}"
             )
             val intent = Intent(c, NotificationBroadcastReceiver::class.java)
+            intent.action = "scheduleNotification"
             val pendingIntent = PendingIntent.getBroadcast(
                 c,
                 12345,

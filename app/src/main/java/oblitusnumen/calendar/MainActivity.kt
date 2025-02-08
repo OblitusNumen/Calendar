@@ -34,6 +34,7 @@ import oblitusnumen.calendar.implementation.data.Period
 import oblitusnumen.calendar.implementation.defaultZoneId
 import oblitusnumen.calendar.implementation.log
 import oblitusnumen.calendar.implementation.notifications.NotificationBroadcastReceiver
+import oblitusnumen.calendar.implementation.setLogFile
 import oblitusnumen.calendar.ui.model.navigation.NavRoutes
 import oblitusnumen.calendar.ui.model.screen.DateScreen
 import oblitusnumen.calendar.ui.model.screen.EntryDetails
@@ -54,6 +55,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) { //fixme ask for required permissions somewhere
         super.onCreate(savedInstanceState)
+        setLogFile(this)
         enableEdgeToEdge()
         val requestPermissionLauncher =
             registerForActivityResult(
