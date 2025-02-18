@@ -1,7 +1,6 @@
 package oblitusnumen.calendar.ui.model.tab
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -26,6 +25,7 @@ import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.launch
 import oblitusnumen.calendar.MainActivity
@@ -69,7 +69,13 @@ class CalendarTab(private val dbManager: DbManager) : ViewModel() {
                 val monthIdx = if (offset < 0) offset / 7 - 1 else offset / 7
                 val mon = LIST_CENTER.plusMonths(monthIdx.toLong()).withDayOfMonth(1)
                 if (monthItemIndex == 0) {
-                    Text(stringArrayResource(R.array.monthNames)[mon.month.value - 1] + " " + mon.year)
+                    HorizontalDivider(Modifier.padding(4.dp))
+                    Text(
+                        stringArrayResource(R.array.monthNames)[mon.month.value - 1] + " " + mon.year,
+                        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontSize = 40.sp,
+                    )
                 } else {
                     displayWeek(
                         mon.monthValue,
@@ -162,6 +168,7 @@ class CalendarTab(private val dbManager: DbManager) : ViewModel() {
             text = text,
             maxLines = 1,
             style = MaterialTheme.typography.bodySmall,
+            fontSize = 10.sp,
             color = bgColorToTextColor(bgColor)
         )
     }
@@ -227,19 +234,28 @@ class CalendarTab(private val dbManager: DbManager) : ViewModel() {
                 },
                 scrollBehavior = scrollBehavior,
             )
-            Row(
-                Modifier.padding(horizontal = MainActivity.PADDING)
-                    .background(MaterialTheme.colorScheme.background.copy(alpha = .8f))
+            Box(
+                Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = .9f))
             ) {
-                repeat(7) {
-                    Text(
-                        stringArrayResource(R.array.weekdayNames)[it],
-                        modifier = Modifier.width(getWidthPartIncludePadding(7f)).height(25.dp)
-                            .border(2.dp, MaterialTheme.colorScheme.primary),
-                        textAlign = TextAlign.Center,
-                    )
+                Row(
+                    Modifier.padding(horizontal = MainActivity.PADDING).height(IntrinsicSize.Min)
+                        .defaultMinSize(minHeight = 25.dp).fillMaxWidth(),
+                ) {
+
+                    repeat(7) {
+                        if (it != 0)
+                            VerticalDivider(
+                                Modifier.padding(vertical = 2.dp)// FIXME: not good approach
+                            )
+                        Text(
+                            stringArrayResource(R.array.weekdayNames)[it],
+                            modifier = Modifier.align(Alignment.CenterVertically).weight(1f),
+                            textAlign = TextAlign.Center,
+                        )
+                    }
                 }
             }
+            HorizontalDivider() // FIXME: use bar shadow instead
         }
     }
 }
