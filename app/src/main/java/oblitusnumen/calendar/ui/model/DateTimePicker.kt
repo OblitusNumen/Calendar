@@ -97,7 +97,8 @@ class DateTimePicker {
                 label = { Text(label) },
                 readOnly = true,
                 trailingIcon = {
-                    IconButton(enabled = enabled,
+                    IconButton(
+                        enabled = enabled,
                         onClick = { showDatePicker = !showDatePicker }) {
                         Icon(
                             imageVector = Icons.Default.DateRange,

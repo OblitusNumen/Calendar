@@ -13,11 +13,7 @@ import androidx.compose.ui.unit.Dp
 import java.io.File
 import java.io.IOException
 import java.text.SimpleDateFormat
-import java.time.Instant
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.ZoneId
-import java.time.ZonedDateTime
+import java.time.*
 import java.util.*
 
 fun Int.toColor(): Color? = if (this == -1) null else Color(this or 0xFF000000.toInt())
@@ -58,7 +54,7 @@ fun log(o: Any) {
 var logfile: File? = null
 fun setLogFile(c: Context) {
     if (logfile == null)
-        logfile = File(c.getFilesDir(), "logfile.log")
+        logfile = File(c.filesDir, "logfile.log")
 }
 
 fun log(tag: String?, o: Any) {
