@@ -42,8 +42,12 @@ class EntryEdit(
     private var tags: List<Tag> by mutableStateOf(entry.getTags().sortedBy { it.name })
     private var dates: List<Date> by mutableStateOf(
         (entry.getDates() + if (fromDate == null) listOf() else listOf(fromDate)).sortedBy { it.start })
-    private var notifications: List<Notification> by mutableStateOf(
-        entry.getNotifications().sortedBy { it.offset.secondsApproximation() })
+    private var notifications: List<Notification> by mutableStateOf(run {
+        if (entry.isNotCreated())
+            dbManager.defaultNotifications.map { Notification(dbManager, null, it.first, it.second) }
+        else
+            entry.getNotifications().sortedBy { it.offset.secondsApproximation() }
+    })
     private var contents by mutableStateOf(TextFieldValue(entry.getContents()))  // FIXME: this should be List<Content>
     private var dateTimePicker = DateTimePicker()
 
@@ -288,69 +292,6 @@ class EntryEdit(
                 )
             },
             colors = InputChipDefaults.inputChipColors(containerColor = bgColor, selectedContainerColor = bgColor),
-        )
-    }
-
-    @Composable
-    fun drawNotificationAddMenu(onConfirm: (Period, Boolean) -> Unit, onDismiss: () -> Unit) {
-        var silent by remember { mutableStateOf(false) }
-        var offsetCount by remember { mutableStateOf("1") }
-        var selectedOffsetType by remember { mutableStateOf(OffsetType(Once())) }
-
-        AlertDialog(
-            onDismissRequest = onDismiss,
-            dismissButton = {
-                TextButton(onClick = onDismiss) {
-                    Text("Cancel")
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    onConfirm(
-                        if (selectedOffsetType.period is Once) Once() else {
-                            val offset = offsetCount.toLong()
-                            if (offset > 0) selectedOffsetType.period.updateCount(offset) else Once()
-                        }, !silent
-                    )
-                }) {
-                    Text("OK")
-                }
-            },
-            text = {
-                Column {
-                    Row {
-                        //offset text field
-                        OutlinedTextField(// FIXME: ui paddings
-                            enabled = selectedOffsetType.period !is Once,
-                            modifier = Modifier.width(100.dp).padding(horizontal = 8.dp),
-                            value = offsetCount, onValueChange = {
-                                try {
-                                    if (it.toLong() >= 0 && it.length <= 3) offsetCount = it
-                                } catch (_: NumberFormatException) {
-                                    if (it.isEmpty())
-                                        offsetCount = it
-                                }
-                            },
-                            textStyle = MaterialTheme.typography.bodyLarge,
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Number,
-                                imeAction = ImeAction.Done
-                            ),
-                            label = { Text("Count") }
-                        )
-                        materialSpinner(
-                            "Type", OffsetType.getAll(),
-                            { selectedOffsetType = it },
-                            selectedOffsetType,
-                            Modifier.padding(horizontal = 8.dp).width(150.dp)
-                        )
-                    }
-                    Row {
-                        Text("silent")
-                        Switch(silent, onCheckedChange = { silent = it })
-                    }
-                }
-            }
         )
     }
 
@@ -731,6 +672,71 @@ class EntryEdit(
             },
             scrollBehavior = scrollBehavior,
         )
+    }
+
+    companion object {
+        @Composable
+        fun drawNotificationAddMenu(onConfirm: (Period, Boolean) -> Unit, onDismiss: () -> Unit) {
+            var silent by remember { mutableStateOf(false) }
+            var offsetCount by remember { mutableStateOf("1") }
+            var selectedOffsetType by remember { mutableStateOf(OffsetType(Once())) }
+
+            AlertDialog(
+                onDismissRequest = onDismiss,
+                dismissButton = {
+                    TextButton(onClick = onDismiss) {
+                        Text("Cancel")
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        onConfirm(
+                            if (selectedOffsetType.period is Once) Once() else {
+                                val offset = offsetCount.toLong()
+                                if (offset > 0) selectedOffsetType.period.updateCount(offset) else Once()
+                            }, !silent
+                        )
+                    }) {
+                        Text("OK")
+                    }
+                },
+                text = {
+                    Column {
+                        Row {
+                            //offset text field
+                            OutlinedTextField(// FIXME: ui paddings
+                                enabled = selectedOffsetType.period !is Once,
+                                modifier = Modifier.width(100.dp).padding(horizontal = 8.dp),
+                                value = offsetCount, onValueChange = {
+                                    try {
+                                        if (it.toLong() >= 0 && it.length <= 3) offsetCount = it
+                                    } catch (_: NumberFormatException) {
+                                        if (it.isEmpty())
+                                            offsetCount = it
+                                    }
+                                },
+                                textStyle = MaterialTheme.typography.bodyLarge,
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Number,
+                                    imeAction = ImeAction.Done
+                                ),
+                                label = { Text("Count") }
+                            )
+                            materialSpinner(
+                                "Type", OffsetType.getAll(),
+                                { selectedOffsetType = it },
+                                selectedOffsetType,
+                                Modifier.padding(horizontal = 8.dp).width(150.dp)
+                            )
+                        }
+                        Row {
+                            Text("silent")
+                            Switch(silent, onCheckedChange = { silent = it })
+                        }
+                    }
+                }
+            )
+        }
     }
 }
 

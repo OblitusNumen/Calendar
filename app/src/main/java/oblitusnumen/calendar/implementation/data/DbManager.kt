@@ -17,6 +17,18 @@ import java.util.*
 
 class DbManager(private val context: Context) :
     SQLiteOpenHelper(context, DB_NAME, null, DATABASE_VERSION) {
+    var defaultNotifications: List<Pair<Period, Boolean>> =
+        getSharedPrefs(context).getString(DEFAULT_NOTIFICATIONS_PREF_NAME, null)?.split(",")?.map {
+            val notification = it.split("_")
+            Period.decode(notification[0]) to (notification[1] != "0")
+        } ?: listOf(Period.Once() to true, Period.Minute(30) to true)
+        set(notifications) {
+            getSharedPrefs(context).edit()
+                .putString(
+                    DEFAULT_NOTIFICATIONS_PREF_NAME,
+                    notifications.joinToString(",") { it.first.toString() + "_" + it.second }).apply()
+            field = notifications
+        }
     val filesDir: File = context.filesDir
     var defaultEntryColor: Color =
         getSharedPrefs(context).getInt(DEFAULT_ENTRY_COLOR_PREF_NAME, -1).toColor() ?: Color.Gray
@@ -197,6 +209,7 @@ class DbManager(private val context: Context) :
         private const val SHARED_PREFERENCES_NAME: String = "calendar_preferences"
         private const val DEFAULT_ENTRY_COLOR_PREF_NAME: String = "default_entry_color"
         private const val DEFAULT_TAG_COLOR_PREF_NAME: String = "default_tag_color"
+        private const val DEFAULT_NOTIFICATIONS_PREF_NAME: String = "default_notifications"
         const val DB_NAME: String = "entries.db"
         private const val SQL_CREATE_ENTRIES =
             "CREATE TABLE IF NOT EXISTS ${Entry.TABLE_NAME} (" +

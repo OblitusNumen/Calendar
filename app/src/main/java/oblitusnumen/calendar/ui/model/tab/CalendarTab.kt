@@ -241,12 +241,9 @@ class CalendarTab(private val dbManager: DbManager) : ViewModel() {
                     Modifier.padding(horizontal = MainActivity.PADDING).height(IntrinsicSize.Min)
                         .defaultMinSize(minHeight = 25.dp).fillMaxWidth(),
                 ) {
-
                     repeat(7) {
                         if (it != 0)
-                            VerticalDivider(
-                                Modifier.padding(vertical = 2.dp)// FIXME: not good approach
-                            )
+                            VerticalDivider(Modifier.padding(vertical = 2.dp))
                         Text(
                             stringArrayResource(R.array.weekdayNames)[it],
                             modifier = Modifier.align(Alignment.CenterVertically).weight(1f),

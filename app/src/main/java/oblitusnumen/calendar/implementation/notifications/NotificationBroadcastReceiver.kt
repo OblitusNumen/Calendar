@@ -36,7 +36,7 @@ class NotificationBroadcastReceiver : BroadcastReceiver() {
                     c,
                     if (pendingNotification.notification.sound) NORMAL_CHANNEL_ID else SILENT_CHANNEL_ID
                 )
-                    .setSmallIcon(R.drawable.ic_launcher_foreground)
+                    .setSmallIcon(R.drawable.ic_calendar) // FIXME: this icon must be transparent
                     .setContentTitle(pendingNotification.date.getDesc())
                     .setContentText(// FIXME: format, missed events
                         "Upcoming event in ${pendingNotification.notification.offset.count} ${pendingNotification.notification.offset.javaClass.simpleName}\n(at ${
@@ -44,7 +44,7 @@ class NotificationBroadcastReceiver : BroadcastReceiver() {
                                 pendingNotification.eventDateTime
                             ).format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm"))
                         })"
-                    )
+                    )// TODO: open on click
                     .build()
                 manager.notify(pendingNotification.dateHash(), notification)
             }

@@ -25,6 +25,8 @@ class Entry private constructor(
 
     fun getColorOrDefault(): Color = color ?: dbManager.defaultEntryColor
 
+    fun isNotCreated() = id == null
+
     private fun create() {
         val contentValues = getContentValues()
         contentValues.put(COLUMN_NAME_ID, null as Int?)
@@ -61,7 +63,7 @@ class Entry private constructor(
 
     @Throws(IOException::class)
     fun deleteCascade() {
-        if (id == null) return
+        if (isNotCreated()) return
         dbManager.writableDatabase.transaction {
             state = STATE_DELETED
             update()
@@ -148,7 +150,7 @@ class Entry private constructor(
     }
 
     fun getDates(): List<Date> {
-        if (id == null) return emptyList()
+        if (isNotCreated()) return emptyList()
         return Date.getAllByEntryId(dbManager, id!!)
     }
 
@@ -172,7 +174,7 @@ class Entry private constructor(
         notifications: Iterable<Notification>,
         contents: String
     ) {
-        if (id == null) {
+        if (isNotCreated()) {
             create()
         } else {
             state = STATE_UPDATING
