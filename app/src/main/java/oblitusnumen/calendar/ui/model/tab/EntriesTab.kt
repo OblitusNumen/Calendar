@@ -28,6 +28,7 @@ import oblitusnumen.calendar.implementation.data.Entry
 import oblitusnumen.calendar.implementation.data.Period
 import oblitusnumen.calendar.implementation.defaultZoneId
 import oblitusnumen.calendar.ui.model.DateTimePicker
+import java.time.LocalDateTime
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
@@ -46,127 +47,16 @@ class EntriesTab(private val dbManager: DbManager) : ViewModel() {
             item {
                 Spacer(Modifier.height(contentOffsetTop))
             }
-            items(entries) {
-                drawEntry(it, editEntry)
+            items(entries) { entry ->
+                drawEntry(entry, editEntry) {
+                    Date(dbManager, entry, "", it.atZone(defaultZoneId()), 0, 1, Period.Once()).create()
+                    dbManager.tryScheduleNotification()
+                }
             }
             item {
                 Spacer(Modifier.height(contentOffsetBottom))
             }
         }
-    }
-
-    @Composable
-    fun drawTag(text: String, bgColor: Color) {
-        Text(
-            modifier = Modifier.padding(horizontal = 2.dp, vertical = 1.5.dp)
-                .background(
-                    bgColor,
-                    shape = RoundedCornerShape(10.dp)
-                ).padding(vertical = 1.dp, horizontal = 6.dp),
-            text = text,
-            maxLines = 1,
-            style = MaterialTheme.typography.bodyMedium,
-            color = bgColorToTextColor(bgColor)
-        )
-    }
-
-    @OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
-    @Composable
-    fun drawEntry(entry: Entry, editEntry: (Int) -> Unit) {
-        val tags = entry.getTags()
-        var scheduleDialogShown by remember { mutableStateOf(false) }
-        var nextDateText by remember { mutableStateOf(getNextDateText(entry)) }
-        Column(
-            Modifier.padding(2.dp).fillMaxWidth().defaultMinSize(minHeight = 64.dp)
-                .background(
-                    MaterialTheme.colorScheme.primaryContainer,
-                    shape = RoundedCornerShape(10.dp)
-                ).combinedClickable(onLongClick = { scheduleDialogShown = true }, onClick = { editEntry(entry.id!!) })
-        ) {
-            Row(Modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 8.dp)) {
-                Box(
-                    Modifier.padding(end = 8.dp).size(24.dp).background(entry.getColorOrDefault(), CircleShape)
-                        .border(0.dp, entry.getColorOrDefault(), CircleShape)
-                        .align(Alignment.CenterVertically)
-                )
-                Text(
-                    modifier = Modifier.weight(1.0f).padding(horizontal = 8.dp).align(Alignment.CenterVertically),
-                    text = entry.name.ifEmpty { "[No title]" },
-                    style = MaterialTheme.typography.headlineSmall,
-                    overflow = TextOverflow.Ellipsis,
-                    maxLines = 1,
-                )
-                Text(
-                    modifier = Modifier.align(Alignment.CenterVertically),
-                    text = nextDateText,
-                    style = MaterialTheme.typography.bodyLarge,
-                )
-            }//todo next line "10 events from 2024.01.01 to 2025.01.01"
-            if (tags.isNotEmpty()) {
-                FlowRow(
-                    Modifier.fillMaxWidth()
-                        .padding(horizontal = 4.dp)
-                        .padding(bottom = 6.5.dp)
-                ) {
-                    for (tag in tags) {
-                        drawTag(tag.name, tag.getColorOrDefault())
-                    }
-                }
-            }
-        }
-        val dateTimePicker = remember { DateTimePicker() }
-        dateTimePicker.tryCompose()
-        if (scheduleDialogShown) scheduleDialog(
-            entry,
-            {
-                dateTimePicker.dateTimePick(
-                    {},
-                    {
-                        Date(dbManager, entry, "", it.atZone(defaultZoneId()), 0, 1, Period.Once()).create()
-                        nextDateText = getNextDateText(entry)
-                        dbManager.tryScheduleNotification()
-                    })
-            }) { scheduleDialogShown = false }
-    }
-
-    private fun getNextDateText(entry: Entry): String {
-        val now = System.currentTimeMillis() / 1000
-        var nextDate: ZonedDateTime? = null
-        var hasDates = false
-        for (date in entry.getDates()) {
-            hasDates = true
-            val next = date.getNext(now)
-            if (nextDate == null || next != null && next < nextDate) nextDate = next
-        }
-        val nextDateText = if (nextDate != null)
-            nextDate.format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm"))
-        else if (hasDates) "Ended" else ""
-        return nextDateText
-    }
-
-    @Composable
-    fun scheduleDialog(entry: Entry, schedule: () -> Unit, onClose: () -> Unit) {
-        AlertDialog(
-            onDismissRequest = onClose,
-            dismissButton = {
-                TextButton(onClick = onClose) {
-                    Text("Cancel")
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    onClose()
-                    schedule()
-                }) {
-                    Text("OK")
-                }
-            },
-            text = {
-                Column {
-                    Text("Schedule ${entry.name.ifEmpty { "[No title]" }} event?")
-                }
-            }
-        )
     }
 
     @OptIn(ExperimentalMaterial3Api::class)
@@ -182,20 +72,120 @@ class EntriesTab(private val dbManager: DbManager) : ViewModel() {
             navigationIcon = {
                 IconButton(onClick = openSettings) {
                     Icon(
-                        imageVector = Icons.Filled.Settings,
-                        contentDescription = null
+                        imageVector = Icons.Filled.Settings, contentDescription = null
                     )
                 }
             },
             actions = {
                 IconButton(onClick = {}) {
                     Icon(
-                        imageVector = Icons.Filled.Search,
-                        contentDescription = null
+                        imageVector = Icons.Filled.Search, contentDescription = null
                     )
                 }
             },
             scrollBehavior = scrollBehavior,
         )
+    }
+
+    companion object {
+        @OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
+        @Composable
+        fun drawEntry(entry: Entry, editEntry: (Int) -> Unit, onSchedule: (LocalDateTime) -> Unit) { //fixme Entry can not be created without DB
+            val tags = entry.getTags()
+            var scheduleDialogShown by remember { mutableStateOf(false) }
+            var nextDateText by remember { mutableStateOf(getNextDateText(entry)) }
+            Column(
+                Modifier.padding(2.dp).fillMaxWidth().defaultMinSize(minHeight = 64.dp).background(
+                        MaterialTheme.colorScheme.primaryContainer, shape = RoundedCornerShape(10.dp)
+                    ).combinedClickable(
+                        onLongClick = { scheduleDialogShown = true },
+                        onClick = { editEntry(entry.id!!) })
+            ) {
+                Row(Modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 8.dp)) {
+                    Box(
+                        Modifier.padding(end = 8.dp).size(24.dp).background(entry.getColorOrDefault(), CircleShape)
+                            .border(0.dp, entry.getColorOrDefault(), CircleShape).align(Alignment.CenterVertically)
+                    )
+                    Text(
+                        modifier = Modifier.weight(1.0f).padding(horizontal = 8.dp).align(Alignment.CenterVertically),
+                        text = entry.name.ifEmpty { "[No title]" },
+                        style = MaterialTheme.typography.headlineSmall,
+                        overflow = TextOverflow.Ellipsis,
+                        maxLines = 1,
+                    )
+                    Text(
+                        modifier = Modifier.align(Alignment.CenterVertically),
+                        text = nextDateText,
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
+                }//todo next line "10 events from 2024.01.01 to 2025.01.01"
+                if (tags.isNotEmpty()) {
+                    FlowRow(
+                        Modifier.fillMaxWidth().padding(horizontal = 4.dp).padding(bottom = 6.5.dp)
+                    ) {
+                        for (tag in tags) {
+                            drawTag(tag.name, tag.getColorOrDefault())
+                        }
+                    }
+                }
+            }
+            val dateTimePicker = remember { DateTimePicker() }
+            dateTimePicker.tryCompose()
+            if (scheduleDialogShown) scheduleDialog(
+                entry, {
+                    dateTimePicker.dateTimePick({}, {
+                        onSchedule(it)
+                        nextDateText = getNextDateText(entry)
+                    })
+                }) { scheduleDialogShown = false }
+        }
+
+        @Composable
+        private fun scheduleDialog(entry: Entry, schedule: () -> Unit, onClose: () -> Unit) {
+            AlertDialog(onDismissRequest = onClose, dismissButton = {
+                TextButton(onClick = onClose) {
+                    Text("Cancel")
+                }
+            }, confirmButton = {
+                TextButton(onClick = {
+                    onClose()
+                    schedule()
+                }) {
+                    Text("OK")
+                }
+            }, text = {
+                Column {
+                    Text("Schedule ${entry.name.ifEmpty { "[No title]" }} event?")
+                }
+            })
+        }
+
+        @Composable
+        private fun drawTag(text: String, bgColor: Color) {
+            Text(
+                modifier = Modifier.padding(horizontal = 2.dp, vertical = 1.5.dp).background(
+                        bgColor, shape = RoundedCornerShape(10.dp)
+                    ).padding(vertical = 1.dp, horizontal = 6.dp),
+                text = text,
+                maxLines = 1,
+                style = MaterialTheme.typography.bodyMedium,
+                color = bgColorToTextColor(bgColor)
+            )
+        }
+
+        private fun getNextDateText(entry: Entry): String {
+            val now = System.currentTimeMillis() / 1000
+            var nextDate: ZonedDateTime? = null
+            var hasDates = false
+            for (date in entry.getDates()) {
+                hasDates = true
+                val next = date.getNext(now)
+                if (nextDate == null || next != null && next < nextDate) nextDate = next
+            }
+            val nextDateText = if (nextDate != null)
+                nextDate.format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm"))
+            else if (hasDates) "Ended" else ""
+            return nextDateText
+        }
     }
 }
