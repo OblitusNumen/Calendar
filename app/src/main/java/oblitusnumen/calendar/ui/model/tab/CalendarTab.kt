@@ -23,6 +23,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -42,20 +43,13 @@ import java.time.temporal.ChronoUnit
 class CalendarTab(private val dbManager: DbManager) : ViewModel() {
     private var calendarLazyListState: LazyListState? = null
     private var evtHeight: Dp = 0.dp
-    private val LIST_CENTER: LocalDate = LocalDate.of(1970, 1, 1)
-    private val LIST_LEN = 420168000 * 2 // ~5M years, should be enough and nobody will see my bugs at dates above that
     private var contentScrollOffset: Int = 0
-
-    @Composable
-    fun getWidthPartIncludePadding(divisor: Float): Dp {
-        return LocalConfiguration.current.screenWidthDp.dp.minus(MainActivity.PADDING.times(2)).div(divisor)
-    }
 
     @Composable
     fun compose(toThatDayInfo: (LocalDate) -> Unit, modifier: Modifier = Modifier) {
         contentScrollOffset = -(WindowInsets.statusBars.getTop(LocalDensity.current) +
                 with(LocalDensity.current) { 92.dp.toPx().toInt() })
-        evtHeight = measureTextLine(MaterialTheme.typography.bodySmall) + 4.dp
+        evtHeight = getEvtInDayExpectedHeight()
         val now = LocalDate.now()
         if (calendarLazyListState == null)
             calendarLazyListState = rememberLazyListState(getNowItemIndex(now), contentScrollOffset)
@@ -87,14 +81,12 @@ class CalendarTab(private val dbManager: DbManager) : ViewModel() {
         }
     }
 
-    private fun getNowItemIndex(now: LocalDate) =
-        (LIST_LEN / 2 + ChronoUnit.MONTHS.between(LIST_CENTER, now) * 7).toInt()
 
     @Composable
     fun displayWeek(monthValue: Int, date0: LocalDate, toThatDayInfo: (LocalDate) -> Unit) {
         var date = date0
         val now = LocalDate.now()
-        val blockW = getWidthPartIncludePadding(7f)
+        val blockW = LocalConfiguration.current.screenWidthDp.dp.minus(MainActivity.PADDING.times(2)).div(7)
         Row {
             while (date.month.value % 12 + 1 == monthValue) {
                 Spacer(Modifier.width(blockW))
@@ -106,72 +98,13 @@ class CalendarTab(private val dbManager: DbManager) : ViewModel() {
                     zonedDateTime(date.plusWeeks(1)).toEpochSecond()
                 )
             while (date.month.value == monthValue) {
-                displayDay(blockW, now, 3, date, dates, toThatDayInfo)// TODO: maxElements setting
+                displayDay(blockW, evtHeight, now, 3, date, dates, toThatDayInfo)// TODO: maxElements setting
                 if (date.dayOfWeek.value == 7) break
                 date = date.plusDays(1)
             }
         }
     }
 
-    @Composable
-    fun displayDay(
-        blockW: Dp,
-        now: LocalDate,
-        maxElements: Int,
-        then: LocalDate,
-        dates: List<Date>,
-        toThatDayInfo: (LocalDate) -> Unit
-    ) {
-        val begin = zonedDateTime(then)
-        val startOfDayCache = begin.toEpochSecond()
-        val endOfDayCache = begin.plusDays(1).toEpochSecond()
-        val eventDates = dates.filter { it.anyInRange(startOfDayCache, endOfDayCache) != null }
-            .sortedBy { it.anyInRange(startOfDayCache, endOfDayCache) }
-
-        val today = (now.year == then.year && now.month == then.month && then.dayOfMonth == now.dayOfMonth)
-        val bgColor = if (today) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primaryContainer
-        val evtOverflow = eventDates.count() > maxElements
-        val spacerHeight = if (evtOverflow) 0.dp else evtHeight * (maxElements - eventDates.count())
-        Column(
-            Modifier.padding(2.dp).width(blockW - 4.dp)
-                .background(
-                    bgColor,
-                    shape = RoundedCornerShape(10.dp)
-                ).clickable(onClick = { toThatDayInfo(then) })
-        ) {
-            Text(
-                modifier = Modifier.align(Alignment.CenterHorizontally)
-                    .padding(top = 2.dp),
-                text = then.dayOfMonth.toString(),
-                color = bgColorToTextColor(bgColor)
-            )
-            repeat(if (evtOverflow) maxElements - 1 else eventDates.count()) {
-                drawEvtInDay(
-                    eventDates[it].entry.getColorOrDefault(),
-                    eventDates[it].getDesc().ifEmpty { "[No title]" }
-                ) //fixme get color from Date. should cache these vals in Date
-            }
-            if (evtOverflow)
-                drawEvtInDay(Color.Red, "+" + (eventDates.count() - maxElements + 1))
-            Spacer(Modifier.height(1.dp + spacerHeight))
-        }
-    }
-
-    @Composable
-    private fun drawEvtInDay(bgColor: Color, text: String) {
-        Text(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 2.dp, vertical = 1.dp)
-                .background(
-                    bgColor,
-                    shape = RoundedCornerShape(10.dp)
-                ).padding(vertical = 1.dp, horizontal = 4.dp),
-            text = text,
-            maxLines = 1,
-            style = MaterialTheme.typography.bodySmall,
-            fontSize = 10.sp,
-            color = bgColorToTextColor(bgColor)
-        )
-    }
 
     @Composable
     fun functionButton(newEntry: () -> Unit) {
@@ -255,4 +188,89 @@ class CalendarTab(private val dbManager: DbManager) : ViewModel() {
             HorizontalDivider() // FIXME: use bar shadow instead
         }
     }
+
+    companion object {
+        private val LIST_CENTER: LocalDate = LocalDate.of(1970, 1, 1)
+        private val LIST_LEN = 420168000 * 2 // ~5M years, should be enough (no point fixing bugs at >5M)
+
+        private fun getNowItemIndex(now: LocalDate) =
+            (LIST_LEN / 2 + ChronoUnit.MONTHS.between(LIST_CENTER, now) * 7).toInt()
+
+        @Composable
+        fun displayDay(
+            blockW: Dp,
+            cachedEvtExpectedHeight: Dp,
+            now: LocalDate,
+            maxElements: Int,
+            then: LocalDate,
+            dates: List<Date>,
+            toThatDayInfo: (LocalDate) -> Unit
+        ) {
+            val begin = zonedDateTime(then)
+            val startOfDayCache = begin.toEpochSecond()
+            val endOfDayCache = begin.plusDays(1).toEpochSecond()
+            val eventDates = dates.filter { it.anyInRange(startOfDayCache, endOfDayCache) != null }
+                .sortedBy { it.anyInRange(startOfDayCache, endOfDayCache) }
+
+            val today = (now.year == then.year && now.month == then.month && then.dayOfMonth == now.dayOfMonth)
+            val bgColor = if (today) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primaryContainer
+            val evtOverflow = eventDates.count() > maxElements
+            val spacerHeight = if (evtOverflow) 0.dp else cachedEvtExpectedHeight * (maxElements - eventDates.count())
+            Column(
+                Modifier.padding(2.dp).width(blockW - 4.dp)
+                    .background(
+                        bgColor,
+                        shape = RoundedCornerShape(10.dp)
+                    ).clickable(onClick = { toThatDayInfo(then) })
+            ) {
+                Text(
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                        .padding(top = 2.dp),
+                    text = then.dayOfMonth.toString(),
+                    color = bgColorToTextColor(bgColor)
+                )
+                repeat(if (evtOverflow) maxElements - 1 else eventDates.count()) {
+                    drawEvtInDay(
+                        eventDates[it].entry.getColorOrDefault(),
+                        eventDates[it].getDesc().ifEmpty { "[No title]" }
+                    ) //fixme get color from Date. should cache these vals in Date
+                }
+                if (evtOverflow)
+                    drawEvtInDay(Color.Red, "+" + (eventDates.count() - maxElements + 1))
+                Spacer(Modifier.height(1.dp + spacerHeight))
+            }
+        }
+
+        @Composable
+        private fun drawEvtInDay(bgColor: Color, text: String) {
+            Text(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 2.dp, vertical = 1.dp)
+                    .background(
+                        bgColor,
+                        shape = RoundedCornerShape(10.dp)
+                    ).padding(vertical = 1.dp, horizontal = 4.dp),
+                text = text,
+                maxLines = 1,
+                style = MaterialTheme.typography.bodySmall,
+                fontSize = 10.sp,
+                color = bgColorToTextColor(bgColor)
+            )
+        }
+
+        @Composable
+        fun getEvtInDayExpectedHeight(): Dp = measureTextLine(MaterialTheme.typography.bodySmall) + 4.dp
+    }
+}
+
+@Preview
+@Composable
+fun displayDayPreview() {
+    CalendarTab.displayDay(
+        70.dp,
+        CalendarTab.getEvtInDayExpectedHeight(),
+        LocalDate.of(2025, 2, 27),
+        3,
+        LocalDate.of(2025, 2, 27),
+        listOf(),//fixme can not create date without database
+        {})
 }
