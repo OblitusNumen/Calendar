@@ -9,6 +9,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import androidx.core.app.NotificationCompat
+import oblitusnumen.calendar.MainActivity
 import oblitusnumen.calendar.R
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.getZonedFromEpochSeconds
@@ -38,13 +39,24 @@ class NotificationBroadcastReceiver : BroadcastReceiver() {
                 )
                     .setSmallIcon(R.drawable.ic_calendar) // FIXME: this icon must be transparent
                     .setContentTitle(pendingNotification.date.getDesc())
+                    .setContentIntent(
+                        PendingIntent.getActivity(
+                            c,
+                            pendingNotification.notification.entryId!!,
+                            Intent(c, MainActivity::class.java).putExtra(
+                                INTENT_EXTRA_ENTRY_ID,
+                                pendingNotification.notification.entryId!!
+                            ),
+                            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+                        )
+                    )
                     .setContentText(// FIXME: format, missed events
                         "Upcoming event in ${pendingNotification.notification.offset.count} ${pendingNotification.notification.offset.javaClass.simpleName}\n(at ${
                             getZonedFromEpochSeconds(
                                 pendingNotification.eventDateTime
                             ).format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm"))
                         })"
-                    )// TODO: open on click
+                    )
                     .build()
                 manager.notify(pendingNotification.dateHash(), notification)
             }
@@ -56,6 +68,7 @@ class NotificationBroadcastReceiver : BroadcastReceiver() {
         const val NORMAL_CHANNEL_ID = "normal_channel"
         const val SILENT_CHANNEL_ID = "silent_channel"
         const val LAST_NOTIFICATION_TIME_PREFERENCE_NAME = "last_notification_time"
+        const val INTENT_EXTRA_ENTRY_ID = "entryId"
 
         fun scheduleNotification(c: Context, triggerAtMillis: Long) {
             log(

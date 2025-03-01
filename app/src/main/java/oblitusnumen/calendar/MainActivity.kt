@@ -57,6 +57,13 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setLogFile(this)
         enableEdgeToEdge()
+        val startingEntryId: Int? =
+            if (intent.hasExtra(NotificationBroadcastReceiver.INTENT_EXTRA_ENTRY_ID))
+                intent.getIntExtra(NotificationBroadcastReceiver.INTENT_EXTRA_ENTRY_ID, -1)
+            else
+                null
+        //if (startingEntryId != null)
+            //(getSystemService(NOTIFICATION_SERVICE) as NotificationManager).cancel(/* fixme find id somehow */)
         val requestPermissionLauncher =
             registerForActivityResult(
                 ActivityResultContracts.RequestPermission()
@@ -106,17 +113,25 @@ class MainActivity : ComponentActivity() {
         setContent {
             CalendarTheme {
                 calendarViewModel = viewModel { CalendarViewModel(DbManager(this@MainActivity)) }
-                navGraph(rememberNavController(), calendarViewModel!!.dbManager)
+                navGraph(
+                    rememberNavController(),
+                    calendarViewModel!!.dbManager,
+                    startingEntryId
+                )
             }
         }
     }
 
     @Composable
-    fun navGraph(navController: NavHostController, dbManager: DbManager) {
+    fun navGraph(navController: NavHostController, dbManager: DbManager, startingEntryId: Int? = null) {
         NavHost(
             modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
             navController = navController,
-            startDestination = NavRoutes.Calendar.route
+            startDestination =
+                if (startingEntryId == null)
+                    NavRoutes.Calendar.route
+                else
+                    NavRoutes.EntryDetails.withArgs(startingEntryId.toString())
         ) {
             composable(route = NavRoutes.Calendar.route) {
                 val calendarTab = viewModel { CalendarTab(dbManager) }
