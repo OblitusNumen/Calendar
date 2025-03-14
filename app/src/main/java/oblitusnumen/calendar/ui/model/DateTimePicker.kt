@@ -21,6 +21,7 @@ class DateTimePicker {
     private var cancelCallback: (() -> Unit)? = null
     private var confirmCallback: ((LocalDateTime) -> Unit)? = null
     private var confirmCallbackDateOnly: ((LocalDate) -> Unit)? = null
+    private var confirmCallbackTimeOnly: ((LocalTime) -> Unit)? = null
 
     @Composable
     fun tryCompose() {
@@ -44,6 +45,11 @@ class DateTimePicker {
                 cancelCallback?.invoke()
                 cleanup()
             }, { hour, minute ->
+                if (confirmCallbackTimeOnly != null) {
+                    confirmCallbackTimeOnly?.invoke(LocalTime.of(hour, minute))
+                    cleanup()
+                    return@timePickerDialog
+                }
                 confirmCallback?.invoke(selectedDate.atTime(hour, minute))
                 cleanup()
             }, initialDateTime.toLocalTime())
@@ -76,11 +82,25 @@ class DateTimePicker {
         datePickerShown = true
     }
 
+    fun timePick(
+        onCancel: () -> Unit,
+        onConfirm: (LocalTime) -> Unit,
+        initialTime: LocalTime = LocalTime.now()
+    ) {
+        if (datePickerShown || timePickerShown)
+            return
+        cancelCallback = onCancel
+        confirmCallbackTimeOnly = onConfirm
+        initialDateTime = initialTime.atDate(LocalDate.now())
+        timePickerShown = true
+    }
+
     private fun cleanup() {
         initialDateTime = LocalDateTime.now()
         cancelCallback = null
         confirmCallback = null
         confirmCallbackDateOnly = null
+        confirmCallbackTimeOnly = null
         datePickerShown = false
         timePickerShown = false
     }

@@ -170,25 +170,14 @@ class MainActivity : ComponentActivity() {
 
             composable(route = NavRoutes.EntryEdit.route) { navBackStackEntry ->
                 val entryId = NavRoutes.EntryEdit.getArgEntryId(navBackStackEntry)
-                val fromDay = NavRoutes.EntryEdit.getArgDate4new(navBackStackEntry)
+                var fromDay = NavRoutes.EntryEdit.getArgDate4new(navBackStackEntry)
                 val entryEdit = viewModel {
                     var entry = dbManager.getEntryById(entryId ?: -1)
-                    var date: Date? = null
                     if (entry == null) {
                         entry = Entry.new(dbManager)
-                        if (fromDay != null) {
-                            date = Date(
-                                dbManager,
-                                entry,
-                                "",
-                                fromDay.atStartOfDay(defaultZoneId()),
-                                0,
-                                1,
-                                Period.Once()
-                            )
-                        }
-                    }
-                    EntryEdit(dbManager, entry, date)
+                    } else
+                        fromDay = null
+                    EntryEdit(dbManager, entry, fromDay)
                 }
                 Scaffold(topBar = { entryEdit.topBar { NavRoutes.backPress(navController) } }) {
                     entryEdit.compose(

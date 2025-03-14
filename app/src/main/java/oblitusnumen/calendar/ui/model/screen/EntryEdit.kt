@@ -35,13 +35,12 @@ import java.time.format.DateTimeFormatter
 class EntryEdit(
     private val dbManager: DbManager,
     private val entry: Entry,
-    fromDate: Date?
+    pendingDate: LocalDate?,
 ) : ViewModel() {
     private var entryName by mutableStateOf(TextFieldValue(entry.name))
     private var color by mutableStateOf(entry.getColorOrDefault())
     private var tags: List<Tag> by mutableStateOf(entry.getTags().sortedBy { it.name })
-    private var dates: List<Date> by mutableStateOf(
-        (entry.getDates() + if (fromDate == null) listOf() else listOf(fromDate)).sortedBy { it.start })
+    private var dates: List<Date> by mutableStateOf(entry.getDates().sortedBy { it.start })
     private var notifications: List<Notification> by mutableStateOf(run {
         if (entry.isNotCreated())
             dbManager.defaultNotifications.map { Notification(dbManager, null, it.first, it.second) }
@@ -50,6 +49,22 @@ class EntryEdit(
     })
     private var contents by mutableStateOf(TextFieldValue(entry.getContents()))  // FIXME: this should be List<Content>
     private var dateTimePicker = DateTimePicker()
+
+    init {
+        if (pendingDate != null)
+            dateTimePicker.timePick({
+            }, {
+                dates += Date(
+                    dbManager,
+                    entry,
+                    "",
+                    ZonedDateTime.of(it.atDate(pendingDate), ZoneId.systemDefault()),
+                    0,
+                    1,
+                    Once()
+                )
+            })
+    }
 
     @OptIn(ExperimentalLayoutApi::class)
     @Composable
@@ -301,8 +316,9 @@ class EntryEdit(
         if (periodSelectorShown)
             periodSelectorDialog({ periodSelectorShown = false }, { periodSelectorShown = false }, date)
         var updated by remember { mutableStateOf(false) }
-        val textStart = (if (date.isPeriodic) "from " else "") +
-                date.getFirstZoneDateTime().format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm"))
+        val dateStartText = (if (date.isPeriodic) "from " else "") +
+                date.getFirstZoneDateTime().format(DateTimeFormatter.ofPattern("dd MMM yyyy "))
+        val timeText = date.getFirstZoneDateTime().format(DateTimeFormatter.ofPattern("HH:mm"))
         val textPeriod: String = if (date.isPeriodic)
             "every " + date.period.count.toString() + " " + PeriodType(date.period).toString() +
                     if (date.isEndless) "" else
@@ -311,20 +327,32 @@ class EntryEdit(
             PeriodType(date.period).toString()
         Column(Modifier.padding(bottom = 6.dp)) {
             updated// fixme this is hack...
-            Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp).clickable {
-                dateTimePicker.dateTimePick({}, {
-                    date.setRange(startOfDayStart = ZonedDateTime.of(it, date.zoneId))
-                    updated = !updated
-                }, date.getFirstZoneDateTime().toLocalDateTime())
-            }) {
+            Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp)) {
                 Icon(
                     Icons.Outlined.Call, "",
                     Modifier.align(Alignment.CenterVertically).padding(8.dp)
                 )
+                val localDateTime = date.getFirstZoneDateTime().toLocalDateTime()
                 Text(
                     modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp, vertical = 8.dp)
-                        .weight(1f),
-                    text = textStart,
+                        .weight(.5f).clickable {
+                            dateTimePicker.datePick({}, {
+                                date.setRange(startOfDayStart = ZonedDateTime.of(it.atTime(localDateTime.toLocalTime()), date.zoneId))
+                                updated = !updated
+                            }, localDateTime.toLocalDate())
+                        },
+                    text = dateStartText,
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                Text(
+                    modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp, vertical = 8.dp)
+                        .weight(.5f).clickable {
+                            dateTimePicker.timePick({}, {
+                                date.setRange(startOfDayStart = ZonedDateTime.of(it.atDate(localDateTime.toLocalDate()), date.zoneId))
+                                updated = !updated
+                            }, localDateTime.toLocalTime())
+                        },
+                    text = timeText,
                     style = MaterialTheme.typography.bodyLarge
                 )
                 IconButton(
