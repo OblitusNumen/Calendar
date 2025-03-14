@@ -216,6 +216,7 @@ class DbManager(private val context: Context) :
                     "${Entry.COLUMN_NAME_ID} INTEGER PRIMARY KEY AUTOINCREMENT," +
                     "${Entry.COLUMN_NAME_STATE} INTEGER NOT NULL," +
                     "${Entry.COLUMN_NAME_NAME} TEXT NOT NULL," +
+                    "${Entry.COLUMN_NAME_EXCLUDE_VIEW} INTEGER NOT NULL," +
                     "${Entry.COLUMN_NAME_COLOR} INTEGER NOT NULL);"
         private const val SQL_CREATE_TAGS =
             "CREATE TABLE IF NOT EXISTS ${Tag.TABLE_NAME} (" +

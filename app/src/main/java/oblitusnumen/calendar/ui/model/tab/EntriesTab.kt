@@ -90,16 +90,20 @@ class EntriesTab(private val dbManager: DbManager) : ViewModel() {
     companion object {
         @OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
         @Composable
-        fun drawEntry(entry: Entry, editEntry: (Int) -> Unit, onSchedule: (LocalDateTime) -> Unit) { //fixme Entry can not be created without DB
+        fun drawEntry(
+            entry: Entry,
+            editEntry: (Int) -> Unit,
+            onSchedule: (LocalDateTime) -> Unit
+        ) { //fixme Entry can not be created without DB
             val tags = entry.getTags()
             var scheduleDialogShown by remember { mutableStateOf(false) }
             var nextDateText by remember { mutableStateOf(getNextDateText(entry)) }
             Column(
                 Modifier.padding(2.dp).fillMaxWidth().defaultMinSize(minHeight = 64.dp).background(
-                        MaterialTheme.colorScheme.primaryContainer, shape = RoundedCornerShape(10.dp)
-                    ).combinedClickable(
-                        onLongClick = { scheduleDialogShown = true },
-                        onClick = { editEntry(entry.id!!) })
+                    MaterialTheme.colorScheme.primaryContainer, shape = RoundedCornerShape(10.dp)
+                ).combinedClickable(
+                    onLongClick = { scheduleDialogShown = true },
+                    onClick = { editEntry(entry.id!!) })
             ) {
                 Row(Modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 8.dp)) {
                     Box(
@@ -164,8 +168,8 @@ class EntriesTab(private val dbManager: DbManager) : ViewModel() {
         private fun drawTag(text: String, bgColor: Color) {
             Text(
                 modifier = Modifier.padding(horizontal = 2.dp, vertical = 1.5.dp).background(
-                        bgColor, shape = RoundedCornerShape(10.dp)
-                    ).padding(vertical = 1.dp, horizontal = 6.dp),
+                    bgColor, shape = RoundedCornerShape(10.dp)
+                ).padding(vertical = 1.dp, horizontal = 6.dp),
                 text = text,
                 maxLines = 1,
                 style = MaterialTheme.typography.bodyMedium,

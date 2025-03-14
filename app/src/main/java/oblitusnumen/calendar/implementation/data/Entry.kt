@@ -18,6 +18,7 @@ class Entry private constructor(
     id: Int? = null,
     private var state: Int = STATE_NEW,
     var name: String = "",
+    var excludeFromCalendarView: Boolean = false,
     var color: Color? = null
 ) : BaseColumns {
     var id: Int? = id
@@ -113,6 +114,7 @@ class Entry private constructor(
         val contentValues = ContentValues()
         contentValues.put(COLUMN_NAME_STATE, state)
         contentValues.put(COLUMN_NAME_NAME, name)
+        contentValues.put(COLUMN_NAME_EXCLUDE_VIEW, if (excludeFromCalendarView) 1 else 0)
         contentValues.put(COLUMN_NAME_COLOR, color.toInt())
         return contentValues
     }
@@ -168,6 +170,7 @@ class Entry private constructor(
     @Throws(IOException::class)
     fun set(
         name: String,
+        excludeFromCalendarView: Boolean,
         color: Color?,
         tags: Iterable<Tag>,
         dates: Iterable<Date>,
@@ -185,6 +188,7 @@ class Entry private constructor(
             //setting entry
             this@Entry.state = STATE_NORMAL
             this@Entry.name = name
+            this@Entry.excludeFromCalendarView = excludeFromCalendarView
             this@Entry.color = color
             update()
 
@@ -244,6 +248,7 @@ class Entry private constructor(
         const val COLUMN_NAME_ID: String = "id"
         const val COLUMN_NAME_STATE: String = "state"
         const val COLUMN_NAME_NAME: String = "name"
+        const val COLUMN_NAME_EXCLUDE_VIEW: String = "excludeView"
         const val COLUMN_NAME_COLOR: String = "color"
         const val STATE_NORMAL: Int = 0
         const val STATE_NEW: Int = 1
@@ -263,6 +268,7 @@ class Entry private constructor(
             val idxId = cursor.getColumnIndex(COLUMN_NAME_ID)
             val idxState = cursor.getColumnIndex(COLUMN_NAME_STATE)
             val idxName = cursor.getColumnIndex(COLUMN_NAME_NAME)
+            val idxExcludeCalendarView = cursor.getColumnIndex(COLUMN_NAME_EXCLUDE_VIEW)
             val idxColor = cursor.getColumnIndex(COLUMN_NAME_COLOR)
             while (cursor.moveToNext())
                 entries.add(
@@ -271,6 +277,7 @@ class Entry private constructor(
                         cursor.getInt(idxId),
                         cursor.getInt(idxState),
                         cursor.getString(idxName),
+                        cursor.getInt(idxExcludeCalendarView) != 0,
                         cursor.getInt(idxColor).toColor()
                     )
                 )

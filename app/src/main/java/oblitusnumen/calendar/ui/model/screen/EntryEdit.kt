@@ -48,6 +48,7 @@ class EntryEdit(
             entry.getNotifications().sortedBy { it.offset.secondsApproximation() }
     })
     private var contents by mutableStateOf(TextFieldValue(entry.getContents()))  // FIXME: this should be List<Content>
+    private var hideInCalendarView: MutableState<Boolean> = mutableStateOf(entry.excludeFromCalendarView)
     private var dateTimePicker = DateTimePicker()
 
     init {
@@ -104,6 +105,7 @@ class EntryEdit(
                         }
                 }
             )
+            checkboxOption(hideInCalendarView, "Hide from calendar view")
             var tagChoose by remember { mutableStateOf(false) }
             if (tagChoose) tagChooseMenu({ tagChoose = false }, { tags = it })
             Row {
@@ -337,7 +339,12 @@ class EntryEdit(
                     modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp, vertical = 8.dp)
                         .weight(.5f).clickable {
                             dateTimePicker.datePick({}, {
-                                date.setRange(startOfDayStart = ZonedDateTime.of(it.atTime(localDateTime.toLocalTime()), date.zoneId))
+                                date.setRange(
+                                    startOfDayStart = ZonedDateTime.of(
+                                        it.atTime(localDateTime.toLocalTime()),
+                                        date.zoneId
+                                    )
+                                )
                                 updated = !updated
                             }, localDateTime.toLocalDate())
                         },
@@ -348,7 +355,12 @@ class EntryEdit(
                     modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp, vertical = 8.dp)
                         .weight(.5f).clickable {
                             dateTimePicker.timePick({}, {
-                                date.setRange(startOfDayStart = ZonedDateTime.of(it.atDate(localDateTime.toLocalDate()), date.zoneId))
+                                date.setRange(
+                                    startOfDayStart = ZonedDateTime.of(
+                                        it.atDate(localDateTime.toLocalDate()),
+                                        date.zoneId
+                                    )
+                                )
                                 updated = !updated
                             }, localDateTime.toLocalTime())
                         },
@@ -689,7 +701,15 @@ class EntryEdit(
             },
             actions = {
                 IconButton(onClick = {
-                    entry.set(entryName.text, color, tags, dates, notifications, contents.text)// FIXME: catch exception
+                    entry.set(
+                        entryName.text,
+                        hideInCalendarView.value,
+                        color,
+                        tags,
+                        dates,
+                        notifications,
+                        contents.text
+                    )// FIXME: catch exception
                     backPress()
                 }) {
                     Icon(
@@ -703,6 +723,24 @@ class EntryEdit(
     }
 
     companion object {
+        @Composable
+        fun checkboxOption(checked: MutableState<Boolean>, label: String) {
+            Row(
+                Modifier.fillMaxWidth().padding(8.dp).defaultMinSize(minHeight = 52.dp)
+                    .clickable {
+                        checked.value = !checked.value
+                    },
+                horizontalArrangement = Arrangement.Start
+            ) {
+                Checkbox(
+                    checked = checked.value,
+                    onCheckedChange = { checked.value = it },
+                    modifier = Modifier.align(Alignment.CenterVertically)
+                )
+                Text(label, modifier = Modifier.align(Alignment.CenterVertically))
+            }
+        }
+
         @Composable
         fun drawNotificationAddMenu(onConfirm: (Period, Boolean) -> Unit, onDismiss: () -> Unit) {
             var silent by remember { mutableStateOf(false) }

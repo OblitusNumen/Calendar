@@ -191,7 +191,7 @@ class CalendarTab(private val dbManager: DbManager) : ViewModel() {
 
     companion object {
         private val LIST_CENTER: LocalDate = LocalDate.of(1970, 1, 1)
-        private val LIST_LEN = 420168000 * 2 // ~5M years, should be enough (no point fixing bugs at >5M)
+        private const val LIST_LEN = 420168000 * 2 // ~5M years, should be enough (no point fixing bugs at >5M)
 
         private fun getNowItemIndex(now: LocalDate) =
             (LIST_LEN / 2 + ChronoUnit.MONTHS.between(LIST_CENTER, now) * 7).toInt()
@@ -209,7 +209,12 @@ class CalendarTab(private val dbManager: DbManager) : ViewModel() {
             val begin = zonedDateTime(then)
             val startOfDayCache = begin.toEpochSecond()
             val endOfDayCache = begin.plusDays(1).toEpochSecond()
-            val eventDates = dates.filter { it.anyInRange(startOfDayCache, endOfDayCache) != null }
+            val eventDates = dates.filter {
+                it.anyInRange(
+                    startOfDayCache,
+                    endOfDayCache
+                ) != null && !it.entry.excludeFromCalendarView
+            }
                 .sortedBy { it.anyInRange(startOfDayCache, endOfDayCache) }
 
             val today = (now.year == then.year && now.month == then.month && then.dayOfMonth == now.dayOfMonth)
