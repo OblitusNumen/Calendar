@@ -241,7 +241,7 @@ class CalendarTab(private val dbManager: DbManager) : ViewModel() {
                     ) //fixme get color from Date. should cache these vals in Date
                 }
                 if (evtOverflow)
-                    drawEvtInDay(Color.Red, "+" + (eventDates.count() - maxElements + 1))
+                    drawEvtInDay(MaterialTheme.colorScheme.primary, "+" + (eventDates.count() - maxElements + 1))
                 Spacer(Modifier.height(1.dp + spacerHeight))
             }
         }
