@@ -5,7 +5,7 @@ import java.time.LocalDate
 import java.time.ZonedDateTime
 import java.util.*
 
-sealed class Period private constructor() : Comparable<Period> {
+sealed class Period : Comparable<Period> {
     class Once : Period() {
         override val count: Long = 1
         override fun toString(): String = "O"
@@ -137,7 +137,8 @@ sealed class Period private constructor() : Comparable<Period> {
         return other is Period &&
                 this.count == other.count &&
                 this.secondsApproximation() == other.secondsApproximation() &&
-                (other !is Weekday || (this as Weekday).daysMask == other.daysMask)
+                (this !is Weekday && other !is Weekday ||
+                        this is Weekday && other is Weekday && this.daysMask == other.daysMask)
     }
 
     override fun hashCode(): Int {
