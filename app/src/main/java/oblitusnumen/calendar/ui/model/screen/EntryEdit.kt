@@ -13,8 +13,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
@@ -458,10 +461,12 @@ class EntryEdit(
     fun periodSelectorDialog(onConfirm: () -> Unit, onDismiss: () -> Unit, date: Date) {
         var periodCount by remember {
             mutableStateOf(
-                if (date.period is Once)
-                    "1"
-                else
-                    date.period.count.toString()
+                TextFieldValue(
+                    if (date.period is Once)
+                        "1"
+                    else
+                        date.period.count.toString()
+                )
             )
         }
         var selectedPeriod by remember { mutableStateOf(PeriodType(date.period)) }
@@ -504,6 +509,15 @@ class EntryEdit(
             },
             confirmButton = {
                 TextButton(onClick = {
+                    var periodCountText = periodCount.text
+                    if (periodCountText.isEmpty() || periodCountText.toLong() <= 0L) {
+                        if (selectedPeriod.period is Once)
+                            periodCountText = "0"
+                        else {// TODO:
+//                            showErrorToast("Could not parse count: '$periodCountText'")
+                            return@TextButton
+                        }
+                    }
                     date.setPeriod(
                         if (selectedPeriod.period is Weekday) {
                             val weekdayDays = (if (monSelected.value) Weekday.WD_MON else 0) +
@@ -514,14 +528,14 @@ class EntryEdit(
                                     (if (satSelected.value) Weekday.WD_SAT else 0) +
                                     (if (sunSelected.value) Weekday.WD_SUN else 0)
                             Weekday(
-                                periodCount.toLong(),
+                                periodCountText.toLong(),
                                 if (weekdayDays == 0L)
                                     Weekday.dayOfWeekIndexToEnum(date.getFirstZoneDateTime().dayOfWeek.value)
                                 else
                                     weekdayDays
                             )
                         } else
-                            selectedPeriod.period.updateCount(periodCount.toLong())
+                            selectedPeriod.period.updateCount(periodCountText.toLong())
                     )
                     if (date.isPeriodic) {
                         when (endVariantSelectedOption) {
@@ -547,14 +561,16 @@ class EntryEdit(
                 Column {
                     Row {
                         //period count text field
+                        val focusRequester = remember { FocusRequester() }
                         OutlinedTextField(
                             enabled = selectedPeriod.period !is Once,
-                            modifier = Modifier.width(100.dp).padding(horizontal = 8.dp),
+                            modifier = Modifier.width(100.dp).padding(horizontal = 8.dp).focusRequester(focusRequester),
                             value = periodCount, onValueChange = {
+                                val text = it.text
                                 try {
-                                    if (it.toLong() >= 0 && it.length <= 3) periodCount = it
+                                    if (text.toLong() >= 0 && text.length <= 3) periodCount = it
                                 } catch (_: NumberFormatException) {
-                                    if (it.isEmpty())
+                                    if (text.isEmpty())
                                         periodCount = it
                                 }
                             },
@@ -568,10 +584,20 @@ class EntryEdit(
 
                         materialSpinner(
                             "Type", PeriodType.getAll(),
-                            { selectedPeriod = it },
+                            {
+                                selectedPeriod = it
+                            },
                             selectedPeriod,
                             Modifier.padding(horizontal = 8.dp).width(150.dp)
                         )
+
+                        LaunchedEffect(selectedPeriod) {
+                            if (selectedPeriod.period !is Once) {
+                                // Place cursor at the end of current text
+                                periodCount = periodCount.copy(selection = TextRange(periodCount.text.length))
+                                focusRequester.requestFocus()
+                            }
+                        }
                     }
                     if (selectedPeriod.period is Weekday) {
                         Row {
