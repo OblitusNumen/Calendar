@@ -1,5 +1,7 @@
 package oblitusnumen.calendar.ui.model.screen
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -17,9 +19,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import oblitusnumen.calendar.implementation.data.DbManager
+import oblitusnumen.calendar.implementation.zipDirectoryToStream
 import oblitusnumen.calendar.ui.model.colorPicker
 import oblitusnumen.calendar.ui.model.screen.EntryEdit.Companion.drawNotificationAddMenu
+import java.io.BufferedOutputStream
+import java.io.File
 
 class SettingsScreen(private val dbManager: DbManager) : ViewModel() {
     @Composable
@@ -134,6 +141,71 @@ class SettingsScreen(private val dbManager: DbManager) : ViewModel() {
                             text = "Add notification", // FIXME: start with plus icon
                             style = MaterialTheme.typography.bodyLarge
                         )
+                    }
+                }
+            }
+            item {
+                val scope = rememberCoroutineScope()
+                val appDataDir = dbManager.filesDir.parentFile!! // contains databases, shared_prefs, files, etc.
+
+                // Launcher for picking backup location
+                val saveLauncher = rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.CreateDocument("application/zip"),
+                    onResult = { uri ->
+                        uri?.let { pickedUri ->
+                            scope.launch(Dispatchers.IO) {
+                                try {
+                                    // Open OutputStream to the URI provided by the picker
+                                    dbManager.contentResolver.openOutputStream(pickedUri)?.use { outStream ->
+                                        BufferedOutputStream(outStream).use { buffered ->
+                                            // Zip directly to the output stream
+                                            zipDirectoryToStream(appDataDir, buffered)
+                                        }
+                                    }
+
+                                    launch(Dispatchers.Main) {
+//                                        TODO:
+//                                        Toast.makeText(context, "Backup saved successfully!", Toast.LENGTH_SHORT).show()
+                                    }
+                                } catch (e: Exception) {
+                                    launch(Dispatchers.Main) {
+//                                        TODO:
+//                                        Toast.makeText(context, "Backup failed: ${e.message}", Toast.LENGTH_LONG).show()
+                                    }
+                                }
+                            }
+                        }
+                    }
+                )
+
+                // Launcher to pick a ZIP file for restore
+                val restoreLauncher = rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.OpenDocument(),
+                    onResult = { uri ->
+                        uri?.let {
+                            scope.launch(Dispatchers.IO) {
+                                // Copy the picked ZIP into app's private dir
+                                val stagedZip = File(appDataDir, "restore_staged.zip")
+                                dbManager.contentResolver.openInputStream(uri)?.use { input ->
+                                    stagedZip.outputStream().use { output -> input.copyTo(output) }
+                                }
+                            }
+                        }
+                        dbManager.finishApp()
+                    }
+                )
+                Row(Modifier.padding(vertical = 8.dp)) {
+                    Button(
+                        onClick = { saveLauncher.launch("backup.zip") },
+                        modifier = Modifier.weight(1f).padding(horizontal = 2.dp)
+                    ) {
+                        Text(text = "Export All Events")
+                    }
+                    Button(
+                        onClick = { restoreLauncher.launch(arrayOf("application/zip")) },
+                        modifier = Modifier.weight(1f).padding(horizontal = 2.dp)
+                    ) {
+                        Text(text = "Restore Events")
                     }
                 }
             }

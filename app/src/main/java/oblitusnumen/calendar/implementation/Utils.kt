@@ -10,11 +10,13 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Dp
-import java.io.File
-import java.io.IOException
+import java.io.*
 import java.text.SimpleDateFormat
 import java.time.*
 import java.util.*
+import java.util.zip.ZipEntry
+import java.util.zip.ZipInputStream
+import java.util.zip.ZipOutputStream
 
 fun Int.toColor(): Color? = if (this == -1) null else Color(this or 0xFF000000.toInt())
 
@@ -89,4 +91,35 @@ fun mult_frac(x: Long, numer: Long, denom: Long): Long {
 fun LocalDate.toWeekNumber(): Long {
     val v = toEpochDay() + 3
     return if (v >= 0) (v / 7) else (v / 7 - 1)
+}
+
+fun unzipFile(zipFile: File, targetDir: File) {
+    ZipInputStream(FileInputStream(zipFile)).use { zis ->
+        var entry = zis.nextEntry
+        while (entry != null) {
+            val newFile = File(targetDir, entry.name)
+            if (entry.isDirectory) {
+                newFile.mkdirs()
+            } else {
+                newFile.parentFile?.mkdirs()
+                FileOutputStream(newFile).use { fos -> zis.copyTo(fos) }
+            }
+            zis.closeEntry()
+            entry = zis.nextEntry
+        }
+    }
+}
+
+fun zipDirectoryToStream(sourceDir: File, outputStream: OutputStream) {
+    ZipOutputStream(outputStream).use { zos ->
+        sourceDir.walkTopDown().forEach { file ->
+            if (file.isFile) {
+                val entryName = file.relativeTo(sourceDir).path
+                zos.putNextEntry(ZipEntry(entryName))
+                file.inputStream().use { it.copyTo(zos) }
+                zos.closeEntry()
+            }
+        }
+        zos.flush()
+    }
 }

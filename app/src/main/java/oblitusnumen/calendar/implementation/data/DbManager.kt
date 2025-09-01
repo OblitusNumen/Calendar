@@ -1,5 +1,7 @@
 package oblitusnumen.calendar.implementation.data
 
+import android.app.Activity
+import android.content.ContentResolver
 import android.content.Context
 import android.content.SharedPreferences
 import android.database.sqlite.SQLiteDatabase
@@ -30,6 +32,7 @@ class DbManager(private val context: Context) :
             field = notifications
         }
     val filesDir: File = context.filesDir
+    val contentResolver: ContentResolver = context.contentResolver
     var defaultEntryColor: Color =
         getSharedPrefs(context).getInt(DEFAULT_ENTRY_COLOR_PREF_NAME, -1).toColor() ?: Color.Gray
         set(color) {
@@ -55,6 +58,10 @@ class DbManager(private val context: Context) :
         for (entry in entries) {
             entry.fixup()
         }
+    }
+
+    fun finishApp() {
+        (context as? Activity)?.finishAffinity()
     }
 
     fun tryScheduleNotification(now: Long = System.currentTimeMillis() / 1000) {

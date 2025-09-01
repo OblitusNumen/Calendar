@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -31,7 +32,9 @@ import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.Entry
 import oblitusnumen.calendar.implementation.log
 import oblitusnumen.calendar.implementation.notifications.NotificationBroadcastReceiver
+import oblitusnumen.calendar.implementation.rmRecursively
 import oblitusnumen.calendar.implementation.setLogFile
+import oblitusnumen.calendar.implementation.unzipFile
 import oblitusnumen.calendar.ui.model.navigation.NavRoutes
 import oblitusnumen.calendar.ui.model.screen.DateScreen
 import oblitusnumen.calendar.ui.model.screen.EntryDetails
@@ -41,6 +44,7 @@ import oblitusnumen.calendar.ui.model.tab.CalendarTab
 import oblitusnumen.calendar.ui.model.tab.EntriesTab
 import oblitusnumen.calendar.ui.model.tab.TagsTab
 import oblitusnumen.calendar.ui.theme.CalendarTheme
+import java.io.File
 import java.time.LocalDate
 
 class MainActivity : ComponentActivity() {
@@ -52,6 +56,23 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) { //fixme ask for required permissions somewhere
         super.onCreate(savedInstanceState)
+
+        // restore backup
+        val appDataDir = filesDir.parentFile!!
+        val stagedZip = File(appDataDir, "restore_staged.zip")
+        if (stagedZip.exists()) {
+            appDataDir.listFiles()!!.forEach { file -> if (file != stagedZip) rmRecursively(file) }
+            try {
+                unzipFile(stagedZip, appDataDir)
+            } catch (e: Throwable) {
+                log("Error while restoring ${e.message}")
+            }
+            stagedZip.delete()
+            Toast.makeText(this, "Restore finished", Toast.LENGTH_LONG).show()
+            // optional: kill and restart app to reload clean state
+//            android.os.Process.killProcess(android.os.Process.myPid())
+        }
+
         setLogFile(this)
         enableEdgeToEdge()
         val startingEntryId: Int? =
