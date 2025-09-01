@@ -63,6 +63,7 @@ class EntryDetails(
         if (!ok) return
         Column(modifier.fillMaxWidth().verticalScroll(rememberScrollState()).fillMaxHeight()) {
             Spacer(Modifier.height(contentOffsetTop))
+            // name and color
             val color by remember { mutableStateOf(entry.getColorOrDefault()) }
             SelectionContainer {
                 Row {
@@ -77,6 +78,19 @@ class EntryDetails(
                     )
                 }
             }
+            // description
+            if (contents.isNotEmpty()) {
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
+                Text("Description", modifier = Modifier.padding(12.dp))
+                SelectionContainer {
+                    Text(
+                        contents,
+                        modifier = Modifier.defaultMinSize(minHeight = 52.dp).fillMaxWidth().padding(horizontal = 12.dp)
+                            .padding(bottom = 12.dp)
+                    )
+                }
+            }
+            // tags
             if (tags.isNotEmpty()) {
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
                 Row {
@@ -89,26 +103,17 @@ class EntryDetails(
                     }
                 }
             }
+            // dates
             if (dates.isNotEmpty()) {
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
                 for (date in dates)
                     drawDate(date)
             }
+            // notifications
             if (notifications.isNotEmpty()) {
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
                 for (notification in notifications)
                     drawNotification(notification)
-            }
-            if (contents.isNotEmpty()) {
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
-                Text("Description", modifier = Modifier.padding(12.dp))
-                SelectionContainer {
-                    Text(
-                        contents,
-                        modifier = Modifier.defaultMinSize(minHeight = 52.dp).fillMaxWidth().padding(horizontal = 12.dp)
-                            .padding(bottom = 12.dp)
-                    )
-                }
             }
             Spacer(Modifier.height(contentOffsetBottom))
         }

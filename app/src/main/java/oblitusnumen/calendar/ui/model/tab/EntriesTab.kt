@@ -26,6 +26,7 @@ import oblitusnumen.calendar.implementation.data.Date
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.Entry
 import oblitusnumen.calendar.implementation.data.Period
+import oblitusnumen.calendar.implementation.data.Tag
 import oblitusnumen.calendar.implementation.defaultZoneId
 import oblitusnumen.calendar.ui.model.DateTimePicker
 import java.time.LocalDateTime
@@ -88,6 +89,30 @@ class EntriesTab(private val dbManager: DbManager) : ViewModel() {
     }
 
     companion object {
+        @OptIn(ExperimentalLayoutApi::class)
+        @Composable
+        fun drawDescriptionAndTags(contents: String, tags: List<Tag>) {
+            if (contents.isNotEmpty()) {
+                Text(
+                    text = contents,
+                    modifier = Modifier.padding(12.dp),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            if (tags.isNotEmpty()) {
+                FlowRow(
+                    Modifier.fillMaxWidth()
+                        .padding(horizontal = 4.dp)
+                        .padding(bottom = 6.5.dp)
+                ) {
+                    for (tag in tags) {
+                        drawTag(tag.name, tag.getColorOrDefault())
+                    }
+                }
+            }
+        }
+
         @OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
         @Composable
         fun drawEntry(
@@ -95,7 +120,6 @@ class EntriesTab(private val dbManager: DbManager) : ViewModel() {
             editEntry: (Int) -> Unit,
             onSchedule: (LocalDateTime) -> Unit
         ) { //fixme Entry can not be created without DB
-            val tags = entry.getTags()
             var scheduleDialogShown by remember { mutableStateOf(false) }
             var nextDateText by remember { mutableStateOf(getNextDateText(entry)) }
             Column(
@@ -123,15 +147,7 @@ class EntriesTab(private val dbManager: DbManager) : ViewModel() {
                         style = MaterialTheme.typography.bodyLarge,
                     )
                 }//todo next line "10 events from 2024.01.01 to 2025.01.01"
-                if (tags.isNotEmpty()) {
-                    FlowRow(
-                        Modifier.fillMaxWidth().padding(horizontal = 4.dp).padding(bottom = 6.5.dp)
-                    ) {
-                        for (tag in tags) {
-                            drawTag(tag.name, tag.getColorOrDefault())
-                        }
-                    }
-                }
+                drawDescriptionAndTags(entry.getContents(), entry.getTags())
             }
             val dateTimePicker = remember { DateTimePicker() }
             dateTimePicker.tryCompose()

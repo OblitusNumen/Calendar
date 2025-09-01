@@ -77,6 +77,7 @@ class EntryEdit(
             with(LocalDensity.current) { WindowInsets.navigationBars.getBottom(LocalDensity.current).toDp() }
         Column(modifier.fillMaxWidth().verticalScroll(rememberScrollState()).fillMaxHeight()) {
             Spacer(Modifier.height(contentOffsetTop))
+            // name
             OutlinedTextField(
                 modifier = Modifier.fillMaxWidth().padding(12.dp),
                 value = entryName, onValueChange = {
@@ -105,7 +106,21 @@ class EntryEdit(
                         }
                 }
             )
+            // description
+            OutlinedTextField(
+                modifier = Modifier.defaultMinSize(minHeight = 52.dp).fillMaxWidth().padding(horizontal = 12.dp)
+                    .padding(bottom = 12.dp),
+                value = contents, onValueChange = {
+                    contents = it
+                },
+                textStyle = MaterialTheme.typography.bodyLarge,
+                label = { Text("Enter description") },
+                minLines = 5
+            )
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
+            // hide from calendar view
             checkboxOption(hideInCalendarView, "Hide from calendar view")
+            // tags
             var tagChoose by remember { mutableStateOf(false) }
             if (tagChoose) tagChooseMenu({ tagChoose = false }, { tags = it })
             Row {
@@ -128,6 +143,7 @@ class EntryEdit(
                 )
             }
             HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
+            // dates
             for (date in dates)
                 drawDate(date)
             Box(Modifier.defaultMinSize(minHeight = 52.dp).fillMaxWidth()/*.padding(top = 8.dp)*/.clickable {
@@ -151,6 +167,7 @@ class EntryEdit(
                 )
             }
             HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
+            // notifications
             var notificationChoose by remember { mutableStateOf(false) }
             if (notificationChoose) drawNotificationAddMenu({ offset, sound ->
                 notificationChoose = false
@@ -202,17 +219,6 @@ class EntryEdit(
                     style = MaterialTheme.typography.bodyLarge
                 )
             }
-            HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
-            OutlinedTextField(
-                modifier = Modifier.defaultMinSize(minHeight = 52.dp).fillMaxWidth().padding(horizontal = 12.dp)
-                    .padding(bottom = 12.dp),
-                value = contents, onValueChange = {
-                    contents = it
-                },
-                textStyle = MaterialTheme.typography.bodyLarge,
-                label = { Text("Enter description") },
-                minLines = 5
-            )
             Spacer(Modifier.height(contentOffsetBottom))
         }
     }

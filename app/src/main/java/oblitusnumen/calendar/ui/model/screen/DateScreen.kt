@@ -25,6 +25,7 @@ import oblitusnumen.calendar.implementation.bgColorToTextColor
 import oblitusnumen.calendar.implementation.data.Date
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.zonedDateTime
+import oblitusnumen.calendar.ui.model.tab.EntriesTab.Companion.drawDescriptionAndTags
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -91,7 +92,6 @@ class DateScreen(
     @Composable
     fun drawEntry(date: Date, editEntry: (Int) -> Unit) { //todo maybe show desc too?
         val entry = date.entry
-        val tags = entry.getTags()
         var excludeDateShown by remember { mutableStateOf(false) }
         Column(
             Modifier.padding(2.dp).fillMaxWidth().defaultMinSize(minHeight = 64.dp)
@@ -120,24 +120,14 @@ class DateScreen(
                     style = MaterialTheme.typography.bodyLarge,
                 )
             }
-            if (tags.isNotEmpty()) {
-                FlowRow(
-                    Modifier.fillMaxWidth()
-                        .padding(horizontal = 4.dp)
-                        .padding(bottom = 6.5.dp)
-                ) {
-                    for (tag in tags) {
-                        drawTag(tag.name, tag.getColorOrDefault())
-                    }
-                }
-            }
+            drawDescriptionAndTags(entry.getContents(), entry.getTags())
             if (excludeDateShown)
-                excludeDate(date, entry.name.ifEmpty { "[No title]" }) { excludeDateShown = false }
+                ExcludeDate(date, entry.name.ifEmpty { "[No title]" }) { excludeDateShown = false }
         }
     }
 
     @Composable
-    fun excludeDate(date: Date, entryName: String, onClose: () -> Unit) {
+    fun ExcludeDate(date: Date, entryName: String, onClose: () -> Unit) {
         AlertDialog(
             onDismissRequest = onClose,
             dismissButton = {
