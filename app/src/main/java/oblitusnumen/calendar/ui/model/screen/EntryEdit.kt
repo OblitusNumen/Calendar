@@ -50,12 +50,12 @@ class EntryEdit(
     private var contents by mutableStateOf(TextFieldValue(entry.getContents()))  // FIXME: this should be List<Content>
     private var hideInCalendarView: MutableState<Boolean> = mutableStateOf(entry.excludeFromCalendarView)
     private var dateTimePicker = DateTimePicker()
+    private var periodSelectorDate = mutableStateOf<Date?>(null)
 
     init {
         if (pendingDate != null)
-            dateTimePicker.timePick({
-            }, {
-                dates += Date(
+            dateTimePicker.timePick({}, {
+                val newDate = Date(
                     dbManager,
                     entry,
                     "",
@@ -64,6 +64,8 @@ class EntryEdit(
                     1,
                     Once()
                 )
+                periodSelectorDate.value = newDate
+                dates += newDate
             })
     }
 
@@ -148,7 +150,7 @@ class EntryEdit(
                 drawDate(date)
             Box(Modifier.defaultMinSize(minHeight = 52.dp).fillMaxWidth()/*.padding(top = 8.dp)*/.clickable {
                 dateTimePicker.dateTimePick({}, {
-                    dates += Date(
+                    val newDate = Date(
                         dbManager,
                         entry,
                         "",
@@ -157,6 +159,8 @@ class EntryEdit(
                         1,
                         Once()
                     )
+                    periodSelectorDate.value = newDate
+                    dates += newDate
                 })
             }) {
                 Text(
@@ -320,9 +324,9 @@ class EntryEdit(
 
     @Composable
     fun drawDate(date: Date) {
-        var periodSelectorShown by remember { mutableStateOf(false) }
-        if (periodSelectorShown)
-            periodSelectorDialog({ periodSelectorShown = false }, { periodSelectorShown = false }, date)
+        var periodSelectorDate by remember { this.periodSelectorDate }
+        if (periodSelectorDate == date)
+            periodSelectorDialog({ periodSelectorDate = null }, { periodSelectorDate = null }, date)
         var updated by remember { mutableStateOf(false) }
         val dateStartText = (if (date.isPeriodic) "from " else "") +
                 date.getFirstZoneDateTime().format(DateTimeFormatter.ofPattern("dd MMM yyyy "))
@@ -340,6 +344,7 @@ class EntryEdit(
                     Icons.Outlined.Call, "",
                     Modifier.align(Alignment.CenterVertically).padding(8.dp)
                 )
+                // pick date
                 val localDateTime = date.getFirstZoneDateTime().toLocalDateTime()
                 Text(
                     modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp, vertical = 8.dp)
@@ -357,6 +362,7 @@ class EntryEdit(
                     text = dateStartText,
                     style = MaterialTheme.typography.bodyLarge
                 )
+                // pick time
                 Text(
                     modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp, vertical = 8.dp)
                         .weight(.5f).clickable {
@@ -378,8 +384,9 @@ class EntryEdit(
                     onClick = { dates -= date },
                     content = { Icon(Icons.Filled.Clear, contentDescription = null) })
             }
+            // choose period
             Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp).clickable {
-                periodSelectorShown = true
+                periodSelectorDate = date
             }.padding(horizontal = 40.dp)) {
                 Text(
                     modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp, vertical = 8.dp)
