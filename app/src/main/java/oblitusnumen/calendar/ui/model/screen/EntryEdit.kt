@@ -783,7 +783,7 @@ class EntryEdit(
         @Composable
         fun drawNotificationAddMenu(onConfirm: (Period, Boolean) -> Unit, onDismiss: () -> Unit) {
             var silent by remember { mutableStateOf(false) }
-            var offsetCount by remember { mutableStateOf("1") }
+            var offsetCount by remember { mutableStateOf(TextFieldValue("1")) }
             var selectedOffsetType by remember { mutableStateOf(OffsetType(Once())) }
 
             AlertDialog(
@@ -795,10 +795,18 @@ class EntryEdit(
                 },
                 confirmButton = {
                     TextButton(onClick = {
+                        var offsetCountText = offsetCount.text
+                        if (offsetCountText.isEmpty() || offsetCountText.toLong() < 0L) {
+                            if (selectedOffsetType.period is Once)
+                                offsetCountText = "0"
+                            else {// TODO:
+//                            showErrorToast("Could not parse count: '$periodCountText'")
+                                return@TextButton
+                            }
+                        }
                         onConfirm(
-                            if (selectedOffsetType.period is Once) Once() else {
-                                val offset = offsetCount.toLong()
-                                if (offset > 0) selectedOffsetType.period.updateCount(offset) else Once()
+                            if (offsetCountText == "0" || selectedOffsetType.period is Once) Once() else {
+                                selectedOffsetType.period.updateCount(offsetCountText.toLong())
                             }, !silent
                         )
                     }) {
@@ -809,14 +817,16 @@ class EntryEdit(
                     Column {
                         Row {
                             //offset text field
+                            val focusRequester = remember { FocusRequester() }
                             OutlinedTextField(// FIXME: ui paddings
                                 enabled = selectedOffsetType.period !is Once,
-                                modifier = Modifier.width(100.dp).padding(horizontal = 8.dp),
+                                modifier = Modifier.width(100.dp).padding(horizontal = 8.dp).focusRequester(focusRequester),
                                 value = offsetCount, onValueChange = {
+                                    val text = it.text
                                     try {
-                                        if (it.toLong() >= 0 && it.length <= 3) offsetCount = it
+                                        if (text.toLong() >= 0 && text.length <= 3) offsetCount = it
                                     } catch (_: NumberFormatException) {
-                                        if (it.isEmpty())
+                                        if (text.isEmpty())
                                             offsetCount = it
                                     }
                                 },
@@ -827,12 +837,21 @@ class EntryEdit(
                                 ),
                                 label = { Text("Count") }
                             )
+
                             materialSpinner(
                                 "Type", OffsetType.getAll(),
                                 { selectedOffsetType = it },
                                 selectedOffsetType,
                                 Modifier.padding(horizontal = 8.dp).width(150.dp)
                             )
+
+                            LaunchedEffect(selectedOffsetType) {
+                                if (selectedOffsetType.period !is Once) {
+                                    // Place cursor at the end of current text
+                                    offsetCount = offsetCount.copy(selection = TextRange(offsetCount.text.length))
+                                    focusRequester.requestFocus()
+                                }
+                            }
                         }
                         Row {
                             Text("silent")
