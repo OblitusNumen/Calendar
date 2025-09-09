@@ -51,7 +51,7 @@ class DateScreen(
         val contentOffsetTop =
             with(LocalDensity.current) { WindowInsets.statusBars.getTop(LocalDensity.current).toDp() } + 64.dp
         val contentOffsetBottom =
-            with(LocalDensity.current) { WindowInsets.navigationBars.getBottom(LocalDensity.current).toDp() }
+            with(LocalDensity.current) { WindowInsets.navigationBars.getBottom(LocalDensity.current).toDp() } + 80.dp
         updated
         LazyColumn(modifier) {
             item {
