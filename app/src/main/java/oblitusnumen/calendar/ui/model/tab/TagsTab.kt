@@ -15,7 +15,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
@@ -175,9 +178,15 @@ class TagsTab(private val dbManager: DbManager, private val editTag: (Int) -> Un
             text = {
                 Column {
                     Row {
+                        val focusRequester = remember { FocusRequester() }
+                        var laidOut by remember { mutableStateOf(false) }
                         OutlinedTextField(// FIXME: ui paddings
                             isError = hasError,
-                            modifier = Modifier.padding(horizontal = 8.dp).weight(1f),
+                            modifier = Modifier
+                                .padding(horizontal = 8.dp)
+                                .weight(1f)
+                                .onGloballyPositioned { laidOut = true }
+                                .focusRequester(focusRequester),
                             value = name, onValueChange = {
                                 if (it.isEmpty()) {
                                     hasError = true
@@ -208,6 +217,9 @@ class TagsTab(private val dbManager: DbManager, private val editTag: (Int) -> Un
                                     color = it
                                 colorPickerShown = false
                             }
+                        LaunchedEffect(laidOut) {
+                             focusRequester.requestFocus()
+                        }
                     }
                     if (hasError) Text(error, color = Color.Red)//errortext
                 }
