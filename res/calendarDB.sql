@@ -1,14 +1,13 @@
-CREATE TABLE IF NOT EXISTS "entries"
+CREATE TABLE IF NOT EXISTS "Entries"
 (
-    "id"          INTEGER PRIMARY KEY AUTOINCREMENT,
-    "state"       INTEGER NOT NULL,
-    "name"        TEXT    NOT NULL,
-    "excludeView" INTEGER NOT NULL,
-    "color"       INTEGER NOT NULL
+    "id"                INTEGER PRIMARY KEY AUTOINCREMENT,
+    "defaultOptionsId"  INTEGER NOT NULL UNIQUE,
+    "isTask"            INTEGER NOT NULL,
+    FOREIGN KEY ("defaultOptionsId") REFERENCES "EventOptions" ("id")
 );
 
 
-CREATE TABLE IF NOT EXISTS "tags"
+CREATE TABLE IF NOT EXISTS "Tags"
 (
     "id"    INTEGER PRIMARY KEY AUTOINCREMENT,
     "name"  TEXT    NOT NULL UNIQUE,
@@ -16,41 +15,92 @@ CREATE TABLE IF NOT EXISTS "tags"
 );
 
 
-CREATE TABLE IF NOT EXISTS "entryTagLinks"
+CREATE TABLE IF NOT EXISTS "EntryTagLinks"
 (
     "entryId" INTEGER NOT NULL,
     "tagId"   INTEGER NOT NULL,
-    FOREIGN KEY ("entryId") REFERENCES "entries" ("id"),
-    FOREIGN KEY ("tagId") REFERENCES "tags" ("id")
+    PRIMARY KEY ("entryId", "tagId"),
+    FOREIGN KEY ("entryId") REFERENCES "Entries" ("id"),
+    FOREIGN KEY ("tagId") REFERENCES "Tags" ("id")
 );
 
 
-CREATE TABLE IF NOT EXISTS "dates"
+CREATE TABLE IF NOT EXISTS "EventOptions"
 (
-    "id"             INTEGER PRIMARY KEY AUTOINCREMENT,
-    "entryId"        INTEGER NOT NULL,
-    "description"    TEXT    NOT NULL,
-    "timeStart"      BIGINT  NOT NULL,
-    "duration"       BIGINT  NOT NULL,
-    "timeEnd"        BIGINT  NOT NULL,
-    "timesRepeat"    INTEGER NOT NULL,
-    "period"         TEXT    NOT NULL,
-    "timeZone"       TEXT    NOT NULL,
-    "exceptionRules" TEXT    NOT NULL,
-    FOREIGN KEY ("entryId") REFERENCES "entries" ("id")
+    "id"          INTEGER PRIMARY KEY AUTOINCREMENT,
+    "entryId"     INTEGER NOT NULL,
+    "state"       INTEGER NOT NULL,
+    "name"        TEXT    NOT NULL,
+    "color"       INTEGER NOT NULL,
+    FOREIGN KEY ("entryId") REFERENCES "Entries" ("id")
 );
 
 
-CREATE TABLE IF NOT EXISTS "notifications"
+CREATE TABLE IF NOT EXISTS "Dates"
 (
-    "entryId"    INTEGER     NOT NULL,
-    "timeOffset" VARCHAR(18) NOT NULL,
-    "sound"      INT         NOT NULL,
-    FOREIGN KEY ("entryId") REFERENCES "entries" ("id")
+    "id"                    INTEGER PRIMARY KEY AUTOINCREMENT,
+    "entryId"               INTEGER NOT NULL,
+    "eventOptionsId"        INTEGER NOT NULL,
+    "epochSecondChainStart" BIGINT  NOT NULL,
+    "duration"              TEXT    NOT NULL,
+    "epochSecondChainEnd"   BIGINT  NOT NULL,
+    "timesRepeat"           INTEGER NOT NULL,
+    "period"                TEXT    NOT NULL,
+    "timeZone"              TEXT    NOT NULL,
+    "exceptionRules"        TEXT    NOT NULL,
+    FOREIGN KEY ("entryId") REFERENCES "Entries" ("id"),
+    FOREIGN KEY ("eventOptionsId") REFERENCES "eventOptions" ("id")
 );
 
-drop table notifications;
-drop table dates;
-drop table entryTagLinks;
-drop table tags;
-drop table entries;
+
+CREATE TABLE IF NOT EXISTS "Notifications"
+(
+    "eventOptionsId"    INTEGER     NOT NULL,
+    "timeOffset"        VARCHAR(18) NOT NULL,
+    "hasSound"          INTEGER     NOT NULL,
+    PRIMARY KEY ("eventOptionsId", "timeOffset"),
+    FOREIGN KEY ("eventOptionsId") REFERENCES "eventOptions" ("id")
+);
+
+
+CREATE TABLE IF NOT EXISTS "Tasks"
+(
+    "entryId"                   INTEGER PRIMARY KEY NOT NULL UNIQUE,
+    "startConstraintTimestamp"  BIGINT  NOT NULL,
+    "deadlineTimestamp"         BIGINT  NOT NULL,
+    "timeZoneId"                TEXT    NOT NULL,
+    "timeConsumed"              INTEGER NOT NULL,
+    "timeRemaining"             INTEGER NOT NULL,
+    FOREIGN KEY ("entryId") REFERENCES "Entries" ("id")
+);
+
+
+CREATE TABLE IF NOT EXISTS "TaskLinks"
+(
+    "parentTaskId"  INTEGER NOT NULL,
+    "childTaskId"   INTEGER NOT NULL,
+    PRIMARY KEY ("parentTaskId", "childTaskId"),
+    FOREIGN KEY ("parentTaskId") REFERENCES "Tasks" ("entryId"),
+    FOREIGN KEY ("childTaskId") REFERENCES "Tasks" ("entryId")
+);
+
+
+CREATE TABLE IF NOT EXISTS "TaskLogs"
+(
+    "id"                    INTEGER PRIMARY KEY AUTOINCREMENT,
+    "taskId"                INTEGER NOT NULL,
+    "startOfDayTimestamp"   BIGINT  NOT NULL,
+    "timeZoneId"            TEXT    NOT NULL,
+    "timeConsumed"          INTEGER NOT NULL,
+    FOREIGN KEY ("taskId") REFERENCES "Tasks" ("entryId")
+);
+
+
+DROP TABLE TaskLinks;
+DROP TABLE Tasks;
+DROP TABLE Notifications;
+DROP TABLE Dates;
+DROP TABLE EventOptions;
+DROP TABLE EntryTagLinks;
+DROP TABLE Tags;
+DROP TABLE Entries;
