@@ -19,6 +19,8 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import com.github.skydoves.colorpicker.compose.HsvColorPicker
+import com.github.skydoves.colorpicker.compose.rememberColorPickerController
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.toColor
 import oblitusnumen.calendar.implementation.toInt
@@ -181,10 +183,10 @@ fun colorTextField(
 
 @Composable
 fun colorWheel(color: Color, onColorChanged: (Color) -> Unit) {// FIXME: initial color is not being set
-//    val controller = rememberColorPickerController()
-//    HsvColorPicker(
-//        modifier = Modifier.fillMaxWidth().height(450.dp).padding(10.dp),
-//        controller = controller,
-//        onColorChanged = { onColorChanged(it.color) }
-//    )
+    val controller = rememberColorPickerController()
+    HsvColorPicker(
+        modifier = Modifier.fillMaxWidth().height(450.dp).padding(10.dp),
+        controller = controller,
+        onColorChanged = { onColorChanged(it.color) }
+    )
 }

@@ -7,6 +7,7 @@ import androidx.compose.material.icons.outlined.ThumbUp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
+import oblitusnumen.calendar.ui.model.screen.MonthDate
 import java.time.LocalDate
 
 sealed class NavRoutes(private val path: String, val route: String = path) {
@@ -19,10 +20,37 @@ sealed class NavRoutes(private val path: String, val route: String = path) {
         }
     }
 
+    data object Agenda : NavRoutes("agenda", route = "agenda/{year}/{month}/{day}") {
+        private const val path = "agenda"
+        private const val year = "year"
+        private const val month = "month"
+        private const val day = "day"
+
+        fun navHere(navController: NavController, year: Int, monthValue: Int, day: Int?) {
+            if (navController.previousBackStackEntry?.destination?.route?.startsWith(path) ?: false) {// FIXME:
+                navController.popBackStack()
+                navController.popBackStack()
+            }
+            navController.navigate(withArgs(year.toString(), monthValue.toString(), day.toString()))
+        }
+
+        fun getArgs(navBackStackEntry: NavBackStackEntry): MonthDate {
+            val year = navBackStackEntry.arguments!!.getString(year)
+            val monthValue = navBackStackEntry.arguments!!.getString(month)
+            val day = navBackStackEntry.arguments!!.getString(day)
+            return MonthDate(year!!.toInt(), monthValue!!.toInt(), day?.toIntOrNull())
+        }
+    }
+
     data object ThatDayDetails : NavRoutes("thatDayDetails", route = "thatDayDetails/{date}") {
+        private const val path = "thatDayDetails"
         private const val date = "date"
 
         fun navHere(navController: NavController, date: LocalDate) {
+            if (navController.previousBackStackEntry?.destination?.route?.startsWith(path) ?: false) {// FIXME:
+                navController.popBackStack()
+                navController.popBackStack()
+            }
             navController.navigate(withArgs(date.toEpochDay().toString()))
         }
 

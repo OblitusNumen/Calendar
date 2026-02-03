@@ -16,13 +16,13 @@ class Notification(
         val contentValues = ContentValues()
         contentValues.put(COLUMN_NAME_ENTRY_ID, entryId)
         contentValues.put(COLUMN_NAME_TIME_OFFSET, offset.toString())
-        contentValues.put(COLUMN_NAME_SOUND, if (sound) 1 else 0)
+        contentValues.put(COLUMN_NAME_HAS_SOUND, if (sound) 1 else 0)
         dbManager.writableDatabase.insert(TABLE_NAME, null, contentValues).toInt()
     }
 
     fun update() {
         dbManager.writableDatabase.execSQL(
-            "UPDATE $TABLE_NAME SET $COLUMN_NAME_SOUND = ? WHERE $COLUMN_NAME_ENTRY_ID = ? AND $COLUMN_NAME_TIME_OFFSET = ?",
+            "UPDATE $TABLE_NAME SET $COLUMN_NAME_HAS_SOUND = ? WHERE $COLUMN_NAME_ENTRY_ID = ? AND $COLUMN_NAME_TIME_OFFSET = ?",
             arrayOf(if (sound) 1 else 0, entryId.toString(), offset.toString())
         )
     }
@@ -38,7 +38,7 @@ class Notification(
         const val TABLE_NAME: String = "notifications"
         const val COLUMN_NAME_ENTRY_ID: String = "entryId"
         const val COLUMN_NAME_TIME_OFFSET: String = "timeOffset"
-        const val COLUMN_NAME_SOUND: String = "sound"
+        const val COLUMN_NAME_HAS_SOUND: String = "hasSound"
 
         fun cursorToList(
             dbManager: DbManager,
@@ -47,7 +47,7 @@ class Notification(
             val notifications: MutableList<Notification> = ArrayList()
             val idxEntryId = cursor.getColumnIndex(COLUMN_NAME_ENTRY_ID)
             val idxOffset = cursor.getColumnIndex(COLUMN_NAME_TIME_OFFSET)
-            val idxSound = cursor.getColumnIndex(COLUMN_NAME_SOUND)
+            val idxSound = cursor.getColumnIndex(COLUMN_NAME_HAS_SOUND)
             while (cursor.moveToNext())
                 notifications.add(
                     Notification(

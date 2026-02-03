@@ -22,11 +22,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import oblitusnumen.calendar.implementation.bgColorToTextColor
-import oblitusnumen.calendar.implementation.data.Date
-import oblitusnumen.calendar.implementation.data.DbManager
-import oblitusnumen.calendar.implementation.data.Entry
-import oblitusnumen.calendar.implementation.data.Period
-import oblitusnumen.calendar.implementation.data.Tag
+import oblitusnumen.calendar.implementation.data.*
 import oblitusnumen.calendar.implementation.defaultZoneId
 import oblitusnumen.calendar.ui.model.DateTimePicker
 import java.time.LocalDateTime
@@ -49,7 +45,7 @@ class EntriesTab(private val dbManager: DbManager) : ViewModel() {
                 Spacer(Modifier.height(contentOffsetTop))
             }
             items(entries) { entry ->
-                drawEntry(entry, editEntry) {
+                drawEntry(dbManager, entry, editEntry) {
                     Date(dbManager, entry, "", it.atZone(defaultZoneId()), 0, 1, Period.Once()).create()
                     dbManager.tryScheduleNotification()
                 }
@@ -91,7 +87,7 @@ class EntriesTab(private val dbManager: DbManager) : ViewModel() {
     companion object {
         @OptIn(ExperimentalLayoutApi::class)
         @Composable
-        fun drawDescriptionAndTags(contents: String, tags: List<Tag>) {
+        fun drawDescriptionAndTags(dbManager: DbManager, contents: String, tags: List<Tag>) {
             if (contents.isNotEmpty()) {
                 Text(
                     text = contents,
@@ -107,7 +103,7 @@ class EntriesTab(private val dbManager: DbManager) : ViewModel() {
                         .padding(bottom = 6.5.dp)
                 ) {
                     for (tag in tags) {
-                        drawTag(tag.name, tag.getColorOrDefault())
+                        drawTag(tag.name, tag.colorOrDefault(dbManager))
                     }
                 }
             }
@@ -116,6 +112,7 @@ class EntriesTab(private val dbManager: DbManager) : ViewModel() {
         @OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
         @Composable
         fun drawEntry(
+            dbManager: DbManager,
             entry: Entry,
             editEntry: (Int) -> Unit,
             onSchedule: (LocalDateTime) -> Unit
@@ -147,7 +144,7 @@ class EntriesTab(private val dbManager: DbManager) : ViewModel() {
                         style = MaterialTheme.typography.bodyLarge,
                     )
                 }//todo next line "10 events from 2024.01.01 to 2025.01.01"
-                drawDescriptionAndTags(entry.getContents(), entry.getTags())
+                drawDescriptionAndTags(dbManager, entry.getContents(), entry.getTags())
             }
             val dateTimePicker = remember { DateTimePicker() }
             dateTimePicker.tryCompose()

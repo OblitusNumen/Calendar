@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -30,16 +32,14 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.Entry
+import oblitusnumen.calendar.implementation.data.Tag
 import oblitusnumen.calendar.implementation.log
 import oblitusnumen.calendar.implementation.notifications.NotificationBroadcastReceiver
 import oblitusnumen.calendar.implementation.rmRecursively
 import oblitusnumen.calendar.implementation.setLogFile
 import oblitusnumen.calendar.implementation.unzipFile
 import oblitusnumen.calendar.ui.model.navigation.NavRoutes
-import oblitusnumen.calendar.ui.model.screen.DateScreen
-import oblitusnumen.calendar.ui.model.screen.EntryDetails
-import oblitusnumen.calendar.ui.model.screen.EntryEdit
-import oblitusnumen.calendar.ui.model.screen.SettingsScreen
+import oblitusnumen.calendar.ui.model.screen.*
 import oblitusnumen.calendar.ui.model.tab.CalendarTab
 import oblitusnumen.calendar.ui.model.tab.EntriesTab
 import oblitusnumen.calendar.ui.model.tab.TagsTab
@@ -56,6 +56,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) { //fixme ask for required permissions somewhere
         super.onCreate(savedInstanceState)
+
+        log(this)
 
         // restore backup
         val appDataDir = filesDir.parentFile!!
@@ -81,7 +83,7 @@ class MainActivity : ComponentActivity() {
             else
                 null
         //if (startingEntryId != null)
-            //(getSystemService(NOTIFICATION_SERVICE) as NotificationManager).cancel(/* fixme find id somehow */)
+        //(getSystemService(NOTIFICATION_SERVICE) as NotificationManager).cancel(/* fixme find id somehow */)
         val requestPermissionLauncher =
             registerForActivityResult(
                 ActivityResultContracts.RequestPermission()
@@ -131,7 +133,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             CalendarTheme {
                 calendarViewModel = viewModel { CalendarViewModel(DbManager(this@MainActivity)) }
-                navGraph(
+                NavGraph(
                     rememberNavController(),
                     calendarViewModel!!.dbManager,
                     startingEntryId
@@ -141,7 +143,9 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    fun navGraph(navController: NavHostController, dbManager: DbManager, startingEntryId: Int? = null) {
+    fun NavGraph(navController: NavHostController, dbManager: DbManager, startingEntryId: Int? = null) {
+        var tagsFilter = rememberSaveable { mutableStateOf(listOf<Tag>()) }
+
         NavHost(
             modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
             navController = navController,
@@ -152,38 +156,63 @@ class MainActivity : ComponentActivity() {
                     NavRoutes.EntryDetails.withArgs(startingEntryId.toString())
         ) {
             composable(route = NavRoutes.Calendar.route) {
-                val calendarTab = viewModel { CalendarTab(dbManager) }
-                Scaffold(
-                    topBar = { calendarTab.topBar { NavRoutes.Settings.navHere(navController) } },
-                    bottomBar = { drawBottomBar(navController) },
-                    floatingActionButton = {
-                        calendarTab.functionButton { NavRoutes.EntryEdit.navHere(navController, null) }
-                    }) {
-                    calendarTab.compose(
-                        { NavRoutes.ThatDayDetails.navHere(navController, it) },
-                        Modifier.padding(//seems like a hack
-                            horizontal = PADDING
-                        )
-                    )
-                }
+                CalendarTab(
+                    dbManager,
+                    tagsFilter,
+                    { drawBottomBar(navController) },
+                    {},// FIXME:
+//                    {dbManager.fillDB()},
+//                    { NavRoutes.EntryEdit.navHere(navController, null) },
+                    { NavRoutes.ThatDayDetails.navHere(navController, it) },
+                    { year, monthValue ->
+                        NavRoutes.Agenda.navHere(navController, year, monthValue, null)
+                        log("year: $year, monthValue: $monthValue")
+                    },
+                    { NavRoutes.Settings.navHere(navController) },
+                )
+                // FIXME:  
+//                val calendarTab = viewModel { CalendarTab(dbManager) }
+//                Scaffold(
+//                    topBar = { calendarTab.topBar { NavRoutes.Settings.navHere(navController) } },
+//                    bottomBar = { drawBottomBar(navController) },
+//                    floatingActionButton = {
+//                        calendarTab.functionButton { NavRoutes.EntryEdit.navHere(navController, null) }
+//                    }) {
+//                    calendarTab.compose(
+//                        { NavRoutes.ThatDayDetails.navHere(navController, it) },
+//                        Modifier.padding(//seems like a hack
+//                            horizontal = PADDING
+//                        )
+//                    )
+//                }
+            }
+
+            composable(route = NavRoutes.Agenda.route) { navBackStackEntry -> // FIXME: resolve recurring stack
+                val month = NavRoutes.Agenda.getArgs(navBackStackEntry)
+                AgendaScreen(
+                    dbManager,
+                    month,
+                    tagsFilter,
+                    { drawBottomBar(navController) },
+                    {},// FIXME:
+                    { NavRoutes.ThatDayDetails.navHere(navController, it) },
+                    { NavRoutes.EntryDetails.navHere(navController, it.date.entryId) },
+                    { NavRoutes.backPress(navController) }
+                )
             }
 
             composable(route = NavRoutes.ThatDayDetails.route) { navBackStackEntry ->
                 val thatDay = NavRoutes.ThatDayDetails.getArgs(navBackStackEntry) ?: LocalDate.now()
-                val dateScreen = viewModel { DateScreen(thatDay, dbManager) }
-                Scaffold(
-                    topBar = { dateScreen.topBar { NavRoutes.backPress(navController) } },
-                    bottomBar = { drawBottomBar(navController) },
-                    floatingActionButton = {
-                        dateScreen.functionButton { NavRoutes.EntryEdit.navHere(navController, null, thatDay) }
-                    }) {
-                    dateScreen.compose(
-                        { NavRoutes.EntryDetails.navHere(navController, it) },
-                        Modifier.padding(//seems like a hack
-                            horizontal = PADDING
-                        )
-                    )
-                }
+                DateScreen(
+                    dbManager,
+                    thatDay,
+                    { year, monthValue, dayOfMonth ->
+                        NavRoutes.Agenda.navHere(navController, year, monthValue, dayOfMonth)
+                    },
+                    { NavRoutes.EntryDetails.navHere(navController, it.date.entryId) },// FIXME:
+                    { NavRoutes.EntryEdit.navHere(navController, null, thatDay) },
+                    { NavRoutes.backPress(navController) }
+                )
             }
 
             composable(route = NavRoutes.EntryEdit.route) { navBackStackEntry ->

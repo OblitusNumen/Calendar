@@ -16,7 +16,7 @@ sealed class Period : Comparable<Period> {
 
     class Minute(override val count: Long) : Period() {
         init {
-            if (count <= 0 || count > MAX_PERIOD_COUNT)
+            if (count !in 1..MAX_PERIOD_COUNT)
                 throw IllegalArgumentException("Invalid period count")
         }
 
@@ -28,7 +28,7 @@ sealed class Period : Comparable<Period> {
 
     class Hour(override val count: Long) : Period() {
         init {
-            if (count <= 0 || count > MAX_PERIOD_COUNT)
+            if (count !in 1..MAX_PERIOD_COUNT)
                 throw IllegalArgumentException("Invalid period count")
         }
 
@@ -40,7 +40,7 @@ sealed class Period : Comparable<Period> {
 
     class Day(override val count: Long) : Period() {
         init {
-            if (count <= 0 || count > MAX_PERIOD_COUNT)
+            if (count !in 1..MAX_PERIOD_COUNT)
                 throw IllegalArgumentException("Invalid period count")
         }
 
@@ -52,7 +52,7 @@ sealed class Period : Comparable<Period> {
 
     class Week(override val count: Long) : Period() {
         init {
-            if (count <= 0 || count > MAX_PERIOD_COUNT)
+            if (count !in 1..MAX_PERIOD_COUNT)
                 throw IllegalArgumentException("Invalid period count")
         }
 
@@ -64,7 +64,7 @@ sealed class Period : Comparable<Period> {
 
     class Month(override val count: Long) : Period() {
         init {
-            if (count <= 0 || count > MAX_PERIOD_COUNT)
+            if (count !in 1..MAX_PERIOD_COUNT)
                 throw IllegalArgumentException("Invalid period count")
         }
 
@@ -76,7 +76,7 @@ sealed class Period : Comparable<Period> {
 
     class Year(override val count: Long) : Period() {
         init {
-            if (count <= 0 || count > MAX_PERIOD_COUNT)
+            if (count !in 1..MAX_PERIOD_COUNT)
                 throw IllegalArgumentException("Invalid period count")
         }
 
@@ -88,7 +88,7 @@ sealed class Period : Comparable<Period> {
 
     class Weekday(override val count: Long, val daysMask: Long) : Period() {
         init {
-            if (count <= 0 || count > MAX_PERIOD_COUNT || daysMask > WD_ALL)
+            if (count !in 1..MAX_PERIOD_COUNT || daysMask > WD_ALL)
                 throw IllegalArgumentException("Invalid period arguments")
         }
 

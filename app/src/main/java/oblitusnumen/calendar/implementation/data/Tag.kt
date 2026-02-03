@@ -4,12 +4,10 @@ import android.content.ContentValues
 import android.database.Cursor
 import android.provider.BaseColumns
 import androidx.compose.ui.graphics.Color
-import androidx.core.database.sqlite.transaction
 import oblitusnumen.calendar.implementation.toColor
 import oblitusnumen.calendar.implementation.toInt
 
 class Tag private constructor(
-    private val dbManager: DbManager,
     var name: String,
     id: Int? = null,
     var color: Color? = null
@@ -17,12 +15,12 @@ class Tag private constructor(
     var id: Int? = id
         private set
 
-    fun getColorOrDefault(): Color = color ?: dbManager.defaultTagColor
+    fun colorOrDefault(dbManager: DbManager): Color = color ?: dbManager.defaultTagColor
 
     private fun create() { //todo may fail on UNIQUE violation
         val contentValues = getContentValues()
         contentValues.put(COLUMN_NAME_ID, null as Int?)
-        id = dbManager.writableDatabase.insert(TABLE_NAME, null, contentValues).toInt()
+//        id = dbManager.writableDatabase.insert(TABLE_NAME, null, contentValues).toInt()
     }
 
     private fun getContentValues(): ContentValues {
@@ -33,23 +31,23 @@ class Tag private constructor(
     }
 
     private fun update() { //todo value update may fail
-        dbManager.writableDatabase.update(TABLE_NAME, getContentValues(), "$COLUMN_NAME_ID = ?", arrayOf(id.toString()))
+//        dbManager.writableDatabase.update(TABLE_NAME, getContentValues(), "$COLUMN_NAME_ID = ?", arrayOf(id.toString()))
     }
 
     fun deleteCascade() {
-        dbManager.writableDatabase.transaction {
-            dbManager.writableDatabase.delete(
-                EntryTagLinks.TABLE_NAME,
-                "${EntryTagLinks.COLUMN_NAME_TAG_ID} = ?",
-                arrayOf(id.toString())
-            )
-            delete()
-        }
+//        dbManager.writableDatabase.transaction {
+//            dbManager.writableDatabase.delete(
+//                EntryTagLinks.TABLE_NAME,
+//                "${EntryTagLinks.COLUMN_NAME_TAG_ID} = ?",
+//                arrayOf(id.toString())
+//            )
+//            delete()
+//        }
         id = null
     }
 
     private fun delete() {
-        dbManager.writableDatabase.delete(TABLE_NAME, "$COLUMN_NAME_ID = ?", arrayOf(id.toString()))
+//        dbManager.writableDatabase.delete(TABLE_NAME, "$COLUMN_NAME_ID = ?", arrayOf(id.toString()))
     }
 
     fun createIfNotExists() {
@@ -68,12 +66,11 @@ class Tag private constructor(
         const val COLUMN_NAME_NAME: String = "name"
         const val COLUMN_NAME_COLOR: String = "color"
 
-        fun new(dbManager: DbManager, name: String): Tag {
-            return Tag(dbManager, name)
+        fun new(name: String): Tag {
+            return Tag(name)
         }
 
         fun cursorToList(
-            dbManager: DbManager,
             cursor: Cursor
         ): MutableList<Tag> {
             val tags: MutableList<Tag> = ArrayList()
@@ -83,12 +80,29 @@ class Tag private constructor(
             while (cursor.moveToNext())
                 tags.add(
                     Tag(
-                        dbManager, cursor.getString(idxName),
+                        cursor.getString(idxName),
                         cursor.getInt(idxId),
                         cursor.getInt(idxColor).toColor()
                     )
                 )
             return tags
+        }
+
+        fun all(dbManager: DbManager): List<Tag> {
+            dbManager.readableDatabase.rawQuery("SELECT * FROM $TABLE_NAME", arrayOf()).use { cursor ->
+                return cursorToList(cursor)
+            }
+        }
+
+        fun forEntry(dbManager: DbManager, entryId: Int): List<Tag> {
+            dbManager.readableDatabase.rawQuery(
+                "SELECT ${TABLE_NAME}.* FROM ${TABLE_NAME} JOIN ${EntryTagLinks.TABLE_NAME} " +
+                        "ON ${TABLE_NAME}.${COLUMN_NAME_ID} = ${EntryTagLinks.TABLE_NAME}.${EntryTagLinks.COLUMN_NAME_TAG_ID} " +
+                        "WHERE ${EntryTagLinks.TABLE_NAME}.${EntryTagLinks.COLUMN_NAME_ENTRY_ID} = ?",
+                arrayOf(entryId.toString())
+            ).use { cursor ->
+                return cursorToList(cursor)
+            }
         }
     }
 }

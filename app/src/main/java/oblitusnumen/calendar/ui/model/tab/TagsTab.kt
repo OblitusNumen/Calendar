@@ -68,7 +68,7 @@ class TagsTab(private val dbManager: DbManager, private val editTag: (Int) -> Un
                     Icon(
                         Icons.Filled.Star, null,
                         Modifier.align(Alignment.CenterVertically).padding(8.dp),
-                        tag.getColorOrDefault()
+                        tag.colorOrDefault(dbManager)
                     )
                     Text(
                         modifier = Modifier.weight(1.0f).padding(end = 8.dp).align(Alignment.CenterVertically),
@@ -140,13 +140,13 @@ class TagsTab(private val dbManager: DbManager, private val editTag: (Int) -> Un
         tagsWithEntryCount: MutableMap<Tag, Int>,
         tags: MutableState<List<Tag>>,
         tagNames: MutableSet<String>,
-        tag: Tag = Tag.new(dbManager, ""),
+        tag: Tag = Tag.new(""),
         onClose: () -> Unit
     ) {
         var hasError: Boolean by remember { mutableStateOf(tag.name == "") }
         var error = "Enter tag name"
         var name by remember { mutableStateOf(tag.name) }
-        var color by remember { mutableStateOf(tag.getColorOrDefault()) }
+        var color by remember { mutableStateOf(tag.colorOrDefault(dbManager)) }
         AlertDialog(
             onDismissRequest = onClose,
             dismissButton = {
@@ -218,7 +218,7 @@ class TagsTab(private val dbManager: DbManager, private val editTag: (Int) -> Un
                                 colorPickerShown = false
                             }
                         LaunchedEffect(laidOut) {
-                             focusRequester.requestFocus()
+                            focusRequester.requestFocus()
                         }
                     }
                     if (hasError) Text(error, color = Color.Red)//errortext

@@ -65,6 +65,7 @@ class Entry private constructor(
     @Throws(IOException::class)
     fun deleteCascade() {
         if (isNotCreated()) return
+        // FIXME: code stacking
         dbManager.writableDatabase.transaction {
             state = STATE_DELETED
             update()
@@ -114,7 +115,7 @@ class Entry private constructor(
         val contentValues = ContentValues()
         contentValues.put(COLUMN_NAME_STATE, state)
         contentValues.put(COLUMN_NAME_NAME, name)
-        contentValues.put(COLUMN_NAME_EXCLUDE_VIEW, if (excludeFromCalendarView) 1 else 0)
+        contentValues.put(COLUMN_NAME_EXCLUDE_FROM_VIEW, if (excludeFromCalendarView) 1 else 0)
         contentValues.put(COLUMN_NAME_COLOR, color.toInt())
         return contentValues
     }
@@ -163,7 +164,7 @@ class Entry private constructor(
                     "WHERE ${EntryTagLinks.TABLE_NAME}.${EntryTagLinks.COLUMN_NAME_ENTRY_ID} = ?",
             arrayOf(id.toString())
         ).use { cursor ->
-            return Tag.cursorToList(dbManager, cursor)
+            return Tag.cursorToList(cursor)
         }
     }
 
@@ -248,7 +249,9 @@ class Entry private constructor(
         const val COLUMN_NAME_ID: String = "id"
         const val COLUMN_NAME_STATE: String = "state"
         const val COLUMN_NAME_NAME: String = "name"
-        const val COLUMN_NAME_EXCLUDE_VIEW: String = "excludeView"
+
+        @Deprecated("rudimental, replace with search filters")
+        const val COLUMN_NAME_EXCLUDE_FROM_VIEW: String = "excludeFromView"
         const val COLUMN_NAME_COLOR: String = "color"
         const val STATE_NORMAL: Int = 0
         const val STATE_NEW: Int = 1
@@ -268,7 +271,7 @@ class Entry private constructor(
             val idxId = cursor.getColumnIndex(COLUMN_NAME_ID)
             val idxState = cursor.getColumnIndex(COLUMN_NAME_STATE)
             val idxName = cursor.getColumnIndex(COLUMN_NAME_NAME)
-            val idxExcludeCalendarView = cursor.getColumnIndex(COLUMN_NAME_EXCLUDE_VIEW)
+            val idxExcludeCalendarView = cursor.getColumnIndex(COLUMN_NAME_EXCLUDE_FROM_VIEW)
             val idxColor = cursor.getColumnIndex(COLUMN_NAME_COLOR)
             while (cursor.moveToNext())
                 entries.add(

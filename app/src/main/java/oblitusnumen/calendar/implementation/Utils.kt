@@ -2,14 +2,8 @@ package oblitusnumen.calendar.implementation
 
 import android.content.Context
 import android.util.Log
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.rememberTextMeasurer
-import androidx.compose.ui.unit.Dp
 import java.io.*
 import java.text.SimpleDateFormat
 import java.time.*
@@ -17,6 +11,13 @@ import java.util.*
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
+
+val LIST_CENTER: LocalDate = LocalDate.of(1970, 1, 1)
+const val LIST_LEN = 420168000 * 2 // ~5M years, should be enough (no point fixing bugs at >5M)
+
+fun ZonedDateTime.toEpochDays(): Long {
+    return toLocalDate().toEpochDay()
+}
 
 fun Int.toColor(): Color? = if (this == -1) null else Color(this or 0xFF000000.toInt())
 
@@ -49,7 +50,7 @@ fun defaultZoneId(): ZoneId {
     return ZoneId.systemDefault()
 }
 
-fun log(o: Any) {
+fun log(o: Any?) {
     log("calendar", o)
 }
 
@@ -59,7 +60,7 @@ fun setLogFile(c: Context) {
         logfile = File(c.filesDir, "logfile.log")
 }
 
-fun log(tag: String?, o: Any) {
+fun log(tag: String?, o: Any?) {
     Log.v(tag, o.toString())
     if (logfile != null)
         logfile!!.appendText("[${LocalDateTime.now()}] $tag: $o\n")
@@ -73,19 +74,10 @@ fun bgColorToTextColor(color: Color): Color {
     return if (colorToLuminance(color) < 0.5) Color.White else Color.Black
 }
 
-@Composable
-fun measureTextLine(style: TextStyle): Dp {
-    val textMeasurer = rememberTextMeasurer()
-    val linePx = remember(textMeasurer, style) {
-        textMeasurer.measure("0", style).size.height
-    }
-    return with(LocalDensity.current) { linePx.toDp() }
-}
-
-fun mult_frac(x: Long, numer: Long, denom: Long): Long {
-    val quot = (x) / (denom)
-    val rem = (x) % (denom)
-    return (quot * (numer)) + ((rem * (numer)) / (denom))
+fun multFrac(x: Long, numer: Long, denominator: Long): Long {
+    val quot = (x) / (denominator)
+    val rem = (x) % (denominator)
+    return (quot * (numer)) + ((rem * (numer)) / (denominator))
 }
 
 fun LocalDate.toWeekNumber(): Long {

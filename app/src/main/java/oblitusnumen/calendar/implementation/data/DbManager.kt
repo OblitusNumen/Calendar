@@ -2,22 +2,23 @@ package oblitusnumen.calendar.implementation.data
 
 import android.app.Activity
 import android.content.ContentResolver
+import android.content.ContentValues
 import android.content.Context
 import android.content.SharedPreferences
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import androidx.compose.ui.graphics.Color
-import oblitusnumen.calendar.implementation.defaultZoneId
-import oblitusnumen.calendar.implementation.getZonedFromEpochSeconds
+import androidx.core.content.edit
+import oblitusnumen.calendar.implementation.*
 import oblitusnumen.calendar.implementation.notifications.NotificationBroadcastReceiver.Companion.LAST_NOTIFICATION_TIME_PREFERENCE_NAME
 import oblitusnumen.calendar.implementation.notifications.NotificationBroadcastReceiver.Companion.scheduleNotification
 import oblitusnumen.calendar.implementation.notifications.PendingNotification
-import oblitusnumen.calendar.implementation.toColor
-import oblitusnumen.calendar.implementation.toInt
 import java.io.File
+import java.time.ZoneId
 import java.util.*
+import kotlin.random.Random
 
-class DbManager(private val context: Context) :
+class DbManager(val context: Context) :
     SQLiteOpenHelper(context, DB_NAME, null, DATABASE_VERSION) {
     var defaultNotifications: List<Pair<Period, Boolean>> =
         getSharedPrefs(context).getString(DEFAULT_NOTIFICATIONS_PREF_NAME, null)?.split(",")?.map {
@@ -25,10 +26,11 @@ class DbManager(private val context: Context) :
             Period.decode(notification[0]) to (notification[1] != "0")
         } ?: listOf(Period.Once() to true, Period.Minute(30) to true)
         set(notifications) {
-            getSharedPrefs(context).edit()
-                .putString(
+            getSharedPrefs(context).edit {
+                putString(
                     DEFAULT_NOTIFICATIONS_PREF_NAME,
-                    notifications.joinToString(",") { it.first.toString() + "_" + it.second }).apply()
+                    notifications.joinToString(",") { it.first.toString() + "_" + it.second })
+            }
             field = notifications
         }
     val filesDir: File = context.filesDir
@@ -36,28 +38,30 @@ class DbManager(private val context: Context) :
     var defaultEntryColor: Color =
         getSharedPrefs(context).getInt(DEFAULT_ENTRY_COLOR_PREF_NAME, -1).toColor() ?: Color.Gray
         set(color) {
-            getSharedPrefs(context).edit().putInt(DEFAULT_ENTRY_COLOR_PREF_NAME, color.toInt()).apply()
+            getSharedPrefs(context).edit { putInt(DEFAULT_ENTRY_COLOR_PREF_NAME, color.toInt()) }
             field = color
         }
     var defaultTagColor: Color = getSharedPrefs(context).getInt(DEFAULT_TAG_COLOR_PREF_NAME, -1).toColor() ?: Color.Gray
         set(color) {
-            getSharedPrefs(context).edit().putInt(DEFAULT_TAG_COLOR_PREF_NAME, color.toInt()).apply()
+            getSharedPrefs(context).edit { putInt(DEFAULT_TAG_COLOR_PREF_NAME, color.toInt()) }
             field = color
         }
 
     init {
+        log(this)
         if (!filesDir.exists() && !filesDir.mkdirs())
             throw RuntimeException("could not create directory for data: $filesDir")
         val entries: List<Entry>
-        readableDatabase.rawQuery(
-            "SELECT * FROM ${Entry.TABLE_NAME} WHERE ${Entry.COLUMN_NAME_STATE} != ?",
-            arrayOf(Entry.STATE_NORMAL.toString())
-        ).use { cursor ->
-            entries = Entry.cursorToList(this, cursor)
-        }
-        for (entry in entries) {
-            entry.fixup()
-        }
+//        readableDatabase.rawQuery(
+//            "SELECT * FROM ${Entry.TABLE_NAME} WHERE ${Entry.COLUMN_NAME_STATE} != ?",
+//            arrayOf(Entry.STATE_NORMAL.toString())
+//        ).use { cursor ->
+//            entries = Entry.cursorToList(this, cursor)
+//        }
+//        for (entry in entries) {
+//            entry.fixup()
+//        }
+        // FIXME:
     }
 
     fun finishApp() {
@@ -66,7 +70,7 @@ class DbManager(private val context: Context) :
 
     fun tryScheduleNotification(now: Long = System.currentTimeMillis() / 1000) {
         val nextNotificationTime = getNextNotificationTime(now)
-        getSharedPrefs(context).edit().putLong(LAST_NOTIFICATION_TIME_PREFERENCE_NAME, now).apply()
+        getSharedPrefs(context).edit { putLong(LAST_NOTIFICATION_TIME_PREFERENCE_NAME, now) }
         if (nextNotificationTime != null)
             scheduleNotification(context, nextNotificationTime * 1000)
     }
@@ -137,11 +141,67 @@ class DbManager(private val context: Context) :
     }
 
     override fun onCreate(sqLiteDatabase: SQLiteDatabase) {
-        sqLiteDatabase.execSQL(SQL_CREATE_ENTRIES)
-        sqLiteDatabase.execSQL(SQL_CREATE_TAGS)
-        sqLiteDatabase.execSQL(SQL_CREATE_ENTRY_TAG_LINKS)
-        sqLiteDatabase.execSQL(SQL_CREATE_DATES)
-        sqLiteDatabase.execSQL(SQL_CREATE_NOTIFICATIONS)
+        sqLiteDatabase.execSQL(
+            "CREATE TABLE IF NOT EXISTS \"Entries\"\n" +
+                    "(\n" +
+                    "    \"id\"                INTEGER PRIMARY KEY AUTOINCREMENT,\n" +
+                    "    \"defaultOptionsId\"  INTEGER NOT NULL UNIQUE,\n" +
+                    "    \"isTask\"            INTEGER NOT NULL,\n" +
+                    "    FOREIGN KEY (\"defaultOptionsId\") REFERENCES \"EventOptions\" (\"id\")\n" +
+                    ");"
+        )
+        sqLiteDatabase.execSQL(
+            "CREATE TABLE IF NOT EXISTS \"EventOptions\"\n" +
+                    "(\n" +
+                    "    \"id\"          INTEGER PRIMARY KEY AUTOINCREMENT,\n" +
+                    "    \"entryId\"     INTEGER NOT NULL,\n" +
+                    "    \"state\"       INTEGER NOT NULL,\n" +
+                    "    \"name\"        TEXT    NOT NULL,\n" +
+                    "    \"color\"       INTEGER NOT NULL,\n" +
+                    "    FOREIGN KEY (\"entryId\") REFERENCES \"Entries\" (\"id\")\n" +
+                    ");"
+        )
+        sqLiteDatabase.execSQL(
+            "CREATE TABLE IF NOT EXISTS \"Dates\"\n" +
+                    "(\n" +
+                    "    \"id\"                    INTEGER PRIMARY KEY AUTOINCREMENT,\n" +
+                    "    \"entryId\"               INTEGER NOT NULL,\n" +
+                    "    \"eventOptionsId\"        INTEGER NOT NULL,\n" +
+                    "    \"epochSecondChainStart\" BIGINT  NOT NULL,\n" +
+                    "    \"duration\"              TEXT    NOT NULL,\n" +
+                    "    \"epochSecondChainEnd\"   BIGINT  NOT NULL,\n" +
+                    "    \"timesRepeat\"           INTEGER NOT NULL,\n" +
+                    "    \"period\"                TEXT    NOT NULL,\n" +
+                    "    \"timeZone\"              TEXT    NOT NULL,\n" +
+                    "    \"exceptionRules\"        TEXT    NOT NULL,\n" +
+                    "    FOREIGN KEY (\"entryId\") REFERENCES \"Entries\" (\"id\"),\n" +
+                    "    FOREIGN KEY (\"eventOptionsId\") REFERENCES \"eventOptions\" (\"id\")\n" +
+                    ");"
+        )
+        sqLiteDatabase.execSQL(
+            "CREATE TABLE IF NOT EXISTS \"Tags\"\n" +
+                    "(\n" +
+                    "    \"id\"    INTEGER PRIMARY KEY AUTOINCREMENT,\n" +
+                    "    \"name\"  TEXT    NOT NULL UNIQUE,\n" +
+                    "    \"color\" INTEGER NOT NULL\n" +
+                    ");"
+        )
+        sqLiteDatabase.execSQL(
+            "CREATE TABLE IF NOT EXISTS \"EntryTagLinks\"\n" +
+                    "(\n" +
+                    "    \"entryId\" INTEGER NOT NULL,\n" +
+                    "    \"tagId\"   INTEGER NOT NULL,\n" +
+                    "    PRIMARY KEY (\"entryId\", \"tagId\"),\n" +
+                    "    FOREIGN KEY (\"entryId\") REFERENCES \"Entries\" (\"id\"),\n" +
+                    "    FOREIGN KEY (\"tagId\") REFERENCES \"Tags\" (\"id\")\n" +
+                    ");"
+        )
+
+//        sqLiteDatabase.execSQL(SQL_CREATE_ENTRIES)
+//        sqLiteDatabase.execSQL(SQL_CREATE_TAGS)
+//        sqLiteDatabase.execSQL(SQL_CREATE_ENTRY_TAG_LINKS)
+//        sqLiteDatabase.execSQL(SQL_CREATE_DATES)
+//        sqLiteDatabase.execSQL(SQL_CREATE_NOTIFICATIONS)
     }
 
     override fun onUpgrade(sqLiteDatabase: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
@@ -156,16 +216,10 @@ class DbManager(private val context: Context) :
         require(end >= start) { "end must be more than start, got start=$start, end=$end" }
         readableDatabase.rawQuery(
             "SELECT * FROM ${Date.TABLE_NAME} WHERE " +
-                    "${Date.COLUMN_NAME_TIME_START} < ? AND ${Date.COLUMN_NAME_TIME_ENDS} >= ?",
+                    "${Date.COLUMN_NAME_EPOCH_SECOND_CHAIN_START} < ? AND ${Date.COLUMN_NAME_EPOCH_SECOND_CHAIN_ENDS} >= ?",
             arrayOf(end.toString(), start.toString())
         ).use { cursor ->
             return Date.cursorToList(this, cursor)
-        }
-    }
-
-    fun getAllTags(): List<Tag> {
-        readableDatabase.rawQuery("SELECT * FROM ${Tag.TABLE_NAME}", arrayOf()).use { cursor ->
-            return Tag.cursorToList(this, cursor)
         }
     }
 
@@ -178,7 +232,7 @@ class DbManager(private val context: Context) :
                     "GROUP BY t.${Tag.COLUMN_NAME_ID}", arrayOf()
         ).use { cursor ->
             val result = HashMap<Tag, Int>()
-            val tags = Tag.cursorToList(this, cursor)
+            val tags = Tag.cursorToList(cursor)
             val entryCountIdx = cursor.getColumnIndex("entryCount")
             cursor.moveToFirst()
             for (t in tags) {
@@ -190,9 +244,10 @@ class DbManager(private val context: Context) :
     }
 
     private fun getAllNotifications(): List<Notification> {
-        readableDatabase.rawQuery("SELECT * FROM ${Notification.TABLE_NAME}", arrayOf()).use { cursor ->
-            return Notification.cursorToList(this, cursor)
-        }
+//        readableDatabase.rawQuery("SELECT * FROM ${Notification.TABLE_NAME}", arrayOf()).use { cursor ->
+//            return Notification.cursorToList(this, cursor)
+//        }
+        return listOf()
     }
 
     fun getEntryById(id: Int): Entry? {
@@ -211,6 +266,51 @@ class DbManager(private val context: Context) :
         }
     }
 
+    fun fillDB() {
+        val epochSecond = 1764432677
+        repeat(500) {
+            var contentValues = ContentValues()
+            contentValues.put("id", it)
+            contentValues.put("entryId", it)
+            contentValues.put("eventOptionsId", it)
+            contentValues.put("epochSecondChainStart", epochSecond + 86000 * it)
+            contentValues.put("duration", Period.Hour(3).toString())
+            contentValues.put("epochSecondChainEnd", epochSecond + 86000 * it + 86400 * 7 * 100)
+            contentValues.put("timesRepeat", 101)
+            contentValues.put("period", Period.Day(7).toString())
+            contentValues.put("timeZone", ZoneId.systemDefault().toString())
+            contentValues.put("exceptionRules", ExceptionRules().toString())
+            writableDatabase.insert("Dates", null, contentValues)
+
+            contentValues = ContentValues()
+            contentValues.put("id", it)
+            contentValues.put("entryId", it)
+            contentValues.put("state", 0)
+            contentValues.put("name", "" + it)
+            contentValues.put("color", Color.Green.toInt())
+            writableDatabase.insert("EventOptions", null, contentValues)
+        }
+        repeat(10) { tagId ->
+            var contentValues = ContentValues()
+            contentValues.put("id", tagId)
+            contentValues.put("name", "tag $tagId")
+            contentValues.put("color", presetColors[tagId].toInt())
+            writableDatabase.insert("Tags", null, contentValues)
+
+            val entries: MutableSet<Int> = mutableSetOf(0)
+            while (entries.size < 70) {
+                entries.add(Random.nextInt(500))
+            }
+
+            entries.forEach {
+                contentValues = ContentValues()
+                contentValues.put("tagId", tagId)
+                contentValues.put("entryId", it)
+                writableDatabase.insert("EntryTagLinks", null, contentValues)
+            }
+        }
+    }
+
     companion object {
         const val DATABASE_VERSION: Int = 1
         private const val SHARED_PREFERENCES_NAME: String = "calendar_preferences"
@@ -223,7 +323,7 @@ class DbManager(private val context: Context) :
                     "${Entry.COLUMN_NAME_ID} INTEGER PRIMARY KEY AUTOINCREMENT," +
                     "${Entry.COLUMN_NAME_STATE} INTEGER NOT NULL," +
                     "${Entry.COLUMN_NAME_NAME} TEXT NOT NULL," +
-                    "${Entry.COLUMN_NAME_EXCLUDE_VIEW} INTEGER NOT NULL," +
+                    "${Entry.COLUMN_NAME_EXCLUDE_FROM_VIEW} INTEGER NOT NULL," +
                     "${Entry.COLUMN_NAME_COLOR} INTEGER NOT NULL);"
         private const val SQL_CREATE_TAGS =
             "CREATE TABLE IF NOT EXISTS ${Tag.TABLE_NAME} (" +
@@ -239,18 +339,18 @@ class DbManager(private val context: Context) :
                     "${Date.COLUMN_NAME_ID} INTEGER PRIMARY KEY AUTOINCREMENT," +
                     "${Date.COLUMN_NAME_ENTRY_ID} INTEGER NOT NULL," +
                     "${Date.COLUMN_NAME_DESC} TEXT NOT NULL," +
-                    "${Date.COLUMN_NAME_TIME_START} BIGINT NOT NULL," +
+                    "${Date.COLUMN_NAME_EPOCH_SECOND_CHAIN_START} BIGINT NOT NULL," +
                     "${Date.COLUMN_NAME_DURATION} BIGINT NOT NULL," +
-                    "${Date.COLUMN_NAME_TIME_ENDS} BIGINT NOT NULL," +
+                    "${Date.COLUMN_NAME_EPOCH_SECOND_CHAIN_ENDS} BIGINT NOT NULL," +
                     "${Date.COLUMN_NAME_TIMES_REPEATS} INTEGER NOT NULL," +
                     "${Date.COLUMN_NAME_PERIOD} TEXT NOT NULL," +
-                    "${Date.COLUMN_NAME_TIME_ZONE} TEXT NOT NULL," +
+                    "${Date.COLUMN_NAME_TIME_ZONE_ID} TEXT NOT NULL," +
                     "${Date.COLUMN_NAME_REMOVED} TEXT NOT NULL);"
         private const val SQL_CREATE_NOTIFICATIONS =
             "CREATE TABLE IF NOT EXISTS ${Notification.TABLE_NAME} (" +
                     "${Notification.COLUMN_NAME_ENTRY_ID} INTEGER NOT NULL," +
                     "${Notification.COLUMN_NAME_TIME_OFFSET} VARCHAR(18) NOT NULL," +
-                    "${Notification.COLUMN_NAME_SOUND} INT NOT NULL);"
+                    "${Notification.COLUMN_NAME_HAS_SOUND} INT NOT NULL);"
         private const val SATURATION = .5f
         private const val VALUE = .8f
         val presetColors: List<Color> = listOf(

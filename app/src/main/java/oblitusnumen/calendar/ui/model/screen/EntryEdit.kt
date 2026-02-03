@@ -43,7 +43,7 @@ class EntryEdit(
     private var entryName by mutableStateOf(TextFieldValue(entry.name))
     private var color by mutableStateOf(entry.getColorOrDefault())
     private var tags: List<Tag> by mutableStateOf(entry.getTags().sortedBy { it.name })
-    private var dates: List<Date> by mutableStateOf(entry.getDates().sortedBy { it.start })
+    private var dates: List<Date> by mutableStateOf(entry.getDates().sortedBy { it.epochSecondStart })
     private var notifications: List<Notification> by mutableStateOf(run {
         if (entry.isNotCreated())
             dbManager.defaultNotifications.map { Notification(dbManager, null, it.first, it.second) }
@@ -233,7 +233,7 @@ class EntryEdit(
     @OptIn(ExperimentalLayoutApi::class)
     @Composable
     fun tagChooseMenu(onClose: () -> Unit, tagAcceptor: (List<Tag>) -> Unit) {
-        val allTags = dbManager.getAllTags().groupingBy { it.name }.reduce { _, accumulator, _ -> accumulator }
+        val allTags = Tag.all(dbManager).groupingBy { it.name }.reduce { _, accumulator, _ -> accumulator }
         val chosenTags: MutableSet<String> = tags.map { it.name }.toMutableSet()
         var searchTag by remember { mutableStateOf("") }
 
@@ -248,7 +248,7 @@ class EntryEdit(
                 TextButton(onClick = {
                     onClose()
                     tagAcceptor(chosenTags.map {
-                        allTags.getOrElse(it) { Tag.new(dbManager, it) }
+                        allTags.getOrElse(it) { Tag.new(it) }
                     })
                 }) {
                     Text("OK")
@@ -301,7 +301,7 @@ class EntryEdit(
     @Composable
     fun drawTag(name: String, tag: Tag?, chosen: Boolean, onChooseToggle: (Boolean) -> Unit) {
         var selected by remember(name) { mutableStateOf(chosen) }
-        val bgColor = tag?.getColorOrDefault() ?: dbManager.defaultTagColor
+        val bgColor = tag?.colorOrDefault(dbManager) ?: dbManager.defaultTagColor
         InputChip(
             selected,
             {
@@ -356,7 +356,7 @@ class EntryEdit(
                                 date.setRange(
                                     startOfDayStart = ZonedDateTime.of(
                                         it.atTime(localDateTime.toLocalTime()),
-                                        date.zoneId
+                                        date.timeZoneId
                                     )
                                 )
                                 updated = !updated
@@ -373,7 +373,7 @@ class EntryEdit(
                                 date.setRange(
                                     startOfDayStart = ZonedDateTime.of(
                                         it.atDate(localDateTime.toLocalDate()),
-                                        date.zoneId
+                                        date.timeZoneId
                                     )
                                 )
                                 updated = !updated
@@ -699,7 +699,7 @@ class EntryEdit(
 
     @Composable
     fun drawTag(tag: Tag) {
-        val bgColor = tag.getColorOrDefault()
+        val bgColor = tag.colorOrDefault(dbManager)
         InputChip(
             false,
             { tags = tags - tag },
@@ -820,7 +820,8 @@ class EntryEdit(
                             val focusRequester = remember { FocusRequester() }
                             OutlinedTextField(// FIXME: ui paddings
                                 enabled = selectedOffsetType.period !is Once,
-                                modifier = Modifier.width(100.dp).padding(horizontal = 8.dp).focusRequester(focusRequester),
+                                modifier = Modifier.width(100.dp).padding(horizontal = 8.dp)
+                                    .focusRequester(focusRequester),
                                 value = offsetCount, onValueChange = {
                                     val text = it.text
                                     try {

@@ -34,7 +34,7 @@ class EntryDetails(
     private var entry = Entry.new(dbManager)
     private var entryName by mutableStateOf(entry.name.ifEmpty { "[No title]" })
     private var tags: List<Tag> by mutableStateOf(entry.getTags().sortedBy { it.name })
-    private var dates: List<Date> by mutableStateOf(entry.getDates().sortedBy { it.start })
+    private var dates: List<Date> by mutableStateOf(entry.getDates().sortedBy { it.epochSecondStart })
     private var notifications: List<Notification> by mutableStateOf(
         entry.getNotifications().sortedBy { it.offset.secondsApproximation() })
     private var contents by mutableStateOf(entry.getContents())  // FIXME: this should be List<Content>
@@ -55,7 +55,7 @@ class EntryDetails(
             entry = entryNullable
             entryName = entry.name.ifEmpty { "[No title]" }
             tags = entry.getTags().sortedBy { it.name }
-            dates = entry.getDates().sortedBy { it.start }
+            dates = entry.getDates().sortedBy { it.epochSecondStart }
             notifications = entry.getNotifications()
             contents = entry.getContents()
             return@remember true
@@ -99,7 +99,7 @@ class EntryDetails(
                         Modifier.fillMaxWidth().padding(end = 16.dp)
                     ) {
                         for (tag in tags)
-                            drawTag(tag)
+                            drawTag(dbManager, tag)
                     }
                 }
             }
@@ -183,8 +183,8 @@ class EntryDetails(
     }
 
     @Composable
-    fun drawTag(tag: Tag) {
-        val bgColor = tag.getColorOrDefault()
+    fun drawTag(dbManager: DbManager, tag: Tag) {
+        val bgColor = tag.colorOrDefault(dbManager)
         InputChip(
             false,
             {},

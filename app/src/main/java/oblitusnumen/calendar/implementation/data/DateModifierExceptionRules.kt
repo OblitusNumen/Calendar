@@ -84,10 +84,6 @@ class ExceptionRules internal constructor(serialized: String = "") { // all oper
     }
 
     fun containsDate(day: Long): Boolean {
-        /*if (exceptions.isEmpty())
-            return false*/
-        //val index = findIndex(day) //for faster work
-        //return exceptions[index].start <= day && exceptions[index].end >= day
         return getRangeForDate(day) != null
     }
 
@@ -132,21 +128,6 @@ class ExceptionRules internal constructor(serialized: String = "") { // all oper
                 list.add(i)
         return list
     }
-
-    /*private fun findIndex(day: Long): Int { //todo bad, but is it actually needed?
-        var begin = 0
-        var end = exceptions.size
-        while (true) { //search algorithm
-            val center = (begin + end) / 2
-            if (exceptions[center].start >= day) {
-                if (center == end) return center
-                end = center
-            } else {
-                if (begin == center) return end
-                begin = center
-            }
-        }
-    }*/
 
     data class ExceptionRange(val start: Long, val end: Long)
 }

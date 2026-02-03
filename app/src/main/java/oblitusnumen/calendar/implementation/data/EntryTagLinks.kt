@@ -3,7 +3,6 @@ package oblitusnumen.calendar.implementation.data
 import android.provider.BaseColumns
 
 class EntryTagLinks : BaseColumns {
-
     companion object {
         const val TABLE_NAME: String = "entryTagLinks"
         const val COLUMN_NAME_ENTRY_ID: String = "entryId"
