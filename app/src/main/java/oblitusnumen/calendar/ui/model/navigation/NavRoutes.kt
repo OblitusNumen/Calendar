@@ -82,6 +82,21 @@ sealed class NavRoutes(private val path: String, val route: String = path) {
         }
     }
 
+    data object TagEdit : NavRoutes("tagEdit", route = "tagEdit/{tag}") {
+        private const val tag = "tag"
+
+        fun navHere(navController: NavController, tagId: Int?) {
+            val tagId = tagId?.toString() ?: "-1"
+            navController.navigate(withArgs(tagId))
+        }
+
+        fun getArgTagId(navBackStackEntry: NavBackStackEntry): Int? {
+            val tagText = navBackStackEntry.arguments?.getString(tag)
+            val tagId = tagText?.toInt()
+            return if (tagId == null || tagId < 0) null else tagId
+        }
+    }
+
     data object EntryDetails : NavRoutes("entryDetails", route = "entryDetails/{entry}") {
         private const val entry = "entry"
 

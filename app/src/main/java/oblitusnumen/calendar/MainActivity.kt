@@ -14,8 +14,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
@@ -30,19 +32,13 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import oblitusnumen.calendar.implementation.*
 import oblitusnumen.calendar.implementation.data.DbManager
-import oblitusnumen.calendar.implementation.data.Entry
-import oblitusnumen.calendar.implementation.data.Tag
-import oblitusnumen.calendar.implementation.log
+import oblitusnumen.calendar.implementation.data.tables.Entry
+import oblitusnumen.calendar.implementation.data.tables.Tag
 import oblitusnumen.calendar.implementation.notifications.NotificationBroadcastReceiver
-import oblitusnumen.calendar.implementation.rmRecursively
-import oblitusnumen.calendar.implementation.setLogFile
-import oblitusnumen.calendar.implementation.unzipFile
 import oblitusnumen.calendar.ui.model.navigation.NavRoutes
 import oblitusnumen.calendar.ui.model.screen.*
-import oblitusnumen.calendar.ui.model.tab.CalendarTab
-import oblitusnumen.calendar.ui.model.tab.EntriesTab
-import oblitusnumen.calendar.ui.model.tab.TagsTab
 import oblitusnumen.calendar.ui.theme.CalendarTheme
 import java.io.File
 import java.time.LocalDate
@@ -144,7 +140,36 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     fun NavGraph(navController: NavHostController, dbManager: DbManager, startingEntryId: Int? = null) {
-        var tagsFilter = rememberSaveable { mutableStateOf(listOf<Tag>()) }
+        val tagFilterSaver: Saver<MutableState<List<Tag>>, Bundle> = Saver(
+            save = { tagFilter ->
+                Bundle().apply {
+                    val tagFilter = tagFilter.value
+                    putInt("tagFilter", tagFilter.size)
+                    var idx = 0
+                    tagFilter.forEach { tag ->
+                        putInt("tagFilter$idx.0", tag.id!!)
+                        putString("tagFilter$idx.1", tag.name)
+                        putInt("tagFilter$idx.2", tag.color.toInt())
+                        idx++
+                    }
+                }
+            },
+            restore = { bundle ->
+                val tagFilter = mutableListOf<Tag>()
+                repeat(bundle.getInt("tagFilter", 0)) { idx ->
+                    tagFilter.add(
+                        Tag(
+                            bundle.getString("tagFilter$idx.1")!!,
+                            bundle.getInt("tagFilter$idx.0"),
+                            bundle.getInt("tagFilter$idx.2").toColor()
+                        )
+                    )
+                }
+                mutableStateOf(tagFilter)
+            }
+        )
+        val tagsFilter = rememberSaveable(saver = tagFilterSaver) { mutableStateOf(listOf()) }
+        // FIXME: check the saveable
 
         NavHost(
             modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
@@ -160,9 +185,9 @@ class MainActivity : ComponentActivity() {
                     dbManager,
                     tagsFilter,
                     { drawBottomBar(navController) },
-                    {},// FIXME:
+//                    {},// FIXME:
 //                    {dbManager.fillDB()},
-//                    { NavRoutes.EntryEdit.navHere(navController, null) },
+                    { NavRoutes.EntryEdit.navHere(navController, null) },
                     { NavRoutes.ThatDayDetails.navHere(navController, it) },
                     { year, monthValue ->
                         NavRoutes.Agenda.navHere(navController, year, monthValue, null)
@@ -189,6 +214,7 @@ class MainActivity : ComponentActivity() {
 
             composable(route = NavRoutes.Agenda.route) { navBackStackEntry -> // FIXME: resolve recurring stack
                 val month = NavRoutes.Agenda.getArgs(navBackStackEntry)
+
                 AgendaScreen(
                     dbManager,
                     month,
@@ -203,6 +229,7 @@ class MainActivity : ComponentActivity() {
 
             composable(route = NavRoutes.ThatDayDetails.route) { navBackStackEntry ->
                 val thatDay = NavRoutes.ThatDayDetails.getArgs(navBackStackEntry) ?: LocalDate.now()
+
                 DateScreen(
                     dbManager,
                     thatDay,
@@ -219,9 +246,9 @@ class MainActivity : ComponentActivity() {
                 val entryId = NavRoutes.EntryEdit.getArgEntryId(navBackStackEntry)
                 var fromDay = NavRoutes.EntryEdit.getArgDate4new(navBackStackEntry)
                 val entryEdit = viewModel {
-                    var entry = dbManager.getEntryById(entryId ?: -1)
+                    var entry = Entry.byId(dbManager, entryId ?: -1)
                     if (entry == null) {
-                        entry = Entry.new(dbManager)
+                        entry = Entry()
                     } else
                         fromDay = null
                     EntryEdit(dbManager, entry, fromDay)
@@ -271,13 +298,25 @@ class MainActivity : ComponentActivity() {
             }
 
             composable(route = NavRoutes.Tags.route) {
-                val tagsTab = viewModel { TagsTab(dbManager) { /*fixme transition to editTag*/ } }
-                Scaffold(
-                    topBar = { tagsTab.topBar { NavRoutes.Settings.navHere(navController) } },
-                    bottomBar = { drawBottomBar(navController) },
-                    floatingActionButton = { tagsTab.functionButton() }) {
-                    tagsTab.compose()
-                }
+                TagsScreen(
+                    dbManager,
+                    { drawBottomBar(navController) },
+                    { NavRoutes.TagEdit.navHere(navController, it) },
+                    { NavRoutes.backPress(navController) }
+                )
+            }
+
+            composable(route = NavRoutes.TagEdit.route) { navBackStackEntry ->
+                val tagId = NavRoutes.TagEdit.getArgTagId(navBackStackEntry) ?: -1
+                if (tagId < 0)
+                    throw RuntimeException("cannot edit non-existing tag")
+                TagEditScreen(
+                    dbManager,
+                    tagId,
+                    { NavRoutes.EntryDetails.navHere(navController, it) },// FIXME:
+//                    { NavRoutes.EntryEdit.navHere(navController, null) },
+                    { NavRoutes.backPress(navController) }
+                )
             }
 
             composable(route = NavRoutes.Settings.route) {
