@@ -53,7 +53,7 @@ fun TagEditScreen(
     var addEntriesDialogShown by remember { mutableStateOf(false) }
     if (addEntriesDialogShown)
         AddEntriesDialog(
-            allEntries.filter { it.id in edits.entryAssociations },
+            allEntries.filter { it.id !in edits.entryAssociations },
             nextDates,
             { edits.addEntryAssociations(*it.toIntArray()) }
         ) { addEntriesDialogShown = false }
