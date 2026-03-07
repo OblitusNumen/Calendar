@@ -9,7 +9,6 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.DateRange
@@ -28,17 +27,13 @@ import kotlinx.coroutines.launch
 import oblitusnumen.calendar.R
 import oblitusnumen.calendar.implementation.LIST_CENTER
 import oblitusnumen.calendar.implementation.LIST_LEN
-import oblitusnumen.calendar.implementation.data.DateOccurrence
 import oblitusnumen.calendar.implementation.data.DbManager
-import oblitusnumen.calendar.implementation.data.Tag
-import oblitusnumen.calendar.implementation.data.ViewDateWithOptions
-import oblitusnumen.calendar.ui.ActionButtonWithScroll
-import oblitusnumen.calendar.ui.PositionStatus
-import oblitusnumen.calendar.ui.horizontal
-import oblitusnumen.calendar.ui.measureTextLine
+import oblitusnumen.calendar.implementation.data.tables.Tag
+import oblitusnumen.calendar.implementation.data.views.DateOccurrence
+import oblitusnumen.calendar.implementation.data.views.ViewDateWithOptions
+import oblitusnumen.calendar.ui.*
 import oblitusnumen.calendar.ui.model.DateTimePicker
-import oblitusnumen.calendar.ui.model.tab.DrawTag
-import oblitusnumen.calendar.ui.model.tab.TagFilterMenu
+import oblitusnumen.calendar.ui.theme.topBarColors
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import kotlin.math.max
@@ -64,7 +59,7 @@ fun AgendaScreen(
 
     val scrollTo: suspend (LocalDate) -> Unit = {
         calendarLazyListState!!.scrollToItem(
-            getNowItemIndexExact(it),
+            getNowDayItemIndexExact(it),
             -contentScrollOffset!!
         )
         monthDisplayShown = false
@@ -93,7 +88,7 @@ fun AgendaScreen(
 
             val initialMonthDate = LocalDate.of(monthDate.year, monthDate.month, monthDate.dayOfMonth ?: 1)
             calendarLazyListState =
-                rememberLazyListState(getNowItemIndexExact(initialMonthDate), -contentScrollOffset)
+                rememberLazyListState(getNowDayItemIndexExact(initialMonthDate), -contentScrollOffset)
 
             LazyColumn(
                 state = calendarLazyListState,
@@ -119,12 +114,12 @@ fun AgendaScreen(
                 }
             }
 
-            LaunchedEffect(calendarLazyListState, getNowItemIndexExact(now)) {
+            LaunchedEffect(calendarLazyListState, getNowDayItemIndexExact(now)) {
                 snapshotFlow { calendarLazyListState.layoutInfo }
                     .collect { layoutInfo ->
                         val todayItemChangeViewportOffset =
                             (layoutInfo.viewportEndOffset + contentScrollOffset - contentScrollOffsetDown) / 2
-                        val targetItemIdx = getNowItemIndexExact(now)
+                        val targetItemIdx = getNowDayItemIndexExact(now)
                         val visibleItemsInfo = layoutInfo.visibleItemsInfo
                         val newPositionStatus = if (visibleItemsInfo.isEmpty())
                             PositionStatus.Visible
@@ -291,7 +286,7 @@ fun AgendaScreen(
                         }
                 }
 
-                LaunchedEffect(calendarLazyListState, getNowItemIndexExact(now)) {
+                LaunchedEffect(calendarLazyListState, getNowDayItemIndexExact(now)) {
                     snapshotFlow { calendarLazyListState.layoutInfo }
                         .collect { layoutInfo ->
                             val visibleItemsInfo = layoutInfo.visibleItemsInfo
@@ -301,7 +296,7 @@ fun AgendaScreen(
 
                             for (info in visibleItemsInfo) {
                                 if (info.offset >= monthChangeViewportOffset || info.offset + info.size > monthChangeViewportOffset) {
-                                    val newCurrentMonth = getCurrentMonthFromIndex(info.index)
+                                    val newCurrentMonth = getCurrentMonthFromDayItemIndex(info.index)
                                     if (newCurrentMonth != currentMonth) {
                                         if (pagerMonth == currentMonth) {
                                             pagerMonth = newCurrentMonth
@@ -348,7 +343,7 @@ fun AgendaScreen(
                     )
                 }
 
-                LaunchedEffect(calendarLazyListState, getNowItemIndexExact(now)) {
+                LaunchedEffect(calendarLazyListState, getNowDayItemIndexExact(now)) {
                     snapshotFlow { calendarLazyListState.layoutInfo }
                         .collect { layoutInfo ->
                             val visibleItemsInfo = layoutInfo.visibleItemsInfo
@@ -358,7 +353,7 @@ fun AgendaScreen(
 
                             for (info in visibleItemsInfo) {
                                 if (info.offset >= monthChangeViewportOffset || info.offset + info.size > monthChangeViewportOffset) {
-                                    val newCurrentMonth = getCurrentMonthFromIndex(info.index)
+                                    val newCurrentMonth = getCurrentMonthFromDayItemIndex(info.index)
                                     if (newCurrentMonth != currentMonth) {
                                         currentMonth = newCurrentMonth
                                     }
@@ -382,7 +377,8 @@ fun DisplayDayAgenda(
     openDayInfo: () -> Unit,
     openEntryInfoByDateOccurrence: (DateOccurrence) -> Unit
 ) {
-    val dates = remember(day, tagsFilter) { ViewDateWithOptions.occurrencesForDay(dbManager, day, tagsFilter) }
+    val dates =
+        remember(day, tagsFilter) { ViewDateWithOptions.occurrencesForDay(dbManager, day, tagsFilter.map { it.id!! }) }
 //    if (dates.isEmpty() && !drawUnconditionally)
 //        return
     // FIXME: ------------------------------------------------------------------------------------------------------- 
@@ -411,74 +407,62 @@ fun AgendaTopBar(
 
     dateTimePicker.tryCompose()
 
-    Column {
-        CenterAlignedTopAppBar(
-            colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = .9f),
-                titleContentColor = MaterialTheme.colorScheme.primary,
-            ),
-            title = {
-                var isFilterOpen by remember { mutableStateOf(false) }
-                if (isFilterOpen)
-                    TagFilterMenu(dbManager, tagsFilter, { isFilterOpen = false }, tagsFilterUpdate)
+    CenterAlignedTopAppBar(
+        colors = topBarColors(),
+        scrollBehavior = scrollBehavior,
+        navigationIcon = { BackPressButton(backPress) },
+        title = {
+            var isFilterOpen by remember { mutableStateOf(false) }
+            if (isFilterOpen)
+                TagFilterMenu(dbManager, tagsFilter, { isFilterOpen = false }, tagsFilterUpdate)
 
-                Row(
-                    Modifier.background(
-                        MaterialTheme.colorScheme.background.copy(alpha = .5f),
-                        shape = RoundedCornerShape(100)
-                    )
-                        .clip(RoundedCornerShape(100))
-                        .height(40.dp).fillMaxWidth().clickable { isFilterOpen = true }
-                ) {
-                    LazyRow(Modifier.weight(1f)/*.clip(RoundedCornerShape(100))*/) {
-                        for (tag in tagsFilter)
-                            item {
-                                DrawTag(dbManager, tag, { isFilterOpen = true }) { tagsFilterUpdate(tagsFilter - tag) }
-                            }
-                    }
-
-                    Icon(
-                        Icons.Filled.Face,
-                        contentDescription = "filter",
-                        Modifier.size(40.dp),
-                        MaterialTheme.colorScheme.onSurface.copy(alpha = .5f)
-                    )
-                }
-            },
-            navigationIcon = {
-                IconButton(onClick = backPress) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = null
-                    )
-                }
-            },
-            actions = {
-                IconButton(onClick = {
-                    dateTimePicker.datePick({}, {
-                        coroutineScope.launch {
-                            scrollTo(it)
+            Row(
+                Modifier.background(
+                    MaterialTheme.colorScheme.background.copy(alpha = .5f),
+                    shape = RoundedCornerShape(100)
+                )
+                    .clip(RoundedCornerShape(100))
+                    .height(40.dp).fillMaxWidth().clickable { isFilterOpen = true }
+            ) {
+                LazyRow(Modifier.weight(1f)/*.clip(RoundedCornerShape(100))*/) {
+                    for (tag in tagsFilter)
+                        item {
+                            DrawTag(dbManager, tag, { isFilterOpen = true }) { tagsFilterUpdate(tagsFilter - tag) }
                         }
-                    })
-                }) {
-                    Icon(
-                        imageVector = Icons.Filled.DateRange,
-                        contentDescription = null
-                    )
                 }
-            },
-            scrollBehavior = scrollBehavior,
-        )
-    }
+
+                Icon(
+                    Icons.Filled.Face,
+                    contentDescription = "filter",
+                    Modifier.size(40.dp),
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = .5f)
+                )
+            }
+        },
+        actions = {
+            IconButton(onClick = {
+                dateTimePicker.datePick({}, {
+                    coroutineScope.launch {
+                        scrollTo(it)
+                    }
+                })
+            }) {
+                Icon(
+                    imageVector = Icons.Filled.DateRange,
+                    contentDescription = null
+                )
+            }
+        },
+    )
 }
 
-fun getNowItemIndex(now: LocalDate) =
+fun getNowMonthItemDayIndex(now: LocalDate) =
     (LIST_LEN / 2 + ChronoUnit.MONTHS.between(LIST_CENTER, now) * 32).toInt()
 
-fun getNowItemIndexExact(now: LocalDate) =
-    getNowItemIndex(now) + now.dayOfMonth
+fun getNowDayItemIndexExact(now: LocalDate) =
+    getNowMonthItemDayIndex(now) + now.dayOfMonth
 
-fun getCurrentMonthFromIndex(index: Int): LocalDate {
+fun getCurrentMonthFromDayItemIndex(index: Int): LocalDate {
     val effectiveIndex = index - LIST_LEN / 2
     return LIST_CENTER.plusMonths(((if (effectiveIndex < 0) effectiveIndex - 32 else effectiveIndex) / 32).toLong())
 }

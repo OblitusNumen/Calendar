@@ -8,7 +8,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Notifications
@@ -19,25 +18,32 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import oblitusnumen.calendar.implementation.bgColorToTextColor
 import oblitusnumen.calendar.implementation.convertMillisToDate
-import oblitusnumen.calendar.implementation.data.*
+import oblitusnumen.calendar.implementation.data.DbManager
+import oblitusnumen.calendar.implementation.data.tables.Date
+import oblitusnumen.calendar.implementation.data.tables.Entry
+import oblitusnumen.calendar.implementation.data.tables.Notification
+import oblitusnumen.calendar.implementation.data.tables.Tag
+import oblitusnumen.calendar.ui.BackPressButton
+import oblitusnumen.calendar.ui.theme.topBarColors
 import java.time.format.DateTimeFormatter
 
 class EntryDetails(
     private val dbManager: DbManager,
     private val entryID: Int
 ) : ViewModel() {
-    private var entry = Entry.new(dbManager)
-    private var entryName by mutableStateOf(entry.name.ifEmpty { "[No title]" })
-    private var tags: List<Tag> by mutableStateOf(entry.getTags().sortedBy { it.name })
-    private var dates: List<Date> by mutableStateOf(entry.getDates().sortedBy { it.epochSecondStart })
+    private var entry = Entry()
+    private var entryName by mutableStateOf("entry.name".ifEmpty { "[No title]" })
+    private var tags: List<Tag> by mutableStateOf(entry.getTags(dbManager).sortedBy { it.name })
+    private var dates: List<Date> by mutableStateOf(entry.getDates(dbManager).sortedBy { it.epochSecondChainStart })
     private var notifications: List<Notification> by mutableStateOf(
-        entry.getNotifications().sortedBy { it.offset.secondsApproximation() })
-    private var contents by mutableStateOf(entry.getContents())  // FIXME: this should be List<Content>
+        entry.getNotifications(dbManager).sortedBy { it.offset.secondsApproximation() })
+    private var contents by mutableStateOf("entry.getContents()")  // FIXME: this should be List<Content>
 
     @OptIn(ExperimentalLayoutApi::class)
     @Composable
@@ -47,24 +53,24 @@ class EntryDetails(
         val contentOffsetBottom =
             with(LocalDensity.current) { WindowInsets.navigationBars.getBottom(LocalDensity.current).toDp() }
         val ok = remember {
-            val entryNullable = dbManager.getEntryById(entryID)
+            val entryNullable = Entry.byId(dbManager, entryID)
             if (entryNullable == null) {
                 backPress()
                 return@remember false
             }
             entry = entryNullable
-            entryName = entry.name.ifEmpty { "[No title]" }
-            tags = entry.getTags().sortedBy { it.name }
-            dates = entry.getDates().sortedBy { it.epochSecondStart }
-            notifications = entry.getNotifications()
-            contents = entry.getContents()
+            entryName = "entry.name.ifEmpty { \"[No title]\" }"
+            tags = entry.getTags(dbManager).sortedBy { it.name }
+            dates = entry.getDates(dbManager).sortedBy { it.epochSecondChainStart }
+            notifications = Notification.forEntry(dbManager, entryID)
+            contents = "entry.getContents()"
             return@remember true
         }
         if (!ok) return
         Column(modifier.fillMaxWidth().verticalScroll(rememberScrollState()).fillMaxHeight()) {
             Spacer(Modifier.height(contentOffsetTop))
             // name and color
-            val color by remember { mutableStateOf(entry.getColorOrDefault()) }
+            val color by remember { mutableStateOf(Color.Red/*entry.getColorOrDefault()*/) }
             SelectionContainer {
                 Row {
                     Box(
@@ -204,19 +210,10 @@ class EntryDetails(
     fun topBar(backPress: () -> Unit, editEntry: (Int) -> Unit) {// TODO: confirm
         val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
         CenterAlignedTopAppBar(
-            colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = .9f),
-                titleContentColor = MaterialTheme.colorScheme.primary,
-            ),
+            colors = topBarColors(),
+            scrollBehavior = scrollBehavior,
+            navigationIcon = { BackPressButton(backPress) },
             title = { Text(entryName, maxLines = 1) },
-            navigationIcon = {
-                IconButton(onClick = backPress) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = null
-                    )
-                }
-            },
             actions = {
                 IconButton(onClick = {
                     editEntry(entryID)
@@ -227,7 +224,7 @@ class EntryDetails(
                     )
                 }
                 IconButton(onClick = {
-                    entry.deleteCascade()// FIXME: catch exception
+                    entry.deleteCascade(dbManager)// FIXME: catch exception
                     backPress()
                 }) {
                     Icon(
@@ -236,7 +233,6 @@ class EntryDetails(
                     )
                 }
             },
-            scrollBehavior = scrollBehavior,
         )
     }
 }

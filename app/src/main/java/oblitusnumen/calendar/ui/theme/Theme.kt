@@ -28,6 +28,13 @@ private val LightColorScheme = lightColorScheme(
     */
 )
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun topBarColors() = TopAppBarDefaults.centerAlignedTopAppBarColors(
+    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = .9f),
+    titleContentColor = MaterialTheme.colorScheme.primary,
+)
+
 @Composable
 fun CalendarTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),

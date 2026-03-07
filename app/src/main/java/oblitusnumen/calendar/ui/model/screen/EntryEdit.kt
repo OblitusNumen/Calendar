@@ -5,8 +5,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Done
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Call
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.*
@@ -25,11 +27,19 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import oblitusnumen.calendar.implementation.bgColorToTextColor
 import oblitusnumen.calendar.implementation.convertMillisToDate
-import oblitusnumen.calendar.implementation.data.*
+import oblitusnumen.calendar.implementation.data.DbManager
+import oblitusnumen.calendar.implementation.data.Period
 import oblitusnumen.calendar.implementation.data.Period.*
+import oblitusnumen.calendar.implementation.data.tables.Date
+import oblitusnumen.calendar.implementation.data.tables.Entry
+import oblitusnumen.calendar.implementation.data.tables.Notification
+import oblitusnumen.calendar.implementation.data.tables.Tag
+import oblitusnumen.calendar.ui.BackPressButton
+import oblitusnumen.calendar.ui.EditDoneButton
 import oblitusnumen.calendar.ui.model.DateTimePicker
 import oblitusnumen.calendar.ui.model.colorPicker
 import oblitusnumen.calendar.ui.model.materialSpinner
+import oblitusnumen.calendar.ui.theme.topBarColors
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -40,18 +50,18 @@ class EntryEdit(
     private val entry: Entry,
     pendingDate: LocalDate?,
 ) : ViewModel() {
-    private var entryName by mutableStateOf(TextFieldValue(entry.name))
-    private var color by mutableStateOf(entry.getColorOrDefault())
-    private var tags: List<Tag> by mutableStateOf(entry.getTags().sortedBy { it.name })
-    private var dates: List<Date> by mutableStateOf(entry.getDates().sortedBy { it.epochSecondStart })
+    private var entryName by mutableStateOf(TextFieldValue("entry.name"))
+    private var color by mutableStateOf(Color.Red/*entry.getColorOrDefault()*/)
+    private var tags: List<Tag> by mutableStateOf(entry.getTags(dbManager).sortedBy { it.name })
+    private var dates: List<Date> by mutableStateOf(entry.getDates(dbManager).sortedBy { it.epochSecondChainStart })
     private var notifications: List<Notification> by mutableStateOf(run {
         if (entry.isNotCreated())
-            dbManager.defaultNotifications.map { Notification(dbManager, null, it.first, it.second) }
+            dbManager.defaultNotifications.map { Notification(null, it.first, it.second) }
         else
-            entry.getNotifications().sortedBy { it.offset.secondsApproximation() }
+            entry.getNotifications(dbManager).sortedBy { it.offset.secondsApproximation() }
     })
-    private var contents by mutableStateOf(TextFieldValue(entry.getContents()))  // FIXME: this should be List<Content>
-    private var hideInCalendarView: MutableState<Boolean> = mutableStateOf(entry.excludeFromCalendarView)
+    private var contents by mutableStateOf(TextFieldValue("entry.getContents()"))  // FIXME: this should be List<Content>
+    private var hideInCalendarView: MutableState<Boolean> = mutableStateOf(false/*entry.excludeFromCalendarView*/)
     private var dateTimePicker = DateTimePicker()
     private var periodSelectorDate = mutableStateOf<Date?>(null)
 
@@ -59,11 +69,9 @@ class EntryEdit(
         if (pendingDate != null)
             dateTimePicker.timePick({}, {
                 val newDate = Date(
-                    dbManager,
                     entry,
-                    "",
                     ZonedDateTime.of(it.atDate(pendingDate), ZoneId.systemDefault()),
-                    0,
+                    Once(),
                     1,
                     Once()
                 )
@@ -94,14 +102,13 @@ class EntryEdit(
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 trailingIcon = {
                     var colorPickerShown by remember { mutableStateOf(false) }
-                    Row {
-                        Box(
-                            Modifier.align(Alignment.CenterVertically).padding(horizontal = 8.dp)
-                                .background(color, CircleShape).border(0.dp, color, CircleShape).size(48.dp).clickable {
-                                    colorPickerShown = true
-                                }
-                        )
-                    }
+                    Box(
+                        Modifier.padding(horizontal = 8.dp)
+                            .background(color, CircleShape).border(0.dp, color, CircleShape).size(48.dp).clickable {
+                                colorPickerShown = true
+                            }
+                    )
+
                     if (colorPickerShown)
                         colorPicker(color, true) {
                             if (it != null) {
@@ -154,11 +161,9 @@ class EntryEdit(
             Box(Modifier.defaultMinSize(minHeight = 52.dp).fillMaxWidth()/*.padding(top = 8.dp)*/.clickable {
                 dateTimePicker.dateTimePick({}, {
                     val newDate = Date(
-                        dbManager,
                         entry,
-                        "",
                         ZonedDateTime.of(it, ZoneId.systemDefault()),
-                        0,
+                        Once(),
                         1,
                         Once()
                     )
@@ -185,7 +190,6 @@ class EntryEdit(
                     }
                 }
                 notifications = (notifications + Notification(
-                    dbManager,
                     entry.id,
                     offset,
                     sound
@@ -248,7 +252,7 @@ class EntryEdit(
                 TextButton(onClick = {
                     onClose()
                     tagAcceptor(chosenTags.map {
-                        allTags.getOrElse(it) { Tag.new(it) }
+                        allTags.getOrElse(it) { Tag(it) }
                     })
                 }) {
                     Text("OK")
@@ -725,22 +729,14 @@ class EntryEdit(
     fun topBar(backPress: () -> Unit) {// TODO: confirm
         val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
         CenterAlignedTopAppBar(
-            colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = .9f),
-                titleContentColor = MaterialTheme.colorScheme.primary,
-            ),
+            colors = topBarColors(),
+            scrollBehavior = scrollBehavior,
+            navigationIcon = { BackPressButton(backPress) },
             title = { Text("Edit event", maxLines = 1) },
-            navigationIcon = {
-                IconButton(onClick = backPress) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = null
-                    )
-                }
-            },
             actions = {
-                IconButton(onClick = {
+                EditDoneButton {
                     entry.set(
+                        dbManager,
                         entryName.text,
                         hideInCalendarView.value,
                         color,
@@ -750,14 +746,8 @@ class EntryEdit(
                         contents.text
                     )// FIXME: catch exception
                     backPress()
-                }) {
-                    Icon(
-                        imageVector = Icons.Filled.Check,
-                        contentDescription = null
-                    )
                 }
             },
-            scrollBehavior = scrollBehavior,
         )
     }
 

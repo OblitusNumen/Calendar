@@ -1,4 +1,4 @@
-package oblitusnumen.calendar.ui.model.tab
+package oblitusnumen.calendar.ui.model.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -32,14 +32,15 @@ import oblitusnumen.calendar.implementation.LIST_CENTER
 import oblitusnumen.calendar.implementation.LIST_LEN
 import oblitusnumen.calendar.implementation.bgColorToTextColor
 import oblitusnumen.calendar.implementation.data.DbManager
-import oblitusnumen.calendar.implementation.data.Tag
-import oblitusnumen.calendar.implementation.data.ViewDateWithOptions
+import oblitusnumen.calendar.implementation.data.tables.Tag
+import oblitusnumen.calendar.implementation.data.views.ViewDateWithOptions
 import oblitusnumen.calendar.implementation.zonedDateTime
 import oblitusnumen.calendar.ui.ActionButtonWithScroll
 import oblitusnumen.calendar.ui.PositionStatus
 import oblitusnumen.calendar.ui.horizontal
 import oblitusnumen.calendar.ui.measureTextLine
 import oblitusnumen.calendar.ui.model.DateTimePicker
+import oblitusnumen.calendar.ui.theme.topBarColors
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
@@ -67,7 +68,7 @@ fun CalendarTab(
 
     val scrollTo: suspend (LocalDate) -> Unit = {// TODO: light up the destination day
         calendarLazyListState!!.scrollToItem(
-            getNowItemIndexExact(it),
+            getNowWeekItemIndexExact(it),
             halfWeekOffset - (calendarLazyListState!!.layoutInfo.viewportEndOffset + contentScrollOffset!! - contentScrollOffsetDown!!) / 2
         )
     }
@@ -92,7 +93,7 @@ fun CalendarTab(
         contentScrollOffsetDown =
             with(LocalDensity.current) { paddingValues.calculateBottomPadding().toPx().toInt() }
         calendarLazyListState =
-            rememberLazyListState(getNowItemIndex(now), -contentScrollOffset)
+            rememberLazyListState(getNowMonthItemWeekIndex(now), -contentScrollOffset)
 
         var currentMonth by rememberSaveable { mutableStateOf(now) }
 
@@ -162,10 +163,10 @@ fun CalendarTab(
                 )
             }
 
-            LaunchedEffect(calendarLazyListState, getNowItemIndexExact(now)) {
+            LaunchedEffect(calendarLazyListState, getNowWeekItemIndexExact(now)) {
                 snapshotFlow { calendarLazyListState.layoutInfo }
                     .collect { layoutInfo ->
-                        val targetItemIdx = getNowItemIndexExact(now)
+                        val targetItemIdx = getNowWeekItemIndexExact(now)
                         val visibleItemsInfo = layoutInfo.visibleItemsInfo
                         val newPositionStatus = if (visibleItemsInfo.isEmpty())
                             PositionStatus.Visible
@@ -197,7 +198,7 @@ fun CalendarTab(
 
                         for (info in visibleItemsInfo) {
                             if (info.offset >= contentScrollOffset) {
-                                val newCurrentMonth = getCurrentMonthFromIndex(info.index)
+                                val newCurrentMonth = getCurrentMonthFromWeekItemIndex(info.index)
                                 if (newCurrentMonth != currentMonth) {
                                     currentMonth = newCurrentMonth
                                 }
@@ -231,7 +232,7 @@ fun DisplayWeek(
                 dbManager,
                 zonedDateTime(date).toEpochSecond(),
                 zonedDateTime(date.plusWeeks(1)).toEpochSecond(),
-                tagsFilter
+                tagsFilter.map { it.id!! }
             )
 
         while (true) {
@@ -359,10 +360,16 @@ fun CalendarTopBar(
 
     Column {
         CenterAlignedTopAppBar(
-            colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = .9f),
-                titleContentColor = MaterialTheme.colorScheme.primary,
-            ),
+            colors = topBarColors(),
+            scrollBehavior = scrollBehavior,
+            navigationIcon = {
+                IconButton(onClick = openSettings) {
+                    Icon(
+                        imageVector = Icons.Filled.Settings,
+                        contentDescription = null
+                    )
+                }
+            },
             title = {
                 var isFilterOpen by remember { mutableStateOf(false) }
                 if (isFilterOpen)
@@ -390,14 +397,6 @@ fun CalendarTopBar(
                     )
                 }
             },
-            navigationIcon = {
-                IconButton(onClick = openSettings) {
-                    Icon(
-                        imageVector = Icons.Filled.Settings,
-                        contentDescription = null
-                    )
-                }
-            },
             actions = {
                 IconButton(onClick = {
                     dateTimePicker.datePick({}, {
@@ -412,7 +411,6 @@ fun CalendarTopBar(
                     )
                 }
             },
-            scrollBehavior = scrollBehavior,
         )
 
         Box(
@@ -565,13 +563,13 @@ fun DrawTag(dbManager: DbManager, tag: Tag, openFilter: () -> Unit, rmTag: () ->
     )
 }
 
-fun getNowItemIndex(now: LocalDate) =
+fun getNowMonthItemWeekIndex(now: LocalDate) =
     (LIST_LEN / 2 + ChronoUnit.MONTHS.between(LIST_CENTER, now) * 7).toInt()
 
-fun getNowItemIndexExact(now: LocalDate) =
-    getNowItemIndex(now) + (now.dayOfMonth + now.withDayOfMonth(1).dayOfWeek.value + 5) / 7
+fun getNowWeekItemIndexExact(now: LocalDate) =
+    getNowMonthItemWeekIndex(now) + (now.dayOfMonth + now.withDayOfMonth(1).dayOfWeek.value + 5) / 7
 
-fun getCurrentMonthFromIndex(index: Int): LocalDate {
+fun getCurrentMonthFromWeekItemIndex(index: Int): LocalDate {
     val effectiveIndex = index - LIST_LEN / 2 - 1
     return LIST_CENTER.plusMonths(((if (effectiveIndex < 0) effectiveIndex - 7 else effectiveIndex) / 7).toLong())
 }

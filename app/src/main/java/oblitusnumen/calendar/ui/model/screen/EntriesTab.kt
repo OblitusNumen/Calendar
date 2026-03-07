@@ -1,13 +1,11 @@
-package oblitusnumen.calendar.ui.model.tab
+package oblitusnumen.calendar.ui.model.screen
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
@@ -22,9 +20,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import oblitusnumen.calendar.implementation.bgColorToTextColor
-import oblitusnumen.calendar.implementation.data.*
-import oblitusnumen.calendar.implementation.defaultZoneId
+import oblitusnumen.calendar.implementation.data.DbManager
+import oblitusnumen.calendar.implementation.data.tables.Entry
+import oblitusnumen.calendar.implementation.data.tables.Tag
 import oblitusnumen.calendar.ui.model.DateTimePicker
+import oblitusnumen.calendar.ui.theme.topBarColors
 import java.time.LocalDateTime
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -38,7 +38,7 @@ class EntriesTab(private val dbManager: DbManager) : ViewModel() {
         val contentOffsetBottom =
             with(LocalDensity.current) { WindowInsets.navigationBars.getBottom(LocalDensity.current).toDp() } + 80.dp
         val entries = remember {// TODO: maybe sort by netx date
-            dbManager.getEntries().sortedBy { it.name }
+            Entry.all(dbManager).sortedBy { it.id }
         }
         LazyColumn(modifier) {
             item {
@@ -46,7 +46,7 @@ class EntriesTab(private val dbManager: DbManager) : ViewModel() {
             }
             items(entries) { entry ->
                 drawEntry(dbManager, entry, editEntry) {
-                    Date(dbManager, entry, "", it.atZone(defaultZoneId()), 0, 1, Period.Once()).create()
+//                    Date(dbManager, entry, "", it.atZone(defaultZoneId()), 0, 1, Period.Once()).create()
                     dbManager.tryScheduleNotification()
                 }
             }
@@ -61,11 +61,8 @@ class EntriesTab(private val dbManager: DbManager) : ViewModel() {
     fun topBar(openSettings: () -> Unit) {
         val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
         CenterAlignedTopAppBar(
-            colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = .9f),
-                titleContentColor = MaterialTheme.colorScheme.primary,
-            ),
-            title = { Text("Entries", maxLines = 1) },
+            colors = topBarColors(),
+            scrollBehavior = scrollBehavior,
             navigationIcon = {
                 IconButton(onClick = openSettings) {
                     Icon(
@@ -73,6 +70,7 @@ class EntriesTab(private val dbManager: DbManager) : ViewModel() {
                     )
                 }
             },
+            title = { Text("Entries", maxLines = 1) },
             actions = {
                 IconButton(onClick = {}) {
                     Icon(
@@ -80,7 +78,6 @@ class EntriesTab(private val dbManager: DbManager) : ViewModel() {
                     )
                 }
             },
-            scrollBehavior = scrollBehavior,
         )
     }
 
@@ -118,7 +115,7 @@ class EntriesTab(private val dbManager: DbManager) : ViewModel() {
             onSchedule: (LocalDateTime) -> Unit
         ) { //fixme Entry can not be created without DB
             var scheduleDialogShown by remember { mutableStateOf(false) }
-            var nextDateText by remember { mutableStateOf(getNextDateText(entry)) }
+            var nextDateText by remember { mutableStateOf(getNextDateText(dbManager, entry)) }
             Column(
                 Modifier.padding(2.dp).fillMaxWidth().defaultMinSize(minHeight = 64.dp).background(
                     MaterialTheme.colorScheme.primaryContainer, shape = RoundedCornerShape(10.dp)
@@ -127,24 +124,24 @@ class EntriesTab(private val dbManager: DbManager) : ViewModel() {
                     onClick = { editEntry(entry.id!!) })
             ) {
                 Row(Modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 8.dp)) {
-                    Box(
-                        Modifier.padding(end = 8.dp).size(24.dp).background(entry.getColorOrDefault(), CircleShape)
-                            .border(0.dp, entry.getColorOrDefault(), CircleShape).align(Alignment.CenterVertically)
-                    )
-                    Text(
-                        modifier = Modifier.weight(1.0f).padding(horizontal = 8.dp).align(Alignment.CenterVertically),
-                        text = entry.name.ifEmpty { "[No title]" },
-                        style = MaterialTheme.typography.headlineSmall,
-                        overflow = TextOverflow.Ellipsis,
-                        maxLines = 1,
-                    )
+//                    Box(
+//                        Modifier.padding(end = 8.dp).size(24.dp).background(entry.getColorOrDefault(), CircleShape)
+//                            .border(0.dp, entry.getColorOrDefault(), CircleShape).align(Alignment.CenterVertically)
+//                    )
+//                    Text(
+//                        modifier = Modifier.weight(1.0f).padding(horizontal = 8.dp).align(Alignment.CenterVertically),
+//                        text = entry.name.ifEmpty { "[No title]" },
+//                        style = MaterialTheme.typography.headlineSmall,
+//                        overflow = TextOverflow.Ellipsis,
+//                        maxLines = 1,
+//                    )
                     Text(
                         modifier = Modifier.align(Alignment.CenterVertically),
                         text = nextDateText,
                         style = MaterialTheme.typography.bodyLarge,
                     )
                 }//todo next line "10 events from 2024.01.01 to 2025.01.01"
-                drawDescriptionAndTags(dbManager, entry.getContents(), entry.getTags())
+//                drawDescriptionAndTags(dbManager, entry.getContents(), entry.getTags())
             }
             val dateTimePicker = remember { DateTimePicker() }
             dateTimePicker.tryCompose()
@@ -152,7 +149,7 @@ class EntriesTab(private val dbManager: DbManager) : ViewModel() {
                 entry, {
                     dateTimePicker.dateTimePick({}, {
                         onSchedule(it)
-                        nextDateText = getNextDateText(entry)
+                        nextDateText = getNextDateText(dbManager, entry)
                     })
                 }) { scheduleDialogShown = false }
         }
@@ -172,7 +169,7 @@ class EntriesTab(private val dbManager: DbManager) : ViewModel() {
                 }
             }, text = {
                 Column {
-                    Text("Schedule ${entry.name.ifEmpty { "[No title]" }} event?")
+//                    Text("Schedule ${entry.name.ifEmpty { "[No title]" }} event?")
                 }
             })
         }
@@ -190,11 +187,11 @@ class EntriesTab(private val dbManager: DbManager) : ViewModel() {
             )
         }
 
-        private fun getNextDateText(entry: Entry): String {
+        private fun getNextDateText(dbManager: DbManager, entry: Entry): String {
             val now = System.currentTimeMillis() / 1000
             var nextDate: ZonedDateTime? = null
             var hasDates = false
-            for (date in entry.getDates()) {
+            for (date in entry.getDates(dbManager)) {
                 hasDates = true
                 val next = date.getNext(now)
                 if (nextDate == null || next != null && next < nextDate) nextDate = next

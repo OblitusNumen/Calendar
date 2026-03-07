@@ -11,7 +11,6 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.*
@@ -21,11 +20,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import oblitusnumen.calendar.implementation.LIST_LEN
-import oblitusnumen.calendar.implementation.data.DateOccurrence
 import oblitusnumen.calendar.implementation.data.DbManager
-import oblitusnumen.calendar.implementation.data.Tag
-import oblitusnumen.calendar.implementation.data.ViewDateWithOptions
-import oblitusnumen.calendar.ui.model.tab.EntriesTab.Companion.drawDescriptionAndTags
+import oblitusnumen.calendar.implementation.data.tables.Tag
+import oblitusnumen.calendar.implementation.data.views.DateOccurrence
+import oblitusnumen.calendar.implementation.data.views.ViewDateWithOptions
+import oblitusnumen.calendar.ui.BackPressButton
+import oblitusnumen.calendar.ui.model.screen.EntriesTab.Companion.drawDescriptionAndTags
+import oblitusnumen.calendar.ui.theme.topBarColors
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -145,10 +146,9 @@ fun DrawEntry(dbManager: DbManager, occurrence: DateOccurrence, openEditEntry: (
 fun DateTopBar(day: LocalDate, openAgenda: () -> Unit, backPress: () -> Unit) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
     CenterAlignedTopAppBar(
-        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = .9f),
-            titleContentColor = MaterialTheme.colorScheme.primary,
-        ),
+        colors = topBarColors(),
+        scrollBehavior = scrollBehavior,
+        navigationIcon = { BackPressButton(backPress) },
         title = {
             Row {
                 Text("Date $day", Modifier.weight(1f).align(Alignment.CenterVertically), maxLines = 1)
@@ -158,15 +158,6 @@ fun DateTopBar(day: LocalDate, openAgenda: () -> Unit, backPress: () -> Unit) {
                 }
             }
         },
-        navigationIcon = {
-            IconButton(onClick = backPress) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Localized description"
-                )
-            }
-        },
-        scrollBehavior = scrollBehavior,
     )
 }
 
