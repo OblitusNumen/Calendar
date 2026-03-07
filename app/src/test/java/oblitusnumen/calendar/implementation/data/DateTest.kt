@@ -2,17 +2,27 @@ package oblitusnumen.calendar.implementation.data
 
 import junit.framework.TestCase
 import oblitusnumen.calendar.implementation.data.Period.*
+import oblitusnumen.calendar.implementation.data.tables.Date
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZonedDateTime
 
 class DateTest : TestCase() {
+    companion object {
+        val UTC_TIME_ZONE: ZoneId = ZoneId.of("UTC")
+    }
+
     fun testNextClosestRawForWeekdays() {
-        val date = Date(
-            null, 0, 0, "", ZonedDateTime.parse("2024-12-09T09:00:00Z").toEpochSecond(),
-            0, ZonedDateTime.parse("2024-12-09T09:00:00Z").toEpochSecond(), 100,
-            Weekday(3, Weekday.WD_MON + Weekday.WD_WED + Weekday.WD_FRI + Weekday.WD_SUN).toString(),
-            "UTC", ""
+        val date = Date.newInstance(1,
+            1,
+            1,
+            ZonedDateTime.parse("2024-12-09T09:00:00Z").toEpochSecond(),
+            Once(),
+            ZonedDateTime.parse("2024-12-09T09:00:00Z").toEpochSecond(),
+            100L,
+            Weekday(3, Weekday.WD_MON + Weekday.WD_WED + Weekday.WD_FRI + Weekday.WD_SUN),
+            UTC_TIME_ZONE,
+            ""
         )
         date.makeEndless()
         assertEquals(
@@ -118,9 +128,9 @@ class DateTest : TestCase() {
 
     fun testSetTimesRepeat() {
         val numberOfDated = 500
-        val date = Date(
-            null, 0, 0, "", 0, 0, 0, numberOfDated.toLong(),
-            Week(1).toString(), "UTC", ""
+        val date = Date.newInstance(
+            1, 1, 1, 0, Once(), 0,
+            numberOfDated.toLong(), Week(1), UTC_TIME_ZONE, ""
         )
         assertEquals("", date.exceptionRules.toString())
         date.setTimesRepeatUI(50)
@@ -137,66 +147,78 @@ class DateTest : TestCase() {
     }
 
     fun testForDayBefore() {
-        val time = Date(null, 0, 0, "", 0, 0, 0, 100, Once().toString(), "UTC", "")
-            .forDay(ZonedDateTime.of(1969, 12, 30, 23, 59, 59, 0, ZoneId.of("UTC")))
+        val time = Date.newInstance(1, 1, 1, 0, Once(),
+            0, 100, Once(), UTC_TIME_ZONE, ""
+        ).forDay(ZonedDateTime.of(1969, 12, 30, 23, 59, 59, 0, ZoneId.of("UTC")))
         assertNull(time)
     }
 
     fun testForDayAfter() {
-        val time = Date(null, 0, 0, "", 0, 0, 0, 100, Once().toString(), "UTC", "")
-            .forDay(ZonedDateTime.of(1970, 1, 2, 0, 0, 0, 0, ZoneId.of("UTC")))
+        val time = Date.newInstance(1, 1, 1, 0, Once(),
+            0, 100, Once(), UTC_TIME_ZONE, ""
+        ).forDay(ZonedDateTime.of(1970, 1, 2, 0, 0, 0, 0, ZoneId.of("UTC")))
         assertNull(time)
     }
 
     fun testForDayAt() {
-        val time = Date(null, 0, 0, "", 0, 0, 0, 100, Once().toString(), "UTC", "")
-            .forDay(ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneId.of("UTC")))
+        val time = Date.newInstance(1, 1, 1, 0, Once(),
+            0, 100, Once(), UTC_TIME_ZONE, ""
+        ).forDay(ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneId.of("UTC")))
         assertNotNull(time)
     }
 
     fun testForDayAtPeriod() {
-        var time = Date(null, 0, 0, "", 0, 0, 0, 10, Day(1).toString(), "UTC", "")
-            .fixEndForTesting().forDay(ZonedDateTime.of(1970, 1, 1, 14, 0, 0, 0, ZoneId.of("UTC")))
+        var time = Date.newInstance(1, 1, 1, 0, Once(),
+            0, 10, Day(1), UTC_TIME_ZONE, ""
+        ).fixEndForTesting().forDay(ZonedDateTime.of(1970, 1, 1, 14, 0, 0, 0, ZoneId.of("UTC")))
         assertNotNull(time)
-        time = Date(null, 0, 0, "", 0, 0, 0, 10, Day(1).toString(), "UTC", "")
-            .fixEndForTesting().forDay(ZonedDateTime.of(1970, 1, 1, 14, 0, 0, 0, ZoneId.of("UTC")).plusDays(5))
+        time = Date.newInstance(1, 1, 1, 0, Once(),
+            0, 10, Day(1), UTC_TIME_ZONE, ""
+        ).fixEndForTesting().forDay(ZonedDateTime.of(1970, 1, 1, 14, 0, 0, 0, ZoneId.of("UTC")).plusDays(5))
         assertNotNull(time)
-        time = Date(null, 0, 0, "", 0, 0, 0, 10, Day(1).toString(), "UTC", "")
-            .forDay(ZonedDateTime.of(1970, 1, 1, 0, 0, 1, 0, ZoneId.of("UTC")).plusDays(9))
+        time = Date.newInstance(1, 1, 1, 0, Once(),
+            0, 10, Day(1), UTC_TIME_ZONE, ""
+        ).forDay(ZonedDateTime.of(1970, 1, 1, 0, 0, 1, 0, ZoneId.of("UTC")).plusDays(9))
         assertNull(time)
-        time = Date(null, 0, 0, "", 0, 0, 0, 10, Month(1).toString(), "UTC", "")
-            .forDay(ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneId.of("UTC")))
+        time = Date.newInstance(1, 1, 1, 0, Once(),
+            0, 10, Month(1), UTC_TIME_ZONE, ""
+        ).forDay(ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneId.of("UTC")))
         assertNotNull(time)
-        time = Date(null, 0, 0, "", 0, 0, 0, 10, Month(1).toString(), "UTC", "")
-            .fixEndForTesting().forDay(ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneId.of("UTC")).plusMonths(5))
+        time = Date.newInstance(1, 1, 1, 0, Once(),
+            0, 10, Month(1), UTC_TIME_ZONE, ""
+        ).fixEndForTesting().forDay(ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneId.of("UTC")).plusMonths(5))
         assertNotNull(time)
-        time = Date(null, 0, 0, "", 0, 0, 0, 10, Month(1).toString(), "UTC", "")
-            .fixEndForTesting().forDay(ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneId.of("UTC")).plusMonths(9))
+        time = Date.newInstance(1, 1, 1, 0, Once(),
+            0, 10, Month(1), UTC_TIME_ZONE, ""
+        ).fixEndForTesting().forDay(ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneId.of("UTC")).plusMonths(9))
         assertNotNull(time)
     }
 
     fun testForDayBetweenPeriod() {
-        var time = Date(null, 0, 0, "", 0, 0, 0, 10, Month(1).toString(), "UTC", "")
-            .forDay(ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneId.of("UTC")).plusDays(25))
+        var time = Date.newInstance(1, 1, 1, 0, Once(),
+            0, 10, Month(1), UTC_TIME_ZONE, ""
+        ).forDay(ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneId.of("UTC")).plusDays(25))
         assertNull(time)
-        time = Date(null, 0, 0, "", 0, 0, 0, 10, Day(2).toString(), "UTC", "")
-            .forDay(ZonedDateTime.of(1970, 1, 1, 11, 0, 0, 0, ZoneId.of("UTC")).plusHours(11))
+        time = Date.newInstance(1, 1, 1, 0, Once(),
+            0, 10, Day(2), UTC_TIME_ZONE, ""
+        ).forDay(ZonedDateTime.of(1970, 1, 1, 11, 0, 0, 0, ZoneId.of("UTC")).plusHours(11))
         assertNull(time)
     }
 
     fun testForDayAfterPeriod() {
-        var time = Date(null, 0, 0, "", 0, 0, 0, 10, Month(1).toString(), "UTC", "")
-            .forDay(ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneId.of("UTC")).plusMonths(10))
+        var time = Date.newInstance(1, 1, 1, 0, Once(),
+            0, 10, Month(1), UTC_TIME_ZONE, ""
+        ).forDay(ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneId.of("UTC")).plusMonths(10))
         assertNull(time)
-        time = Date(null, 0, 0, "", 0, 0, 0, 10, Day(1).toString(), "UTC", "")
-            .forDay(ZonedDateTime.of(1970, 1, 1, 14, 0, 0, 0, ZoneId.of("UTC")).plusDays(10))
+        time = Date.newInstance(1, 1, 1, 0, Once(),
+            0, 10, Day(1), UTC_TIME_ZONE, ""
+        ).forDay(ZonedDateTime.of(1970, 1, 1, 14, 0, 0, 0, ZoneId.of("UTC")).plusDays(10))
         assertNull(time)
     }
 
     fun testFixExceptionList() {
-        val date = Date(
-            null, 0, 0, "", 0, 0, 0, 80,
-            Day(1).toString(), "UTC", ""
+        val date = Date.newInstance(1, 1, 1, 0, Once(),
+            0, 80, Day(1), UTC_TIME_ZONE, ""
         ).fixEndForTesting()
         date.addExceptions(date.getZDTForTesting(1).toLocalDate(), date.getZDTForTesting(100).toLocalDate())
         assertEquals(80, date.getTimesRepeatForTesting())
@@ -212,9 +234,8 @@ class DateTest : TestCase() {
 
     fun testExceptionsFromGetZonedDTI() {
         val numberOfDated = 50
-        var date = Date(
-            null, 0, 0, "", 0, 0, 0, numberOfDated.toLong(),
-            Week(1).toString(), "UTC", ""
+        var date = Date.newInstance(1, 1, 1, 0, Once(),
+            0, numberOfDated.toLong(), Week(1), UTC_TIME_ZONE, ""
         )
         date.addExceptions(date.getZDTForTesting(5).toLocalDate(), date.getZDTForTesting(23).toLocalDate())
         assertEquals(50, date.getTimesRepeatForTesting())
@@ -222,9 +243,8 @@ class DateTest : TestCase() {
         date.addExceptions(date.getZDTForTesting(20).toLocalDate(), date.getZDTForTesting(23).toLocalDate())
         assertEquals(50, date.getTimesRepeatForTesting())
         assertEquals("35_161", date.exceptionRules.toString())
-        date = Date(
-            null, 0, 0, "", 0, 0, 0, numberOfDated.toLong(),
-            Month(1).toString(), "UTC", ""
+        date = Date.newInstance(1, 1, 1, 0, Once(),
+            0, numberOfDated.toLong(), Month(1), UTC_TIME_ZONE, ""
         )
         date.addExceptions(date.getZDTForTesting(3).toLocalDate(), date.getZDTForTesting(12).toLocalDate())
         assertEquals("90_365", date.exceptionRules.toString())
@@ -232,9 +252,8 @@ class DateTest : TestCase() {
 
     fun testFixRanges() {
         val numberOfDated = 50
-        var date = Date(
-            null, 0, 0, "", 0, 0, 0, numberOfDated.toLong(),
-            Week(1).toString(), "UTC", ""
+        var date = Date.newInstance(1, 1, 1, 0, Once(),
+            0, numberOfDated.toLong(), Week(1), UTC_TIME_ZONE, ""
         ).fixEndForTesting()
         date.addExceptions(date.getZDTForTesting(0).toLocalDate(), date.getZDTForTesting(50).toLocalDate())
         date.fixDateRange()
@@ -242,9 +261,8 @@ class DateTest : TestCase() {
         assertEquals(0, date.getTimesRepeatForTesting())
         assertTrue(date.isEmpty)
         assertEquals("", date.exceptionRules.toString())
-        date = Date(
-            null, 0, 0, "", 0, 0, 0, numberOfDated.toLong(),
-            Week(1).toString(), "UTC", ""
+        date = Date.newInstance(1, 1, 1, 0, Once(),
+            0, numberOfDated.toLong(), Week(1), UTC_TIME_ZONE, ""
         ).fixEndForTesting()
         date.addExceptions(date.getZDTForTesting(0).toLocalDate(), date.getZDTForTesting(4).toLocalDate())
         date.addExceptions(date.getZDTForTesting(40).toLocalDate(), date.getZDTForTesting(49).toLocalDate())
@@ -263,8 +281,9 @@ class DateTest : TestCase() {
     }
 
     fun testForDayIndexAt() {
-        val time = Date(null, 0, 0, "", 0, 0, 0, 100, Once().toString(), "UTC", "")
-            .forDay(ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneId.of("UTC")))
+        val time = Date.newInstance(1, 1, 1, 0, Once(),
+            0, 100, Once(), UTC_TIME_ZONE, ""
+        ).forDay(ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneId.of("UTC")))
         assertNotNull(time)
     }
 
@@ -296,9 +315,8 @@ class DateTest : TestCase() {
                 """.trimIndent().split("\n".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
         val utc =
             ZonedDateTime.ofInstant(Instant.ofEpochSecond((1729458000 - 86400).toLong()), ZoneId.of("Europe/Moscow"))
-        val date = Date(
-            null, 0, 0, "", 972071999, 0, 0, 10950,
-            Day(1).toString(), "Europe/Kiev", ""
+        val date = Date.newInstance(1, 1, 1, 972071999, Once(),
+            0, 10950, Day(1), ZoneId.of("Europe/Kiev"), ""
         ).fixEndForTesting()
         for (i in -1..20) {
             val time = date.forDay(utc.plusDays(i.toLong()))
@@ -342,9 +360,8 @@ class DateTest : TestCase() {
                 """.trimIndent().split("\n".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
         val utc =
             ZonedDateTime.ofInstant(Instant.ofEpochSecond((1729458000 - 86400).toLong()), ZoneId.of("Europe/Moscow"))
-        val date = Date(
-            null, 0, 0, "", 972071999, 0, 0, 10950,
-            Day(3).toString(), "Europe/Kiev", ""
+        val date = Date.newInstance(1, 1, 1, 972071999, Once(),
+            0, 10950, Day(3), ZoneId.of("Europe/Kiev"), ""
         ).fixEndForTesting()
         for (i in -1..20) {
             val time = date.forDay(utc.plusDays(i.toLong()))
@@ -387,9 +404,8 @@ class DateTest : TestCase() {
                 
                 """.trimIndent().split("\n".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
         val utc = ZonedDateTime.ofInstant(Instant.ofEpochSecond(1729458000), ZoneId.of("Europe/Kiev"))
-        val date = Date(
-            null, 0, 0, "", 972071999, 0, 0, 10950,
-            Day(1).toString(), "Europe/Moscow", ""
+        val date = Date.newInstance(1, 1, 1, 972071999, Once(),
+            0, 10950, Day(1), ZoneId.of("Europe/Moscow"), ""
         ).fixEndForTesting()
         for (i in -1..20) {
             val time = date.forDay(utc.plusDays(i.toLong()))
@@ -458,9 +474,8 @@ class DateTest : TestCase() {
                 """.trimIndent().split("\n".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
         val utc =
             ZonedDateTime.ofInstant(Instant.ofEpochSecond((1729458000 - 86400).toLong()), ZoneId.of("Europe/Moscow"))
-        val date = Date(
-            null, 0, 0, "", 972071999, 0, 0, 10950,
-            Month(1).toString(), "Europe/Kiev", ""
+        val date = Date.newInstance(1, 1, 1, 972071999, Once(),
+            0, 10950, Month(1), ZoneId.of("Europe/Kiev"), ""
         ).fixEndForTesting()
         for (i in -1..20) {
             val time = date.forDay(utc.plusMonths(i.toLong()))
@@ -536,9 +551,8 @@ class DateTest : TestCase() {
                 """.trimIndent().split("\n".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
         val utc =
             ZonedDateTime.ofInstant(Instant.ofEpochSecond((1729458000 - 86400).toLong()), ZoneId.of("Europe/Kiev"))
-        val date = Date(
-            null, 0, 0, "", 972071999, 0, 0, 10950,
-            Month(1).toString(), "Europe/Moscow", ""
+        val date = Date.newInstance(1, 1, 1, 972071999, Once(),
+            0, 10950, Month(1), ZoneId.of("Europe/Moscow"), ""
         ).fixEndForTesting()
         for (i in -1..20) {
             val time = date.forDay(utc.plusMonths(i.toLong()))

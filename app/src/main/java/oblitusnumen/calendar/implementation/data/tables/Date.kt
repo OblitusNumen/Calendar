@@ -571,5 +571,32 @@ class Date : BaseColumns {
                 return cursorToList(cursor)
             }
         }
+
+        @TestOnly
+        fun newInstance(
+            id: Int,
+            entryId: Int,
+            eventOptionsId: Int,
+            epochSecondChainStart: Long,
+            duration: Period,
+            epochSecondChainEnd: Long,
+            timesRepeat: Long,
+            period: Period,
+            timeZoneId: ZoneId,
+            exceptionRules: String,
+        ): Date {
+            return Date(
+                id,
+                entryId,
+                eventOptionsId,
+                epochSecondChainStart,
+                duration,
+                epochSecondChainEnd,
+                timesRepeat,
+                period,
+                timeZoneId,
+                exceptionRules
+            )
+        }
     }
 }
