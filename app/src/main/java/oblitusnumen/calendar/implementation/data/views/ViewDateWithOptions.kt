@@ -1,7 +1,13 @@
-package oblitusnumen.calendar.implementation.data
+package oblitusnumen.calendar.implementation.data.views
 
 import androidx.compose.ui.graphics.Color
 import oblitusnumen.calendar.implementation.*
+import oblitusnumen.calendar.implementation.data.DbManager
+import oblitusnumen.calendar.implementation.data.ExceptionRules
+import oblitusnumen.calendar.implementation.data.Period
+import oblitusnumen.calendar.implementation.data.tables.Date
+import oblitusnumen.calendar.implementation.data.tables.EntryTagLinks
+import oblitusnumen.calendar.implementation.data.tables.EventOptions
 import java.time.*
 import java.util.*
 import kotlin.math.min
@@ -152,6 +158,7 @@ class ViewDateWithOptions(
 //    }
 
     companion object {
+        // FIXME: for debug
         fun getAll(dbManager: DbManager): MutableList<ViewDateWithOptions> =
             getAll(dbManager, 1764432677 + 50 * 86400, 1764432677 + 150 * 86400)
 
@@ -159,41 +166,43 @@ class ViewDateWithOptions(
             dbManager: DbManager,
             start: Long,
             end: Long,
-            tagsFilter: List<Tag> = listOf()
+            tagsFilter: List<Int> = listOf()
         ): MutableList<ViewDateWithOptions> {
             dbManager.readableDatabase.rawQuery(
-                "SELECT Dates.id as dateId, Dates.entryId as entryId, epochSecondChainStart, duration, epochSecondChainEnd, " +
-                        "timesRepeat, period, timeZone, exceptionRules, name, color " +
-                        "from Dates " +
-                        "join EventOptions on EventOptions.id=eventOptionsId " +
+                "SELECT ${Date.TABLE_NAME}.*, " +
+                        "${EventOptions.COLUMN_NAME_NAME} as name, ${EventOptions.COLUMN_NAME_COLOR} as color " +
+                        "from ${Date.TABLE_NAME} " +
+                        "join ${EventOptions.TABLE_NAME} " +
+                        "on ${EventOptions.TABLE_NAME}.${EventOptions.COLUMN_NAME_ID}=${Date.COLUMN_NAME_EVENT_OPTIONS_ID} " +
                         if (tagsFilter.isEmpty())
                             ""
                         else {
                             "join " +
-                                    "(SELECT entryId as eId " +
-                                    "FROM EntryTagLinks " +
-                                    "WHERE tagId IN (${tagsFilter.joinToString(", ") { it.id!!.toString() }}) " +
+                                    "(SELECT ${EntryTagLinks.COLUMN_NAME_ENTRY_ID} as eId " +
+                                    "FROM ${EntryTagLinks.TABLE_NAME} " +
+                                    "WHERE ${EntryTagLinks.COLUMN_NAME_TAG_ID} " +
+                                    "IN (${tagsFilter.joinToString(", ") { it.toString() }}) " +
                                     "GROUP BY eId " +
-                                    "HAVING COUNT(DISTINCT tagId) = ${tagsFilter.size}" +
+                                    "HAVING COUNT(DISTINCT ${EntryTagLinks.COLUMN_NAME_TAG_ID}) = ${tagsFilter.size}" +
                                     ") " +
-                                    "on eId=Dates.entryId "
+                                    "on eId=${Date.COLUMN_NAME_ENTRY_ID}" // FIXME: might as well be needed  ${Date.TABLE_NAME}.${Date.COLUMN_NAME_ENTRY_ID}
                         } +
-                        "WHERE epochSecondChainStart < ? AND epochSecondChainEnd >= ?",
+                        "WHERE ${Date.COLUMN_NAME_EPOCH_SECOND_CHAIN_START} < ? AND ${Date.COLUMN_NAME_EPOCH_SECOND_CHAIN_END} >= ?",
                 arrayOf(
                     end.toString(),
                     start.toString(),
                 )
             ).use { cursor ->
                 val views: MutableList<ViewDateWithOptions> = ArrayList()
-                val idxId = cursor.getColumnIndex("dateId")
-                val idxEntryId = cursor.getColumnIndex("entryId")
-                val idxStart = cursor.getColumnIndex("epochSecondChainStart")
-                val idxDuration = cursor.getColumnIndex("duration")
-                val idxEnd = cursor.getColumnIndex("epochSecondChainEnd")
-                val idxRepeat = cursor.getColumnIndex("timesRepeat")
-                val idxPeriod = cursor.getColumnIndex("period")
-                val idxZone = cursor.getColumnIndex("timeZone")
-                val idxExceptions = cursor.getColumnIndex("exceptionRules")
+                val idxId = cursor.getColumnIndex(Date.COLUMN_NAME_ID)
+                val idxEntryId = cursor.getColumnIndex(Date.COLUMN_NAME_ENTRY_ID)
+                val idxStart = cursor.getColumnIndex(Date.COLUMN_NAME_EPOCH_SECOND_CHAIN_START)
+                val idxDuration = cursor.getColumnIndex(Date.COLUMN_NAME_DURATION)
+                val idxEnd = cursor.getColumnIndex(Date.COLUMN_NAME_EPOCH_SECOND_CHAIN_END)
+                val idxRepeat = cursor.getColumnIndex(Date.COLUMN_NAME_TIMES_REPEATS)
+                val idxPeriod = cursor.getColumnIndex(Date.COLUMN_NAME_PERIOD)
+                val idxZone = cursor.getColumnIndex(Date.COLUMN_NAME_TIME_ZONE_ID)
+                val idxExceptions = cursor.getColumnIndex(Date.COLUMN_NAME_OCCURRENCE_EXCEPTIONS)
                 val idxName = cursor.getColumnIndex("name")
                 val idxColor = cursor.getColumnIndex("color")
                 while (cursor.moveToNext())
@@ -220,7 +229,7 @@ class ViewDateWithOptions(
         fun occurrencesForDay(
             dbManager: DbManager,
             day: LocalDate,
-            tagsFilter: List<Tag> = listOf()
+            tagsFilter: List<Int> = listOf()
         ): List<DateOccurrence> {
             val begin = zonedDateTime(day)
             val start = begin.toEpochSecond()
@@ -248,7 +257,7 @@ class ViewDateWithOptions(
         fun occurrencesIntersectingDay(
             dbManager: DbManager,
             day: LocalDate,
-            tagsFilter: List<Tag> = listOf()
+            tagsFilter: List<Int> = listOf()
         ): List<DateOccurrence> {
             val begin = zonedDateTime(day)
             val start = begin.toEpochSecond()

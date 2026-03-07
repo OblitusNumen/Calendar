@@ -18,6 +18,7 @@ import oblitusnumen.calendar.implementation.setLogFile
 import java.time.format.DateTimeFormatter
 
 class NotificationBroadcastReceiver : BroadcastReceiver() {
+    // TODO: show missed events, show events that is in progress
     override fun onReceive(c: Context, intent: Intent?) {
         setLogFile(c)
         log("NotificationBroadcastReceiver RECEIVED INTENT: ${intent?.action}")
@@ -32,20 +33,20 @@ class NotificationBroadcastReceiver : BroadcastReceiver() {
             )
             val manager = c.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             for (pendingNotification in pendingNotifications) {
-                log("NotificationBroadcastReceiver SENDING_NOTIFICATION " + pendingNotification.notification.entryId + ":" + pendingNotification.notification.offset)
+                log("NotificationBroadcastReceiver SENDING_NOTIFICATION " + pendingNotification.notification.eventOptionsId + ":" + pendingNotification.notification.offset)
                 val notification = NotificationCompat.Builder(
                     c,
                     if (pendingNotification.notification.sound) NORMAL_CHANNEL_ID else SILENT_CHANNEL_ID
                 )
                     .setSmallIcon(R.drawable.ic_calendar) // FIXME: this icon must be transparent
-                    .setContentTitle(pendingNotification.date.getDesc())
+                    .setContentTitle("${pendingNotification.date.id}")
                     .setContentIntent(
                         PendingIntent.getActivity(
                             c,
-                            pendingNotification.notification.entryId!!,
+                            pendingNotification.notification.eventOptionsId!!,
                             Intent(c, MainActivity::class.java).putExtra(
                                 INTENT_EXTRA_ENTRY_ID,
-                                pendingNotification.notification.entryId!!
+                                pendingNotification.notification.eventOptionsId!!
                             ),
                             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
                         )

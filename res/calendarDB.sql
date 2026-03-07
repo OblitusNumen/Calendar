@@ -1,3 +1,12 @@
+CREATE TABLE IF NOT EXISTS "EventOptions"
+(
+    "id"          INTEGER PRIMARY KEY AUTOINCREMENT,
+    "state"       INTEGER NOT NULL,
+    "name"        TEXT    NOT NULL,
+    "color"       INTEGER NOT NULL
+);
+
+
 CREATE TABLE IF NOT EXISTS "Entries"
 (
     "id"                INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -25,17 +34,6 @@ CREATE TABLE IF NOT EXISTS "EntryTagLinks"
 );
 
 
-CREATE TABLE IF NOT EXISTS "EventOptions"
-(
-    "id"          INTEGER PRIMARY KEY AUTOINCREMENT,
-    "entryId"     INTEGER NOT NULL,
-    "state"       INTEGER NOT NULL,
-    "name"        TEXT    NOT NULL,
-    "color"       INTEGER NOT NULL,
-    FOREIGN KEY ("entryId") REFERENCES "Entries" ("id")
-);
-
-
 CREATE TABLE IF NOT EXISTS "Dates"
 (
     "id"                    INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -46,10 +44,10 @@ CREATE TABLE IF NOT EXISTS "Dates"
     "epochSecondChainEnd"   BIGINT  NOT NULL,
     "timesRepeat"           INTEGER NOT NULL,
     "period"                TEXT    NOT NULL,
-    "timeZone"              TEXT    NOT NULL,
-    "exceptionRules"        TEXT    NOT NULL,
+    "timeZoneId"            TEXT    NOT NULL,
+    "occurrenceExceptions"  TEXT    NOT NULL,
     FOREIGN KEY ("entryId") REFERENCES "Entries" ("id"),
-    FOREIGN KEY ("eventOptionsId") REFERENCES "eventOptions" ("id")
+    FOREIGN KEY ("eventOptionsId") REFERENCES "EventOptions" ("id")
 );
 
 
@@ -96,6 +94,7 @@ CREATE TABLE IF NOT EXISTS "TaskLogs"
 );
 
 
+DROP TABLE TaskLogs;
 DROP TABLE TaskLinks;
 DROP TABLE Tasks;
 DROP TABLE Notifications;

@@ -1,9 +1,10 @@
-package oblitusnumen.calendar.implementation.data
+package oblitusnumen.calendar.implementation.data.tables
 
 import android.content.ContentValues
 import android.database.Cursor
 import android.provider.BaseColumns
 import androidx.core.database.sqlite.transaction
+import oblitusnumen.calendar.implementation.data.DbManager
 import java.time.ZoneId
 
 class Task(
@@ -25,12 +26,6 @@ class Task(
 //            return entryCache!!
 //        }
 
-    private fun create(dbManager: DbManager) { //todo may fail on UNIQUE violation?
-        val contentValues = getContentValues()
-        contentValues.put(COLUMN_NAME_ENTRY_ID, null as Int?)
-        dbManager.writableDatabase.insert(TABLE_NAME, null, contentValues)
-    }
-
     private fun getContentValues(): ContentValues {
         val contentValues = ContentValues()
         contentValues.put(COLUMN_NAME_ENTRY_ID, entryId)
@@ -40,6 +35,12 @@ class Task(
         contentValues.put(COLUMN_NAME_TIME_CONSUMED, timeConsumed)
         contentValues.put(COLUMN_NAME_TIME_REMAINING, timeRemaining)
         return contentValues
+    }
+
+    private fun create(dbManager: DbManager) { //todo may fail on UNIQUE violation?
+        val contentValues = getContentValues()
+        contentValues.put(COLUMN_NAME_ENTRY_ID, null as Int?)
+        dbManager.writableDatabase.insert(TABLE_NAME, null, contentValues)
     }
 
     private fun update(dbManager: DbManager) { //todo value update may fail?
@@ -70,7 +71,8 @@ class Task(
 //    }
 
     companion object {
-        const val TABLE_NAME: String = "tasks"
+        const val TABLE_NAME: String = "Tasks"
+
         const val COLUMN_NAME_ENTRY_ID: String = "entryId"
         const val COLUMN_NAME_START_CONSTRAINT_TIMESTAMP: String = "startConstraintTimestamp"
         const val COLUMN_NAME_DEADLINE_TIMESTAMP: String = "deadlineTimestamp"
@@ -78,14 +80,27 @@ class Task(
         const val COLUMN_NAME_TIME_CONSUMED: String = "timeConsumed"
         const val COLUMN_NAME_TIME_REMAINING: String = "timeRemaining"
 
+        const val SQL_CREATE: String = "CREATE TABLE IF NOT EXISTS \"${TABLE_NAME}\"\n" +
+                "(\n" +
+                "    \"$COLUMN_NAME_ENTRY_ID\"                      INTEGER PRIMARY KEY NOT NULL UNIQUE,\n" +
+                "    \"$COLUMN_NAME_START_CONSTRAINT_TIMESTAMP\"    BIGINT  NOT NULL,\n" +
+                "    \"$COLUMN_NAME_DEADLINE_TIMESTAMP\"            BIGINT  NOT NULL,\n" +
+                "    \"$COLUMN_NAME_TIME_ZONE_ID\"                  TEXT    NOT NULL,\n" +
+                "    \"$COLUMN_NAME_TIME_CONSUMED\"                 INTEGER NOT NULL,\n" +
+                "    \"$COLUMN_NAME_TIME_REMAINING\"                INTEGER NOT NULL,\n" +
+                "    FOREIGN KEY (\"$COLUMN_NAME_ENTRY_ID\") REFERENCES \"${Entry.TABLE_NAME}\" (\"${Entry.COLUMN_NAME_ID}\")\n" +
+                ");"
+
         fun cursorToList(cursor: Cursor): MutableList<Task> {
             val tasks: MutableList<Task> = ArrayList()
+
             val idxId = cursor.getColumnIndex(COLUMN_NAME_ENTRY_ID)
             val idxStart = cursor.getColumnIndex(COLUMN_NAME_START_CONSTRAINT_TIMESTAMP)
             val idxEnd = cursor.getColumnIndex(COLUMN_NAME_DEADLINE_TIMESTAMP)
             val idxZoneId = cursor.getColumnIndex(COLUMN_NAME_TIME_ZONE_ID)
             val idxTimeConsumed = cursor.getColumnIndex(COLUMN_NAME_TIME_CONSUMED)
             val idxTimeRemaining = cursor.getColumnIndex(COLUMN_NAME_TIME_REMAINING)
+
             while (cursor.moveToNext())
                 tasks.add(
                     Task(

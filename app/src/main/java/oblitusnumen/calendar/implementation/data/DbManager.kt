@@ -10,6 +10,8 @@ import android.database.sqlite.SQLiteOpenHelper
 import androidx.compose.ui.graphics.Color
 import androidx.core.content.edit
 import oblitusnumen.calendar.implementation.*
+import oblitusnumen.calendar.implementation.data.tables.*
+import oblitusnumen.calendar.implementation.data.tables.Date
 import oblitusnumen.calendar.implementation.notifications.NotificationBroadcastReceiver.Companion.LAST_NOTIFICATION_TIME_PREFERENCE_NAME
 import oblitusnumen.calendar.implementation.notifications.NotificationBroadcastReceiver.Companion.scheduleNotification
 import oblitusnumen.calendar.implementation.notifications.PendingNotification
@@ -80,10 +82,10 @@ class DbManager(val context: Context) :
         val dateCache: MutableMap<Int, List<Date>> = mutableMapOf()
         for (notification in getAllNotifications()) {
             val fromO = notification.offset.addTo(getZonedFromEpochSeconds(timeStamp), 1).toEpochSecond()
-            val dates = dateCache.computeIfAbsent(notification.entryId!!) {
-                Date.getAllByEntryId(
+            val dates = dateCache.computeIfAbsent(notification.eventOptionsId!!) {
+                Date.byEntryId(
                     this,
-                    notification.entryId!!
+                    notification.eventOptionsId!!
                 )
             }
             for (date in dates) {
@@ -104,10 +106,10 @@ class DbManager(val context: Context) :
         for (notification in getAllNotifications()) {
             val fromO = notification.offset.addTo(getZonedFromEpochSeconds(from), 1).toEpochSecond()
             val toO = notification.offset.addTo(getZonedFromEpochSeconds(to), 1).toEpochSecond()
-            val dates = dateCache.computeIfAbsent(notification.entryId!!) {
-                Date.getAllByEntryId(
+            val dates = dateCache.computeIfAbsent(notification.eventOptionsId!!) {
+                Date.byEntryId(
                     this,
-                    notification.entryId!!
+                    notification.eventOptionsId!!
                 )
             }
             for (date in dates) {
@@ -141,67 +143,15 @@ class DbManager(val context: Context) :
     }
 
     override fun onCreate(sqLiteDatabase: SQLiteDatabase) {
-        sqLiteDatabase.execSQL(
-            "CREATE TABLE IF NOT EXISTS \"Entries\"\n" +
-                    "(\n" +
-                    "    \"id\"                INTEGER PRIMARY KEY AUTOINCREMENT,\n" +
-                    "    \"defaultOptionsId\"  INTEGER NOT NULL UNIQUE,\n" +
-                    "    \"isTask\"            INTEGER NOT NULL,\n" +
-                    "    FOREIGN KEY (\"defaultOptionsId\") REFERENCES \"EventOptions\" (\"id\")\n" +
-                    ");"
-        )
-        sqLiteDatabase.execSQL(
-            "CREATE TABLE IF NOT EXISTS \"EventOptions\"\n" +
-                    "(\n" +
-                    "    \"id\"          INTEGER PRIMARY KEY AUTOINCREMENT,\n" +
-                    "    \"entryId\"     INTEGER NOT NULL,\n" +
-                    "    \"state\"       INTEGER NOT NULL,\n" +
-                    "    \"name\"        TEXT    NOT NULL,\n" +
-                    "    \"color\"       INTEGER NOT NULL,\n" +
-                    "    FOREIGN KEY (\"entryId\") REFERENCES \"Entries\" (\"id\")\n" +
-                    ");"
-        )
-        sqLiteDatabase.execSQL(
-            "CREATE TABLE IF NOT EXISTS \"Dates\"\n" +
-                    "(\n" +
-                    "    \"id\"                    INTEGER PRIMARY KEY AUTOINCREMENT,\n" +
-                    "    \"entryId\"               INTEGER NOT NULL,\n" +
-                    "    \"eventOptionsId\"        INTEGER NOT NULL,\n" +
-                    "    \"epochSecondChainStart\" BIGINT  NOT NULL,\n" +
-                    "    \"duration\"              TEXT    NOT NULL,\n" +
-                    "    \"epochSecondChainEnd\"   BIGINT  NOT NULL,\n" +
-                    "    \"timesRepeat\"           INTEGER NOT NULL,\n" +
-                    "    \"period\"                TEXT    NOT NULL,\n" +
-                    "    \"timeZone\"              TEXT    NOT NULL,\n" +
-                    "    \"exceptionRules\"        TEXT    NOT NULL,\n" +
-                    "    FOREIGN KEY (\"entryId\") REFERENCES \"Entries\" (\"id\"),\n" +
-                    "    FOREIGN KEY (\"eventOptionsId\") REFERENCES \"eventOptions\" (\"id\")\n" +
-                    ");"
-        )
-        sqLiteDatabase.execSQL(
-            "CREATE TABLE IF NOT EXISTS \"Tags\"\n" +
-                    "(\n" +
-                    "    \"id\"    INTEGER PRIMARY KEY AUTOINCREMENT,\n" +
-                    "    \"name\"  TEXT    NOT NULL UNIQUE,\n" +
-                    "    \"color\" INTEGER NOT NULL\n" +
-                    ");"
-        )
-        sqLiteDatabase.execSQL(
-            "CREATE TABLE IF NOT EXISTS \"EntryTagLinks\"\n" +
-                    "(\n" +
-                    "    \"entryId\" INTEGER NOT NULL,\n" +
-                    "    \"tagId\"   INTEGER NOT NULL,\n" +
-                    "    PRIMARY KEY (\"entryId\", \"tagId\"),\n" +
-                    "    FOREIGN KEY (\"entryId\") REFERENCES \"Entries\" (\"id\"),\n" +
-                    "    FOREIGN KEY (\"tagId\") REFERENCES \"Tags\" (\"id\")\n" +
-                    ");"
-        )
-
-//        sqLiteDatabase.execSQL(SQL_CREATE_ENTRIES)
-//        sqLiteDatabase.execSQL(SQL_CREATE_TAGS)
-//        sqLiteDatabase.execSQL(SQL_CREATE_ENTRY_TAG_LINKS)
-//        sqLiteDatabase.execSQL(SQL_CREATE_DATES)
-//        sqLiteDatabase.execSQL(SQL_CREATE_NOTIFICATIONS)
+        sqLiteDatabase.execSQL(Entry.SQL_CREATE)
+        sqLiteDatabase.execSQL(Tag.SQL_CREATE)
+        sqLiteDatabase.execSQL(EntryTagLinks.SQL_CREATE)
+        sqLiteDatabase.execSQL(EventOptions.SQL_CREATE)
+        sqLiteDatabase.execSQL(Date.SQL_CREATE)
+        sqLiteDatabase.execSQL(Notification.SQL_CREATE)
+        sqLiteDatabase.execSQL(Task.SQL_CREATE)
+        sqLiteDatabase.execSQL(TaskDependencies.SQL_CREATE)
+        sqLiteDatabase.execSQL(TaskLog.SQL_CREATE)
     }
 
     override fun onUpgrade(sqLiteDatabase: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
@@ -216,30 +166,10 @@ class DbManager(val context: Context) :
         require(end >= start) { "end must be more than start, got start=$start, end=$end" }
         readableDatabase.rawQuery(
             "SELECT * FROM ${Date.TABLE_NAME} WHERE " +
-                    "${Date.COLUMN_NAME_EPOCH_SECOND_CHAIN_START} < ? AND ${Date.COLUMN_NAME_EPOCH_SECOND_CHAIN_ENDS} >= ?",
+                    "${Date.COLUMN_NAME_EPOCH_SECOND_CHAIN_START} < ? AND ${Date.COLUMN_NAME_EPOCH_SECOND_CHAIN_END} >= ?",
             arrayOf(end.toString(), start.toString())
         ).use { cursor ->
-            return Date.cursorToList(this, cursor)
-        }
-    }
-
-    fun getAllTagsWithEntryCount(): Map<Tag, Int> {
-        readableDatabase.rawQuery(
-            "SELECT t.*, count(l.${EntryTagLinks.COLUMN_NAME_ENTRY_ID}) as \"entryCount\" " +
-                    "FROM ${Tag.TABLE_NAME} as t " +
-                    "LEFT JOIN ${EntryTagLinks.TABLE_NAME} as l " +
-                    "ON l.${EntryTagLinks.COLUMN_NAME_TAG_ID} = t.${Tag.COLUMN_NAME_ID} " +
-                    "GROUP BY t.${Tag.COLUMN_NAME_ID}", arrayOf()
-        ).use { cursor ->
-            val result = HashMap<Tag, Int>()
-            val tags = Tag.cursorToList(cursor)
-            val entryCountIdx = cursor.getColumnIndex("entryCount")
-            cursor.moveToFirst()
-            for (t in tags) {
-                result[t] = cursor.getInt(entryCountIdx)
-                cursor.moveToNext()
-            }
-            return result
+            return Date.cursorToList(cursor)
         }
     }
 
@@ -250,26 +180,16 @@ class DbManager(val context: Context) :
         return listOf()
     }
 
-    fun getEntryById(id: Int): Entry? {
-        readableDatabase.rawQuery(
-            "SELECT * FROM ${Entry.TABLE_NAME} WHERE ${Entry.COLUMN_NAME_ID} = ?",
-            arrayOf(id.toString())
-        ).use { cursor ->
-            val entries = Entry.cursorToList(this, cursor)
-            return if (entries.isEmpty()) null else entries[0]
-        }
-    }
-
-    fun getEntries(): List<Entry> {
-        readableDatabase.rawQuery("SELECT * FROM ${Entry.TABLE_NAME}", arrayOf()).use { cursor ->
-            return Entry.cursorToList(this, cursor)
-        }
-    }
-
     fun fillDB() {
         val epochSecond = 1764432677
         repeat(500) {
             var contentValues = ContentValues()
+            contentValues.put("id", it)
+            contentValues.put("defaultOptionsId", it)
+            contentValues.put("isTask", 0)
+            writableDatabase.insert("Entries", null, contentValues)
+
+            contentValues = ContentValues()
             contentValues.put("id", it)
             contentValues.put("entryId", it)
             contentValues.put("eventOptionsId", it)
@@ -278,13 +198,12 @@ class DbManager(val context: Context) :
             contentValues.put("epochSecondChainEnd", epochSecond + 86000 * it + 86400 * 7 * 100)
             contentValues.put("timesRepeat", 101)
             contentValues.put("period", Period.Day(7).toString())
-            contentValues.put("timeZone", ZoneId.systemDefault().toString())
-            contentValues.put("exceptionRules", ExceptionRules().toString())
+            contentValues.put("timeZoneId", ZoneId.systemDefault().toString())
+            contentValues.put("occurrenceExceptions", ExceptionRules().toString())
             writableDatabase.insert("Dates", null, contentValues)
 
             contentValues = ContentValues()
             contentValues.put("id", it)
-            contentValues.put("entryId", it)
             contentValues.put("state", 0)
             contentValues.put("name", "" + it)
             contentValues.put("color", Color.Green.toInt())
@@ -313,44 +232,13 @@ class DbManager(val context: Context) :
 
     companion object {
         const val DATABASE_VERSION: Int = 1
+        const val DB_NAME: String = "entries.db"
+
         private const val SHARED_PREFERENCES_NAME: String = "calendar_preferences"
         private const val DEFAULT_ENTRY_COLOR_PREF_NAME: String = "default_entry_color"
         private const val DEFAULT_TAG_COLOR_PREF_NAME: String = "default_tag_color"
         private const val DEFAULT_NOTIFICATIONS_PREF_NAME: String = "default_notifications"
-        const val DB_NAME: String = "entries.db"
-        private const val SQL_CREATE_ENTRIES =
-            "CREATE TABLE IF NOT EXISTS ${Entry.TABLE_NAME} (" +
-                    "${Entry.COLUMN_NAME_ID} INTEGER PRIMARY KEY AUTOINCREMENT," +
-                    "${Entry.COLUMN_NAME_STATE} INTEGER NOT NULL," +
-                    "${Entry.COLUMN_NAME_NAME} TEXT NOT NULL," +
-                    "${Entry.COLUMN_NAME_EXCLUDE_FROM_VIEW} INTEGER NOT NULL," +
-                    "${Entry.COLUMN_NAME_COLOR} INTEGER NOT NULL);"
-        private const val SQL_CREATE_TAGS =
-            "CREATE TABLE IF NOT EXISTS ${Tag.TABLE_NAME} (" +
-                    "${Tag.COLUMN_NAME_ID} INTEGER PRIMARY KEY AUTOINCREMENT," +
-                    "${Tag.COLUMN_NAME_NAME} TEXT NOT NULL UNIQUE," +
-                    "${Tag.COLUMN_NAME_COLOR} INTEGER NOT NULL);"
-        private const val SQL_CREATE_ENTRY_TAG_LINKS =
-            "CREATE TABLE IF NOT EXISTS ${EntryTagLinks.TABLE_NAME} (" +
-                    "${EntryTagLinks.COLUMN_NAME_ENTRY_ID} INTEGER NOT NULL," +
-                    "${EntryTagLinks.COLUMN_NAME_TAG_ID} INTEGER NOT NULL);"
-        private const val SQL_CREATE_DATES =
-            "CREATE TABLE IF NOT EXISTS ${Date.TABLE_NAME} (" +
-                    "${Date.COLUMN_NAME_ID} INTEGER PRIMARY KEY AUTOINCREMENT," +
-                    "${Date.COLUMN_NAME_ENTRY_ID} INTEGER NOT NULL," +
-                    "${Date.COLUMN_NAME_DESC} TEXT NOT NULL," +
-                    "${Date.COLUMN_NAME_EPOCH_SECOND_CHAIN_START} BIGINT NOT NULL," +
-                    "${Date.COLUMN_NAME_DURATION} BIGINT NOT NULL," +
-                    "${Date.COLUMN_NAME_EPOCH_SECOND_CHAIN_ENDS} BIGINT NOT NULL," +
-                    "${Date.COLUMN_NAME_TIMES_REPEATS} INTEGER NOT NULL," +
-                    "${Date.COLUMN_NAME_PERIOD} TEXT NOT NULL," +
-                    "${Date.COLUMN_NAME_TIME_ZONE_ID} TEXT NOT NULL," +
-                    "${Date.COLUMN_NAME_REMOVED} TEXT NOT NULL);"
-        private const val SQL_CREATE_NOTIFICATIONS =
-            "CREATE TABLE IF NOT EXISTS ${Notification.TABLE_NAME} (" +
-                    "${Notification.COLUMN_NAME_ENTRY_ID} INTEGER NOT NULL," +
-                    "${Notification.COLUMN_NAME_TIME_OFFSET} VARCHAR(18) NOT NULL," +
-                    "${Notification.COLUMN_NAME_HAS_SOUND} INT NOT NULL);"
+
         private const val SATURATION = .5f
         private const val VALUE = .8f
         val presetColors: List<Color> = listOf(

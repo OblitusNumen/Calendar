@@ -1,9 +1,12 @@
-package oblitusnumen.calendar.implementation.data
+package oblitusnumen.calendar.implementation.data.tables
 
 import android.content.ContentValues
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.provider.BaseColumns
+import oblitusnumen.calendar.implementation.data.DbManager
+import oblitusnumen.calendar.implementation.data.ExceptionRules
+import oblitusnumen.calendar.implementation.data.Period
 import oblitusnumen.calendar.implementation.multFrac
 import oblitusnumen.calendar.implementation.toEpochDays
 import oblitusnumen.calendar.implementation.toWeekNumber
@@ -15,15 +18,15 @@ import java.time.ZonedDateTime
 import kotlin.math.min
 
 class Date : BaseColumns {
-    private val dbManager: DbManager?
     var id: Int? = null
         private set
-    internal var entryId: Int?
-    private var desc: String
-    var epochSecondStart: Long
+    var entryId_: Int?
+    var eventOptionsId_: Int?
+    var epochSecondChainStart: Long
         private set
-    private var duration: Long
-    private var epochSecondEnd: Long = 0
+    var duration: Period
+        private set
+    private var epochSecondChainEnd: Long = 0
     private var timesRepeat: Long = 1
     var period: Period
         private set
@@ -32,51 +35,21 @@ class Date : BaseColumns {
     var exceptionRules: ExceptionRules
         private set
     private var entryCache: Entry? = null
-    val entry: Entry
-        get() {
-            if (entryCache == null) entryCache = dbManager!!.getEntryById(entryId!!)!!
-            return entryCache!!
-        }
-
-    internal constructor(
-        dbManager: DbManager?,
-        id: Int,
-        entryId: Int,
-        desc: String,
-        start: Long,
-        duration: Long,
-        end: Long,
-        timesRepeat: Long,
-        period: String,
-        zoneId: String?,
-        removed: String
-    ) {
-        this.dbManager = dbManager
-        this.id = id
-        this.entryId = entryId
-        this.desc = desc
-        this.epochSecondStart = start
-        this.duration = duration
-        this.epochSecondEnd = end
-        this.timesRepeat = timesRepeat
-        this.period = Period.decode(period)
-        this.timeZoneId = ZoneId.of(zoneId)
-        this.exceptionRules = ExceptionRules(removed)
+    fun getEntry(dbManager: DbManager): Entry {
+        if (entryCache == null) entryCache = Entry.byId(dbManager, entryId_!!)!!
+        return entryCache!!
     }
 
     constructor(
-        dbManager: DbManager,
         entry: Entry,
-        desc: String,
         time: ZonedDateTime,
-        duration: Long,
+        duration: Period,
         timesRepeat: Long,
         period: Period
     ) {
-        this.dbManager = dbManager
-        this.entryId = entry.id
-        this.desc = desc
-        this.epochSecondStart = time.toEpochSecond()
+        this.entryId_ = entry.id
+        this.eventOptionsId_ = entry.defaultOptionsId
+        this.epochSecondChainStart = time.toEpochSecond()
         this.duration = duration
         this.period = period
         this.timeZoneId = time.zone
@@ -84,14 +57,53 @@ class Date : BaseColumns {
         setTimesRepeat(timesRepeat)
     }
 
-    fun create() {
+    private constructor(
+        id: Int,
+        entryId: Int,
+        eventOptionsId: Int,
+        epochSecondChainStart: Long,
+        duration: Period,
+        epochSecondChainEnd: Long,
+        timesRepeat: Long,
+        period: Period,
+        timeZoneId: ZoneId,
+        exceptionRules: String,
+    ) {
+        this.id = id
+        this.entryId_ = entryId
+        this.eventOptionsId_ = eventOptionsId
+        this.epochSecondChainStart = epochSecondChainStart
+        this.duration = duration
+        this.epochSecondChainEnd = epochSecondChainEnd
+        this.timesRepeat = timesRepeat
+        this.period = period
+        this.timeZoneId = timeZoneId
+        this.exceptionRules = ExceptionRules(exceptionRules)
+    }
+
+    private fun getContentValues(): ContentValues {
+        val contentValues = ContentValues()
+        contentValues.put(COLUMN_NAME_ENTRY_ID, entryId_)
+        contentValues.put(COLUMN_NAME_EVENT_OPTIONS_ID, eventOptionsId_)
+        contentValues.put(COLUMN_NAME_EPOCH_SECOND_CHAIN_START, epochSecondChainStart)
+        contentValues.put(COLUMN_NAME_DURATION, duration.toString())
+        contentValues.put(COLUMN_NAME_EPOCH_SECOND_CHAIN_END, epochSecondChainEnd)
+        contentValues.put(COLUMN_NAME_TIMES_REPEATS, timesRepeat)
+        contentValues.put(COLUMN_NAME_PERIOD, period.toString())
+        contentValues.put(COLUMN_NAME_TIME_ZONE_ID, timeZoneId.toString())
+        contentValues.put(COLUMN_NAME_OCCURRENCE_EXCEPTIONS, exceptionRules.toString())
+        return contentValues
+    }
+
+    //since function is private isCreated check not needed
+    fun create(dbManager: DbManager) {
         fixDateRange()
         fixExceptionList()
         if (isEmpty)
             return
         val contentValues = getContentValues()
         contentValues.put(COLUMN_NAME_ID, null as Int?)
-        id = dbManager!!.writableDatabase.insertWithOnConflict(
+        id = dbManager.writableDatabase.insertWithOnConflict(
             TABLE_NAME,
             null,
             contentValues,
@@ -99,14 +111,14 @@ class Date : BaseColumns {
         ).toInt()
     }
 
-    fun update() {
+    fun update(dbManager: DbManager) {
         fixDateRange()
         fixExceptionList()
         if (isEmpty) {
-            delete()
+            delete(dbManager)
             return
         }
-        dbManager!!.writableDatabase.update(
+        dbManager.writableDatabase.update(
             TABLE_NAME,
             getContentValues(),
             "$COLUMN_NAME_ID = ?",
@@ -114,39 +126,25 @@ class Date : BaseColumns {
         )
     }
 
-    fun delete() {
-        dbManager!!.writableDatabase.execSQL(
+    fun delete(dbManager: DbManager) {
+        dbManager.writableDatabase.execSQL(
             "DELETE FROM $TABLE_NAME WHERE $COLUMN_NAME_ID = ?",
             arrayOf(id.toString())
         )
         id = null
     }
 
-    private fun getContentValues(): ContentValues {
-        val contentValues = ContentValues()
-        contentValues.put(COLUMN_NAME_ENTRY_ID, entryId)
-        contentValues.put(COLUMN_NAME_DESC, desc)
-        contentValues.put(COLUMN_NAME_EPOCH_SECOND_CHAIN_START, epochSecondStart)
-        contentValues.put(COLUMN_NAME_DURATION, duration)
-        contentValues.put(COLUMN_NAME_EPOCH_SECOND_CHAIN_ENDS, epochSecondEnd)
-        contentValues.put(COLUMN_NAME_TIMES_REPEATS, timesRepeat)
-        contentValues.put(COLUMN_NAME_PERIOD, period.toString())
-        contentValues.put(COLUMN_NAME_TIME_ZONE_ID, timeZoneId.toString())
-        contentValues.put(COLUMN_NAME_REMOVED, exceptionRules.toString())
-        return contentValues
-    }
-
     val isPeriodic: Boolean
         get() = period !is Period.Once
 
     val isEndless: Boolean
-        get() = epochSecondEnd > END_ENDLESS_THRESHOLD
+        get() = epochSecondChainEnd > END_ENDLESS_THRESHOLD
 
     val isEmpty: Boolean
         get() = timesRepeat <= 0
 
     private fun getZoneDateTime(idx: Long): ZonedDateTime {
-        return period.addTo(Instant.ofEpochSecond(epochSecondStart).atZone(timeZoneId), idx)
+        return period.addTo(Instant.ofEpochSecond(epochSecondChainStart).atZone(timeZoneId), idx)
     }
 
     fun getFirstZoneDateTime(): ZonedDateTime {
@@ -185,13 +183,19 @@ class Date : BaseColumns {
     }
 
     private fun getZonedDateTimeInRange(start: Long, finish: Long): ZonedDateTime? { //any(?) in range
-        if (finish <= this.epochSecondStart || timesRepeat == 0L) return null
-        if (this.epochSecondEnd == this.epochSecondStart) return if (this.epochSecondStart >= start) getZoneDateTime(0) else null
-        val periodExpect = (this.epochSecondEnd - this.epochSecondStart) / (timesRepeat - 1)
-        val idxExpect = (finish - this.epochSecondStart) / periodExpect
+        if (finish <= this.epochSecondChainStart || timesRepeat == 0L) return null
+        if (this.epochSecondChainEnd == this.epochSecondChainStart) return if (this.epochSecondChainStart >= start) getZoneDateTime(
+            0
+        ) else null
+        val periodExpect = (this.epochSecondChainEnd - this.epochSecondChainStart) / (timesRepeat - 1)
+        val idxExpect = (finish - this.epochSecondChainStart) / periodExpect
         //mult_frac will overflow with period 1D after a few million years, but who cares about that
         val timeEst =
-            multFrac(this.epochSecondEnd - this.epochSecondStart, idxExpect, timesRepeat) + this.epochSecondStart
+            multFrac(
+                this.epochSecondChainEnd - this.epochSecondChainStart,
+                idxExpect,
+                timesRepeat
+            ) + this.epochSecondChainStart
         val idxDiff = (timeEst - start) / periodExpect
         val idx = min((timesRepeat - 1), idxExpect - idxDiff)
         val zdtIdx = getZoneDateTime(idx)
@@ -231,22 +235,14 @@ class Date : BaseColumns {
         return zonedDateTime
     }
 
-    fun getDesc(): String {
-        return desc.ifEmpty { entry.name }
-    }
-
-    fun setDesc(desc: String) {
-        this.desc = desc
-    }
-
     fun makeEndless() {
         if (period is Period.Once)
             throw IllegalStateException("event without period cannot be endless")
-        setTimesRepeat((END_ENDLESS_EXPECT - epochSecondStart) / period.secondsApproximation())
+        setTimesRepeat((END_ENDLESS_EXPECT - epochSecondChainStart) / period.secondsApproximation())
     }
 
     private fun verifyParams(
-        start: Long = this.epochSecondStart,
+        start: Long = this.epochSecondChainStart,
         timesRepeat: Long = this.timesRepeat,
         period: Period = this.period
     ) {
@@ -258,7 +254,7 @@ class Date : BaseColumns {
                 start + (timesRepeat - 1) * period.secondsApproximation() > END_ENDLESS_EXPECT
             )
                 throw IllegalArgumentException("end overflow")
-        } catch (e: ArithmeticException) {
+        } catch (_: ArithmeticException) {
             throw IllegalArgumentException("end overflow")
         }
     }
@@ -321,7 +317,7 @@ class Date : BaseColumns {
     private fun setTimesRepeat(timesRepeat: Long) {
         verifyParams(timesRepeat = timesRepeat)
         this.timesRepeat = timesRepeat
-        this.epochSecondEnd = getZoneDateTime(timesRepeat - 1).toEpochSecond()
+        this.epochSecondChainEnd = getZoneDateTime(timesRepeat - 1).toEpochSecond()
     }
 
     fun setPeriod(period: Period) {
@@ -332,7 +328,7 @@ class Date : BaseColumns {
         }
         verifyParams(period = period)
         this.period = period
-        this.epochSecondEnd = getZoneDateTime(timesRepeat - 1).toEpochSecond()
+        this.epochSecondChainEnd = getZoneDateTime(timesRepeat - 1).toEpochSecond()
     }
 
     fun addExceptions(dateStart: LocalDate, dateEnd: LocalDate = dateStart) {
@@ -348,12 +344,12 @@ class Date : BaseColumns {
             timeZoneId = startOfDayStart.zone
             val start = startOfDayStart.toEpochSecond()
             if (isEndless) {
-                this.epochSecondStart = start
+                this.epochSecondChainStart = start
                 makeEndless()
             } else {
                 verifyParams(start = start)
                 val end = getLastZoneDateTime()
-                this.epochSecondStart = start
+                this.epochSecondChainStart = start
                 if (period is Period.Once)
                     setTimesRepeat(1)
                 else
@@ -363,7 +359,7 @@ class Date : BaseColumns {
         if (startOfDayEnd != null) {
             val startOfDayAfterEnd = startOfDayEnd.plusDays(1)
             val end = startOfDayAfterEnd.toEpochSecond() - 1
-            var expectedCount = (end - epochSecondStart) / period.secondsApproximation() + 1
+            var expectedCount = (end - epochSecondChainStart) / period.secondsApproximation() + 1
             verifyParams(timesRepeat = expectedCount)
             while (getZoneDateTime(expectedCount - 1) < startOfDayAfterEnd)
                 expectedCount += (end - getZoneDateTime(expectedCount - 1).toEpochSecond()) / period.secondsApproximation() + 1
@@ -403,9 +399,9 @@ class Date : BaseColumns {
     }
 
     private fun getNextClosestRaw(fromEpochSecond: Long): ZonedDateTime? {
-        if (fromEpochSecond > epochSecondEnd || timesRepeat <= 0)
+        if (fromEpochSecond > epochSecondChainEnd || timesRepeat <= 0)
             return null
-        if (fromEpochSecond <= epochSecondStart)
+        if (fromEpochSecond <= epochSecondChainStart)
             return getFirstZoneDateTime()
         if (period is Period.Weekday) {
             val period = this.period as Period.Weekday
@@ -429,7 +425,7 @@ class Date : BaseColumns {
                     if (then.toWeekNumber() != weekNumberStart) break
                     if (period.verifyWeekday(firstLocal, then)) {
                         val validEvent = getZoneDateTime(then.toEpochDay() - firstLocal.toEpochDay())
-                        return if (validEvent.toEpochSecond() > epochSecondEnd) null else validEvent
+                        return if (validEvent.toEpochSecond() > epochSecondChainEnd) null else validEvent
                     }
                 }
             }
@@ -441,13 +437,13 @@ class Date : BaseColumns {
             while (true) {
                 if (period.verifyWeekday(firstLocal, then)) {
                     val validEvent = getZoneDateTime(then.toEpochDay() - firstLocal.toEpochDay())
-                    return if (validEvent.toEpochSecond() > epochSecondEnd) null else validEvent
+                    return if (validEvent.toEpochSecond() > epochSecondChainEnd) null else validEvent
                 }
                 then = then.plusDays(1)
             }
         }
-        val period = (epochSecondEnd - epochSecondStart) / (timesRepeat - 1)
-        val idx = min((timesRepeat - 1), ((fromEpochSecond - epochSecondStart) / period))
+        val period = (epochSecondChainEnd - epochSecondChainStart) / (timesRepeat - 1)
+        val idx = min((timesRepeat - 1), ((fromEpochSecond - epochSecondChainStart) / period))
         val zoneDateTime = getZoneDateTime(idx)
         val evt = zoneDateTime.toEpochSecond()
         if (evt < fromEpochSecond) {
@@ -462,12 +458,12 @@ class Date : BaseColumns {
     }
 
     private fun getNextClosestIdxRaw(fromEpochSecond: Long): Long {
-        if (fromEpochSecond > epochSecondEnd || timesRepeat <= 0)
+        if (fromEpochSecond > epochSecondChainEnd || timesRepeat <= 0)
             return -1
-        if (fromEpochSecond <= epochSecondStart)
+        if (fromEpochSecond <= epochSecondChainStart)
             return 0
-        val period = (epochSecondEnd - epochSecondStart) / (timesRepeat - 1)
-        val idx = min((timesRepeat - 1), ((fromEpochSecond - epochSecondStart) / period))
+        val period = (epochSecondChainEnd - epochSecondChainStart) / (timesRepeat - 1)
+        val idx = min((timesRepeat - 1), ((fromEpochSecond - epochSecondChainStart) / period))
         val evt = getZoneDateTime(idx).toEpochSecond()
         if (evt < fromEpochSecond) {
             val evtNext = getZoneDateTime(idx + 1).toEpochSecond()
@@ -483,9 +479,9 @@ class Date : BaseColumns {
         if (exceptionRules.containsDate(getLastZoneDateTime().toEpochDays())) {
             val endExceptionRange = exceptionRules.getRangeForDate(getLastZoneDateTime().toEpochDays())!!
             val newEnd = epoch0.plusDays(endExceptionRange.start - 1)
-            if (newEnd.toEpochSecond() < epochSecondStart) {
+            if (newEnd.toEpochSecond() < epochSecondChainStart) {
                 timesRepeat = 0
-                epochSecondEnd = epochSecondStart
+                epochSecondChainEnd = epochSecondChainStart
             } else {
                 setRange(startOfDayEnd = newEnd)
             }
@@ -503,61 +499,76 @@ class Date : BaseColumns {
     }
 
     companion object {
-        const val TABLE_NAME: String = "dates"
+        const val TABLE_NAME: String = "Dates"
+
         const val COLUMN_NAME_ID: String = "id"
         const val COLUMN_NAME_ENTRY_ID: String = "entryId"
-        const val COLUMN_NAME_DESC: String = "description"
+        const val COLUMN_NAME_EVENT_OPTIONS_ID: String = "eventOptionsId"
         const val COLUMN_NAME_EPOCH_SECOND_CHAIN_START: String = "epochSecondChainStart"
         const val COLUMN_NAME_DURATION: String = "duration"
-        const val COLUMN_NAME_EPOCH_SECOND_CHAIN_ENDS: String = "epochSecondChainEnd"
+        const val COLUMN_NAME_EPOCH_SECOND_CHAIN_END: String = "epochSecondChainEnd"
         const val COLUMN_NAME_TIMES_REPEATS: String = "timesRepeat"
         const val COLUMN_NAME_PERIOD: String = "period"
         const val COLUMN_NAME_TIME_ZONE_ID: String = "timeZoneId"
-        const val COLUMN_NAME_REMOVED: String = "exceptionRules"
+        const val COLUMN_NAME_OCCURRENCE_EXCEPTIONS: String = "occurrenceExceptions"
+
+        const val SQL_CREATE: String = "CREATE TABLE IF NOT EXISTS \"$TABLE_NAME\"\n" +
+                "(\n" +
+                "    \"$COLUMN_NAME_ID\"                        INTEGER PRIMARY KEY AUTOINCREMENT,\n" +
+                "    \"$COLUMN_NAME_ENTRY_ID\"                  INTEGER NOT NULL,\n" +
+                "    \"$COLUMN_NAME_EVENT_OPTIONS_ID\"          INTEGER NOT NULL,\n" +
+                "    \"$COLUMN_NAME_EPOCH_SECOND_CHAIN_START\"  BIGINT  NOT NULL,\n" +
+                "    \"$COLUMN_NAME_DURATION\"                  TEXT    NOT NULL,\n" +
+                "    \"$COLUMN_NAME_EPOCH_SECOND_CHAIN_END\"    BIGINT  NOT NULL,\n" +
+                "    \"$COLUMN_NAME_TIMES_REPEATS\"             INTEGER NOT NULL,\n" +
+                "    \"$COLUMN_NAME_PERIOD\"                    TEXT    NOT NULL,\n" +
+                "    \"$COLUMN_NAME_TIME_ZONE_ID\"              TEXT    NOT NULL,\n" +
+                "    \"$COLUMN_NAME_OCCURRENCE_EXCEPTIONS\"     TEXT    NOT NULL,\n" +
+                "    FOREIGN KEY (\"$COLUMN_NAME_ENTRY_ID\") REFERENCES \"${Entry.TABLE_NAME}\" (\"${Entry.COLUMN_NAME_ID}\"),\n" +
+                "    FOREIGN KEY (\"$COLUMN_NAME_EVENT_OPTIONS_ID\") REFERENCES \"${EventOptions.TABLE_NAME}\" (\"${EventOptions.COLUMN_NAME_ID}\")\n" +
+                ");"
+
         const val END_ENDLESS_EXPECT: Long = 281474976710656L //2^48
         const val END_ENDLESS_THRESHOLD: Long = 140737488355328L //2^47
 
-        fun cursorToList(
-            dbManager: DbManager,
-            cursor: Cursor
-        ): MutableList<Date> {
+        fun cursorToList(cursor: Cursor): MutableList<Date> {
             val dates: MutableList<Date> = ArrayList()
-            return dates
+
             val idIdx: Int = cursor.getColumnIndex(COLUMN_NAME_ID)
             val entryIdx: Int = cursor.getColumnIndex(COLUMN_NAME_ENTRY_ID)
-            val descIdx: Int = cursor.getColumnIndex(COLUMN_NAME_DESC)
+            val eventOptionsIdx: Int = cursor.getColumnIndex(COLUMN_NAME_EVENT_OPTIONS_ID)
             val timeStartIdx: Int = cursor.getColumnIndex(COLUMN_NAME_EPOCH_SECOND_CHAIN_START)
             val durationIdx: Int = cursor.getColumnIndex(COLUMN_NAME_DURATION)
-            val timeEndsIdx: Int = cursor.getColumnIndex(COLUMN_NAME_EPOCH_SECOND_CHAIN_ENDS)
+            val timeEndsIdx: Int = cursor.getColumnIndex(COLUMN_NAME_EPOCH_SECOND_CHAIN_END)
             val timesRepeatsIdx: Int = cursor.getColumnIndex(COLUMN_NAME_TIMES_REPEATS)
             val periodIdx: Int = cursor.getColumnIndex(COLUMN_NAME_PERIOD)
             val timeZoneIdx: Int = cursor.getColumnIndex(COLUMN_NAME_TIME_ZONE_ID)
-            val removedIdx: Int = cursor.getColumnIndex(COLUMN_NAME_REMOVED)
+            val removedIdx: Int = cursor.getColumnIndex(COLUMN_NAME_OCCURRENCE_EXCEPTIONS)
+
             while (cursor.moveToNext())
                 dates.add(
                     Date(
-                        dbManager,
                         cursor.getInt(idIdx),
                         cursor.getInt(entryIdx),
-                        cursor.getString(descIdx),
+                        cursor.getInt(eventOptionsIdx),
                         cursor.getLong(timeStartIdx),
-                        cursor.getLong(durationIdx),
+                        Period.decode(cursor.getString(durationIdx)),
                         cursor.getLong(timeEndsIdx),
                         cursor.getLong(timesRepeatsIdx),
-                        cursor.getString(periodIdx),
-                        cursor.getString(timeZoneIdx),
+                        Period.decode(cursor.getString(periodIdx)),
+                        ZoneId.of(cursor.getString(timeZoneIdx)),
                         cursor.getString(removedIdx)
                     )
                 )
             return dates
         }
 
-        fun getAllByEntryId(dbManager: DbManager, entryId: Int): List<Date> {
+        fun byEntryId(dbManager: DbManager, entryId: Int): List<Date> {
             dbManager.readableDatabase.rawQuery(
                 "SELECT * FROM $TABLE_NAME WHERE $COLUMN_NAME_ENTRY_ID = ?",
                 arrayOf(entryId.toString())
             ).use { cursor ->
-                return cursorToList(dbManager, cursor)
+                return cursorToList(cursor)
             }
         }
     }

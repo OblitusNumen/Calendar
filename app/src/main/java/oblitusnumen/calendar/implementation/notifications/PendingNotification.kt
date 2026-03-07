@@ -1,7 +1,7 @@
 package oblitusnumen.calendar.implementation.notifications
 
-import oblitusnumen.calendar.implementation.data.Date
-import oblitusnumen.calendar.implementation.data.Notification
+import oblitusnumen.calendar.implementation.data.tables.Date
+import oblitusnumen.calendar.implementation.data.tables.Notification
 import java.util.*
 
 class PendingNotification(
