@@ -20,6 +20,17 @@ fun measureTextLine(style: TextStyle, text: String = "0"): Dp {
 }
 
 @Composable
+fun dpByDpForPixelPerfect(dp: Float): Dp {
+    val dpPerPx = with(LocalDensity.current) { 1.toDp() }
+    if (dpPerPx > 1.dp)
+        return dpPerPx * dp
+    val pxPerDp = (1.dp / dpPerPx).toInt()
+    if (1.dp - dpPerPx * pxPerDp < dpPerPx * (pxPerDp + 1) - 1.dp)
+        return dpPerPx * pxPerDp * dp
+    return dpPerPx * (pxPerDp + 1) * dp
+}
+
+@Composable
 fun PaddingValues.horizontal(): PaddingValues = object : PaddingValues {
     override fun calculateLeftPadding(layoutDirection: LayoutDirection): Dp {
         return this@horizontal.calculateLeftPadding(layoutDirection)

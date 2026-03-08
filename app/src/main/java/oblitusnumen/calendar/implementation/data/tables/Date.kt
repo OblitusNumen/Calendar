@@ -78,7 +78,7 @@ class Date : BaseColumns {
         this.timesRepeat = timesRepeat
         this.period = period
         this.timeZoneId = timeZoneId
-        this.exceptionRules = ExceptionRules(exceptionRules)
+        this.exceptionRules = exceptionRules
     }
 
     private fun getContentValues(): ContentValues {
@@ -557,7 +557,7 @@ class Date : BaseColumns {
                         cursor.getLong(timesRepeatsIdx),
                         Period.decode(cursor.getString(periodIdx)),
                         ZoneId.of(cursor.getString(timeZoneIdx)),
-                        cursor.getString(removedIdx)
+                        ExceptionRules(cursor.getString(removedIdx))
                     )
                 )
             return dates
@@ -595,7 +595,7 @@ class Date : BaseColumns {
                 timesRepeat,
                 period,
                 timeZoneId,
-                exceptionRules
+                ExceptionRules(exceptionRules)
             )
         }
     }

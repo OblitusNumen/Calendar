@@ -15,6 +15,7 @@ import kotlin.math.min
 class ViewDateWithOptions(
     val dateId: Int,
     val entryId: Int,
+    val eventOptionsId: Int,
     val epochSecondChainStart: Long,
     val duration: Period,// FIXME: fixup in db in date
     val epochSecondChainEnd: Long,// FIXME: account for duration in db in date
@@ -26,7 +27,21 @@ class ViewDateWithOptions(
     val color: Color
 ) {
     val displayName: String = name.ifEmpty { "[No title]" } // FIXME:
+    val date
+        get() = Date(
+            dateId,
+            entryId,
+            eventOptionsId,
+            epochSecondChainStart,
+            duration,
+            epochSecondChainEnd,
+            timesRepeat,
+            period,
+            timeZoneId,
+            exceptionRules
+        )
 
+    // TODO: extract static methods
     fun anyInRange(start: Long, finish: Long): ZonedDateTime? {// FIXME: measure performance (weekdays especially)
         val zonedDateTime = getZonedDateTimeInRange(start, finish)
         val period = this.period
@@ -196,6 +211,7 @@ class ViewDateWithOptions(
                 val views: MutableList<ViewDateWithOptions> = ArrayList()
                 val idxId = cursor.getColumnIndex(Date.COLUMN_NAME_ID)
                 val idxEntryId = cursor.getColumnIndex(Date.COLUMN_NAME_ENTRY_ID)
+                val idxOptionsId = cursor.getColumnIndex(Date.COLUMN_NAME_EVENT_OPTIONS_ID)
                 val idxStart = cursor.getColumnIndex(Date.COLUMN_NAME_EPOCH_SECOND_CHAIN_START)
                 val idxDuration = cursor.getColumnIndex(Date.COLUMN_NAME_DURATION)
                 val idxEnd = cursor.getColumnIndex(Date.COLUMN_NAME_EPOCH_SECOND_CHAIN_END)
@@ -210,6 +226,7 @@ class ViewDateWithOptions(
                         ViewDateWithOptions(
                             cursor.getInt(idxId),
                             cursor.getInt(idxEntryId),
+                            cursor.getInt(idxOptionsId),
                             cursor.getLong(idxStart),
                             Period.decode(cursor.getString(idxDuration)),
                             cursor.getLong(idxEnd),
@@ -288,4 +305,7 @@ data class DateOccurrence(
     val occurrence: LocalDateTime,
     val occurrenceZoned: ZonedDateTime,
     val date: ViewDateWithOptions
-)
+) {
+    fun startEpochSecond() = occurrenceZoned.toEpochSecond()
+    fun endEpochSecond() = date.duration.addTo(occurrenceZoned, 1).toEpochSecond()
+}
