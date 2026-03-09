@@ -18,6 +18,14 @@ class Entry(
     var defaultOptionsId: Int? = defaultOptionsId
         private set
 
+    private var optionsCache: EventOptions? = null
+
+    fun getOptions(dbManager: DbManager): EventOptions {
+        if (optionsCache == null)
+            optionsCache = EventOptions.byId(dbManager, defaultOptionsId!!)
+        return optionsCache!!
+    }
+
     private fun getContentValues(): ContentValues {
         val contentValues = ContentValues()
         contentValues.put(COLUMN_NAME_DEFAULT_OPTIONS_ID, defaultOptionsId)

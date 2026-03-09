@@ -1,11 +1,8 @@
 package oblitusnumen.calendar.ui.model.screen
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -22,11 +19,9 @@ import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.tables.Entry
 import oblitusnumen.calendar.implementation.data.tables.Tag
 import oblitusnumen.calendar.implementation.data.views.EditViewTag
-import oblitusnumen.calendar.implementation.getZonedFromEpochSeconds
 import oblitusnumen.calendar.implementation.log
 import oblitusnumen.calendar.ui.*
 import oblitusnumen.calendar.ui.theme.topBarColors
-import java.time.format.DateTimeFormatter
 
 @Composable
 fun TagEditScreen(
@@ -114,7 +109,7 @@ fun TagEditScreen(
                 val id = entry.id!!
                 val selected = id in selectedEntries
 
-                DrawEntry(
+                DrawEntrySelectable(
                     entry, nextDates[id], selected,
                     if (editable) {
                         { selectedEntries += id }
@@ -134,59 +129,6 @@ fun TagEditScreen(
                 )
             }
             item { Spacer(Modifier.height(paddingValues.calculateBottomPadding())) }
-        }
-    }
-}
-
-@OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
-@Composable
-fun DrawEntry(
-    entry: Entry,
-    nextDate: Long?,
-    selected: Boolean,
-    onLongClick: () -> Unit,
-    onClick: () -> Unit,
-) { //fixme Entry can not be created without DB
-    var nextDateText by remember {
-        val nextDateText =
-            when (val nextDate = nextDate) {
-                null -> ""
-                -1L -> "Ended"
-                else -> getZonedFromEpochSeconds(nextDate).format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm"))
-            }
-        mutableStateOf(nextDateText)
-    }
-
-    Row {
-        if (selected)
-            Checkbox(checked = true, onCheckedChange = {})
-        Column(
-            Modifier.padding(2.dp).fillMaxWidth().defaultMinSize(minHeight = 64.dp).background(
-                MaterialTheme.colorScheme.primaryContainer, shape = RoundedCornerShape(10.dp)
-            ).combinedClickable(
-                onLongClick = onLongClick,
-                onClick = onClick
-            )
-        ) {
-            Row(Modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 8.dp)) {
-//                    Box(
-//                        Modifier.padding(end = 8.dp).size(24.dp).background(entry.getColorOrDefault(), CircleShape)
-//                            .border(0.dp, entry.getColorOrDefault(), CircleShape).align(Alignment.CenterVertically)
-//                    )
-//                    Text(
-//                        modifier = Modifier.weight(1.0f).padding(horizontal = 8.dp).align(Alignment.CenterVertically),
-//                        text = entry.name.ifEmpty { "[No title]" },
-//                        style = MaterialTheme.typography.headlineSmall,
-//                        overflow = TextOverflow.Ellipsis,
-//                        maxLines = 1,
-//                    )
-                Text(
-                    modifier = Modifier.align(Alignment.CenterVertically),
-                    text = nextDateText,
-                    style = MaterialTheme.typography.bodyLarge,
-                )
-            }//todo next line "10 events from 2024.01.01 to 2025.01.01"
-//                drawDescriptionAndTags(dbManager, entry.getContents(), entry.getTags())
         }
     }
 }
@@ -404,7 +346,7 @@ fun AddEntriesDialog(
                         val id = entry.id!!
                         val selected = id in selectedEntries
 
-                        DrawEntry(
+                        DrawEntrySelectable(
                             entry,
                             nextDates[id],
                             selected,

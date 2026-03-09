@@ -4,6 +4,7 @@ import android.content.ContentValues
 import android.database.Cursor
 import android.provider.BaseColumns
 import androidx.compose.ui.graphics.Color
+import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.toColor
 import oblitusnumen.calendar.implementation.toInt
 
@@ -64,6 +65,16 @@ class EventOptions private constructor(
                     )
                 )
             return options
+        }
+
+        fun byId(dbManager: DbManager, id: Int): EventOptions? {
+            dbManager.readableDatabase.rawQuery(
+                "SELECT * FROM $TABLE_NAME WHERE $COLUMN_NAME_ID = ?",
+                arrayOf(id.toString())
+            ).use { cursor ->
+                val entries = cursorToList(cursor)
+                return if (entries.isEmpty()) null else entries[0]
+            }
         }
     }
 }

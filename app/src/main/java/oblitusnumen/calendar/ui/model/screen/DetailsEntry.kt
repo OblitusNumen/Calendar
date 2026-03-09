@@ -33,7 +33,7 @@ import oblitusnumen.calendar.ui.BackPressButton
 import oblitusnumen.calendar.ui.theme.topBarColors
 import java.time.format.DateTimeFormatter
 
-class EntryDetails(
+class DetailsEntry(
     private val dbManager: DbManager,
     private val entryID: Int
 ) : ViewModel() {

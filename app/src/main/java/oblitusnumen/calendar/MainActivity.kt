@@ -181,10 +181,10 @@ class MainActivity : ComponentActivity() {
                     NavRoutes.EntryDetails.withArgs(startingEntryId.toString())
         ) {
             composable(route = NavRoutes.Calendar.route) {
-                CalendarTab(
+                CalendarScreen(
                     dbManager,
                     tagsFilter,
-                    { drawBottomBar(navController) },
+                    { DrawBottomBar(navController) },
 //                    {},// FIXME:
 //                    {dbManager.fillDB()},
                     { NavRoutes.EntryEdit.navHere(navController, null) },
@@ -221,7 +221,7 @@ class MainActivity : ComponentActivity() {
                     dbManager,
                     month,
                     tagsFilter,
-                    { drawBottomBar(navController) },
+                    { DrawBottomBar(navController) },
                     {},// FIXME:
                     { NavRoutes.ThatDayDetails.navHere(navController, it) },
                     { NavRoutes.EntryDetails.navHere(navController, it.date.entryId) },
@@ -270,13 +270,13 @@ class MainActivity : ComponentActivity() {
                     NavRoutes.backPress(navController)
                     return@composable
                 }
-                val entryDetails = viewModel { EntryDetails(dbManager, entryId) }
+                val detailsEntry = viewModel { DetailsEntry(dbManager, entryId) }
                 Scaffold(topBar = {
-                    entryDetails.topBar(
+                    detailsEntry.topBar(
                         { NavRoutes.backPress(navController) },
                         { NavRoutes.EntryEdit.navHere(navController, it) })
                 }) {
-                    entryDetails.compose(
+                    detailsEntry.compose(
                         { NavRoutes.backPress(navController) },
                         Modifier.padding(//seems like a hack
                             horizontal = PADDING
@@ -286,23 +286,19 @@ class MainActivity : ComponentActivity() {
             }
 
             composable(route = NavRoutes.Entries.route) {
-                val entriesTab = viewModel { EntriesTab(dbManager) }
-                Scaffold(
-                    topBar = { entriesTab.topBar { NavRoutes.backPress(navController) }},
-                    bottomBar = { drawBottomBar(navController) }) {
-                    entriesTab.compose(
-                        { NavRoutes.EntryDetails.navHere(navController, it) },
-                        Modifier.padding(//seems like a hack
-                            horizontal = PADDING
-                        )
-                    )
-                }
+                EntriesScreen(
+                    dbManager,
+                    { DrawBottomBar(navController) },
+                    { NavRoutes.EntryEdit.navHere(navController, null) },
+                    { NavRoutes.EntryDetails.navHere(navController, it) },
+                    { NavRoutes.backPress(navController) }
+                )
             }
 
             composable(route = NavRoutes.Tags.route) {
                 TagsScreen(
                     dbManager,
-                    { drawBottomBar(navController) },
+                    { DrawBottomBar(navController) },
                     { NavRoutes.TagEdit.navHere(navController, it) },
                     { NavRoutes.backPress(navController) }
                 )
@@ -322,10 +318,10 @@ class MainActivity : ComponentActivity() {
             }
 
             composable(route = NavRoutes.Settings.route) {
-                val settingsScreen = viewModel { SettingsScreen(dbManager) }
+                val settings = viewModel { Settings(dbManager) }
                 Scaffold(
-                    topBar = { settingsScreen.topBar { NavRoutes.backPress(navController) } }) { innerPadding ->
-                    settingsScreen.compose(
+                    topBar = { settings.topBar { NavRoutes.backPress(navController) } }) { innerPadding ->
+                    settings.compose(
                         Modifier.padding(//seems like a hack
                             horizontal = PADDING
                         ), innerPadding
@@ -336,7 +332,7 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    fun drawBottomBar(navController: NavController) {
+    fun DrawBottomBar(navController: NavController) {
         NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.9f)) {
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentDestination = navBackStackEntry?.destination

@@ -7,7 +7,6 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -23,8 +22,9 @@ import oblitusnumen.calendar.implementation.data.views.ViewDateWithOptions
 import oblitusnumen.calendar.implementation.getZonedFromEpochSeconds
 import oblitusnumen.calendar.implementation.log
 import oblitusnumen.calendar.ui.BackPressButton
+import oblitusnumen.calendar.ui.DrawEntryDescriptionAndTags
+import oblitusnumen.calendar.ui.NewEntryFunctionButton
 import oblitusnumen.calendar.ui.dpByDpForPixelPerfect
-import oblitusnumen.calendar.ui.model.screen.EntriesTab.Companion.drawDescriptionAndTags
 import oblitusnumen.calendar.ui.theme.topBarColors
 import java.time.Duration
 import java.time.LocalDate
@@ -51,7 +51,7 @@ fun DateScreen(
                 onBackPress
             )
         },
-        floatingActionButton = { DateFunctionButton({ openEditNewEntry(pagerDay) }) }
+        floatingActionButton = { NewEntryFunctionButton { openEditNewEntry(pagerDay) } }
     ) { paddingValues ->
         val pagerState = rememberPagerState(initialPage = LIST_LEN / 2, pageCount = { LIST_LEN })
 
@@ -257,7 +257,11 @@ fun DrawEntry(dbManager: DbManager, occurrence: DateOccurrence, openEntryInfo: (
             )
         }
 
-        drawDescriptionAndTags(dbManager, dateMeta.getContents(dbManager), Tag.forEntry(dbManager, dateMeta.entryId))
+        DrawEntryDescriptionAndTags(
+            dbManager,
+            dateMeta.getContents(dbManager),
+            Tag.forEntry(dbManager, dateMeta.entryId)
+        )
 
         if (excludeDateShown)
             ExcludeOccurrenceDialog(occurrence.occurrence, dateMeta.displayName, {
@@ -295,13 +299,6 @@ fun DateTopBar(day: LocalDate, openAgenda: () -> Unit, backPress: () -> Unit) {
             }
         },
     )
-}
-
-@Composable
-fun DateFunctionButton(openEditNewEntry: () -> Unit) {
-    FloatingActionButton(onClick = openEditNewEntry) {
-        Icon(Icons.Filled.Add, "add event")
-    }
 }
 
 @Composable

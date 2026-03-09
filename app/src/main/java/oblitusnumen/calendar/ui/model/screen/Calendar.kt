@@ -46,7 +46,7 @@ import java.time.temporal.ChronoUnit
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CalendarTab(
+fun CalendarScreen(
     dbManager: DbManager,
     tagsFilter: MutableState<List<Tag>>,
     navBar: @Composable () -> Unit,

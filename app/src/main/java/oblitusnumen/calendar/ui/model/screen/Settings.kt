@@ -26,7 +26,7 @@ import oblitusnumen.calendar.ui.theme.topBarColors
 import java.io.BufferedOutputStream
 import java.io.File
 
-class SettingsScreen(private val dbManager: DbManager) : ViewModel() {
+class Settings(private val dbManager: DbManager) : ViewModel() {
     @Composable
     fun compose(modifier: Modifier = Modifier, innerPadding: PaddingValues) {
         LazyColumn(modifier) {
