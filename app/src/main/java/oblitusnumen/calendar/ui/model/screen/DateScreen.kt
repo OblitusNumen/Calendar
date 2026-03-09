@@ -1,6 +1,5 @@
 package oblitusnumen.calendar.ui.model.screen
 
-import android.R
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
@@ -25,7 +24,6 @@ import oblitusnumen.calendar.implementation.getZonedFromEpochSeconds
 import oblitusnumen.calendar.implementation.log
 import oblitusnumen.calendar.ui.BackPressButton
 import oblitusnumen.calendar.ui.dpByDpForPixelPerfect
-import oblitusnumen.calendar.ui.measureTextLine
 import oblitusnumen.calendar.ui.model.screen.EntriesTab.Companion.drawDescriptionAndTags
 import oblitusnumen.calendar.ui.theme.topBarColors
 import java.time.Duration
@@ -74,7 +72,10 @@ fun DateScreen(
                     Row {
                         Box(Modifier.height(minutesToDp(1440)).padding(end = 2.dp)) {
                             repeat(24) {
-                                Text("$it:00", Modifier.padding(top = minutesToDp(it * 60) + 1.dp).align(Alignment.TopEnd))
+                                Text(
+                                    "$it:00",
+                                    Modifier.padding(top = minutesToDp(it * 60) + 1.dp).align(Alignment.TopEnd)
+                                )
                             }
                         }
                         Box {

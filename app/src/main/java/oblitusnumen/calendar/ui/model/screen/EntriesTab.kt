@@ -23,6 +23,7 @@ import oblitusnumen.calendar.implementation.bgColorToTextColor
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.tables.Entry
 import oblitusnumen.calendar.implementation.data.tables.Tag
+import oblitusnumen.calendar.ui.BackPressButton
 import oblitusnumen.calendar.ui.model.DateTimePicker
 import oblitusnumen.calendar.ui.theme.topBarColors
 import java.time.LocalDateTime
@@ -58,18 +59,12 @@ class EntriesTab(private val dbManager: DbManager) : ViewModel() {
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    fun topBar(openSettings: () -> Unit) {
+    fun topBar(backPress: () -> Unit) {
         val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
         CenterAlignedTopAppBar(
             colors = topBarColors(),
             scrollBehavior = scrollBehavior,
-            navigationIcon = {
-                IconButton(onClick = openSettings) {
-                    Icon(
-                        imageVector = Icons.Filled.Settings, contentDescription = null
-                    )
-                }
-            },
+            navigationIcon = { BackPressButton(backPress) },
             title = { Text("Entries", maxLines = 1) },
             actions = {
                 IconButton(onClick = {}) {

@@ -193,6 +193,8 @@ class MainActivity : ComponentActivity() {
                         NavRoutes.Agenda.navHere(navController, year, monthValue, null)
                         log("year: $year, monthValue: $monthValue")
                     },
+                    { NavRoutes.Entries.navHere(navController) },
+                    { NavRoutes.Tags.navHere(navController) },
                     { NavRoutes.Settings.navHere(navController) },
                 )
                 // FIXME:  
@@ -286,7 +288,7 @@ class MainActivity : ComponentActivity() {
             composable(route = NavRoutes.Entries.route) {
                 val entriesTab = viewModel { EntriesTab(dbManager) }
                 Scaffold(
-                    topBar = { entriesTab.topBar { NavRoutes.Settings.navHere(navController) } },
+                    topBar = { entriesTab.topBar { NavRoutes.backPress(navController) }},
                     bottomBar = { drawBottomBar(navController) }) {
                     entriesTab.compose(
                         { NavRoutes.EntryDetails.navHere(navController, it) },

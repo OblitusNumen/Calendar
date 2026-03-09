@@ -12,9 +12,20 @@ import java.time.LocalDate
 
 sealed class NavRoutes(private val path: String, val route: String = path) {
     data object Calendar : NavRoutes("calendar")
-    data object Tags : NavRoutes("tags")
-    data object Entries : NavRoutes("entries")
+
     data object Settings : NavRoutes("settings") {
+        fun navHere(navController: NavController) {
+            navController.navigate(route)
+        }
+    }
+
+    data object Tags : NavRoutes("tags") {
+        fun navHere(navController: NavController) {
+            navController.navigate(route)
+        }
+    }
+
+    data object Entries : NavRoutes("entries") {
         fun navHere(navController: NavController) {
             navController.navigate(route)
         }

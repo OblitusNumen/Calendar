@@ -53,6 +53,8 @@ fun CalendarTab(
     newEntry: () -> Unit,
     openThatDayInfo: (LocalDate) -> Unit,
     openMonthAgenda: (Int, Int) -> Unit,
+    openEntriesScreen: () -> Unit,
+    openTagsScreen: () -> Unit,
     openSettings: () -> Unit,
 ) {
     val now = LocalDate.now()
@@ -77,135 +79,196 @@ fun CalendarTab(
 
     var tagsFilter by remember { tagsFilter }
 
-    Scaffold(
-        topBar = { CalendarTopBar(dbManager, tagsFilter, { tagsFilter = it }, openSettings, scrollTo) },
-        bottomBar = navBar,
-        floatingActionButton = {
-            ActionButtonWithScroll(
-                newEntry,
-                scrollTo,
-                todayPosition
-            )
-        }
-    ) { paddingValues ->
-        contentScrollOffset =
-            with(LocalDensity.current) { paddingValues.calculateTopPadding().toPx().toInt() }
-        contentScrollOffsetDown =
-            with(LocalDensity.current) { paddingValues.calculateBottomPadding().toPx().toInt() }
-        calendarLazyListState =
-            rememberLazyListState(getNowMonthItemWeekIndex(now), -contentScrollOffset)
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
+    val coroutineScope = rememberCoroutineScope()
 
-        var currentMonth by rememberSaveable { mutableStateOf(now) }
-
-        Box(Modifier.fillMaxSize()) {
-            LazyColumn(
-                state = calendarLazyListState,
-                modifier = Modifier.padding(paddingValues.horizontal()),
-            ) {
-                items(LIST_LEN) {
-                    val offset = it - LIST_LEN / 2 // FIXME: extract functions
-                    val monthItemIndex = if (offset < 0) 6 + offset % 7 else offset % 7
-                    val monthIdx = if (offset < 0) offset / 7 - 1 else offset / 7
-                    val mon = LIST_CENTER.plusMonths(monthIdx.toLong()).withDayOfMonth(1)
-                    if (monthItemIndex == 0) {
-                        HorizontalDivider(Modifier.padding(4.dp))
-                        Box(Modifier.fillMaxWidth()) {
-                            Box(
-                                Modifier.padding(top = 8.dp, bottom = 4.dp).align(Alignment.Center)
-                                    .background(
-                                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
-                                        RoundedCornerShape(100)
-                                    )
-                                    .clip(RoundedCornerShape(100))
-                                    .clickable { openMonthAgenda(mon.year, mon.month.value) },
-                            ) {
-                                Text(
-                                    stringArrayResource(R.array.monthNames)[mon.month.value - 1] + " " + mon.year,
-                                    modifier = Modifier.padding(horizontal = 8.dp),
-                                    style = MaterialTheme.typography.titleLarge,
-                                )
-                            }
-
-                            IconButton(
-                                { openMonthAgenda(mon.year, mon.month.value) },
-                                Modifier.align(Alignment.CenterEnd)
-                            ) {
-                                Icon(Icons.Filled.KeyboardArrowRight, "open month agenda")
-                            }
-                        }
-                    } else {
-                        DisplayWeek(
-                            dbManager,
-                            tagsFilter,
-                            evtHeight,
-                            mon.monthValue,
-                            mon.plusDays(7 * (monthItemIndex - 1) - (mon.dayOfWeek.value - 1).toLong()),
-                            eventsPerDay,
-                            openThatDayInfo
-                        )
+    ModalNavigationDrawer(
+        drawerContent = {
+            ModalDrawerSheet {
+                Row(Modifier.padding(16.dp)) {
+                    Text("Calendar", Modifier.align(Alignment.CenterVertically).weight(1f))
+                    IconButton(onClick = { coroutineScope.launch { drawerState.close() } }) {
+                        Icon(Icons.Filled.Close, contentDescription = "close drawer")
                     }
                 }
-            }
-
-            Box(
-                Modifier.padding(top = paddingValues.calculateTopPadding() + 4.dp).align(Alignment.TopCenter)
-                    .background(
-                        color = MaterialTheme.colorScheme.background.copy(alpha = .5f),
-                        RoundedCornerShape(100)
-                    )
-                    .clip(RoundedCornerShape(100))
-                    .clickable { openMonthAgenda(currentMonth.year, currentMonth.month.value) },
-            ) {
-                Text(
-                    stringArrayResource(R.array.monthNames)[currentMonth.month.value - 1] + " " + currentMonth.year,
-                    modifier = Modifier.padding(horizontal = 8.dp),
-                    style = MaterialTheme.typography.titleLarge
+                HorizontalDivider()
+                NavigationDrawerItem(
+                    label = { Text(text = "Entries") },
+                    selected = false,
+                    onClick = openEntriesScreen,
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Filled.ThumbUp,
+                            contentDescription = null
+                        )
+                    }
+                )
+                HorizontalDivider()
+                NavigationDrawerItem(
+                    label = { Text(text = "Tags") },
+                    selected = false,
+                    onClick = openTagsScreen,
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Filled.Star,
+                            contentDescription = null
+                        )
+                    }
+                )
+                HorizontalDivider()
+                NavigationDrawerItem(
+                    label = { Text(text = "Settings") },
+                    selected = false,
+                    onClick = openSettings,
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Filled.Settings,
+                            contentDescription = null
+                        )
+                    }
                 )
             }
+        },
+        drawerState = drawerState,
+    ) {
+        Scaffold(
+            topBar = {
+                CalendarTopBar(
+                    dbManager,
+                    tagsFilter,
+                    { tagsFilter = it },
+                    { coroutineScope.launch { drawerState.open() } },
+                    scrollTo
+                )
+            },
+            bottomBar = navBar,
+            floatingActionButton = {
+                ActionButtonWithScroll(
+                    newEntry,
+                    scrollTo,
+                    todayPosition
+                )
+            }
+        ) { paddingValues ->
+            contentScrollOffset =
+                with(LocalDensity.current) { paddingValues.calculateTopPadding().toPx().toInt() }
+            contentScrollOffsetDown =
+                with(LocalDensity.current) { paddingValues.calculateBottomPadding().toPx().toInt() }
+            calendarLazyListState =
+                rememberLazyListState(getNowMonthItemWeekIndex(now), -contentScrollOffset)
 
-            LaunchedEffect(calendarLazyListState, getNowWeekItemIndexExact(now)) {
-                snapshotFlow { calendarLazyListState.layoutInfo }
-                    .collect { layoutInfo ->
-                        val targetItemIdx = getNowWeekItemIndexExact(now)
-                        val visibleItemsInfo = layoutInfo.visibleItemsInfo
-                        val newPositionStatus = if (visibleItemsInfo.isEmpty())
-                            PositionStatus.Visible
-                        else {
-                            val firstVisibleIdx = visibleItemsInfo.first().index
-                            val lastVisibleIdx = visibleItemsInfo.last().index
-                            if (targetItemIdx < firstVisibleIdx)
-                                PositionStatus.Above
-                            else {
-                                if (lastVisibleIdx < targetItemIdx)
-                                    PositionStatus.Below
-                                else {
-                                    val targetItemInfoIndex = targetItemIdx - firstVisibleIdx
-                                    val targetItemInfo: LazyListItemInfo =
-                                        visibleItemsInfo.elementAt(targetItemInfoIndex)
-                                    val targetItemOffset = targetItemInfo.offset
-                                    val targetItemSize = targetItemInfo.size
-                                    if (contentScrollOffset > targetItemOffset)
-                                        PositionStatus.Above
-                                    else if (layoutInfo.viewportEndOffset - contentScrollOffsetDown < targetItemOffset + targetItemSize)
-                                        PositionStatus.Below
-                                    else
-                                        PositionStatus.Visible
+            var currentMonth by rememberSaveable { mutableStateOf(now) }
+
+            Box(Modifier.fillMaxSize()) {
+                LazyColumn(
+                    state = calendarLazyListState,
+                    modifier = Modifier.padding(paddingValues.horizontal()),
+                ) {
+                    items(LIST_LEN) {
+                        val offset = it - LIST_LEN / 2 // FIXME: extract functions
+                        val monthItemIndex = if (offset < 0) 6 + offset % 7 else offset % 7
+                        val monthIdx = if (offset < 0) offset / 7 - 1 else offset / 7
+                        val mon = LIST_CENTER.plusMonths(monthIdx.toLong()).withDayOfMonth(1)
+                        if (monthItemIndex == 0) {
+                            HorizontalDivider(Modifier.padding(4.dp))
+                            Box(Modifier.fillMaxWidth()) {
+                                Box(
+                                    Modifier.padding(top = 8.dp, bottom = 4.dp).align(Alignment.Center)
+                                        .background(
+                                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
+                                            RoundedCornerShape(100)
+                                        )
+                                        .clip(RoundedCornerShape(100))
+                                        .clickable { openMonthAgenda(mon.year, mon.month.value) },
+                                ) {
+                                    Text(
+                                        stringArrayResource(R.array.monthNames)[mon.month.value - 1] + " " + mon.year,
+                                        modifier = Modifier.padding(horizontal = 8.dp),
+                                        style = MaterialTheme.typography.titleLarge,
+                                    )
+                                }
+
+                                IconButton(
+                                    { openMonthAgenda(mon.year, mon.month.value) },
+                                    Modifier.align(Alignment.CenterEnd)
+                                ) {
+                                    Icon(Icons.Filled.KeyboardArrowRight, "open month agenda")
                                 }
                             }
-                        }
-                        if (newPositionStatus != todayPosition)
-                            todayPosition = newPositionStatus
-
-                        for (info in visibleItemsInfo) {
-                            if (info.offset >= contentScrollOffset) {
-                                val newCurrentMonth = getCurrentMonthFromWeekItemIndex(info.index)
-                                if (newCurrentMonth != currentMonth) {
-                                    currentMonth = newCurrentMonth
-                                }
-                                break
-                            }
+                        } else {
+                            DisplayWeek(
+                                dbManager,
+                                tagsFilter,
+                                evtHeight,
+                                mon.monthValue,
+                                mon.plusDays(7 * (monthItemIndex - 1) - (mon.dayOfWeek.value - 1).toLong()),
+                                eventsPerDay,
+                                openThatDayInfo
+                            )
                         }
                     }
+                }
+
+                Box(
+                    Modifier.padding(top = paddingValues.calculateTopPadding() + 4.dp).align(Alignment.TopCenter)
+                        .background(
+                            color = MaterialTheme.colorScheme.background.copy(alpha = .5f),
+                            RoundedCornerShape(100)
+                        )
+                        .clip(RoundedCornerShape(100))
+                        .clickable { openMonthAgenda(currentMonth.year, currentMonth.month.value) },
+                ) {
+                    Text(
+                        stringArrayResource(R.array.monthNames)[currentMonth.month.value - 1] + " " + currentMonth.year,
+                        modifier = Modifier.padding(horizontal = 8.dp),
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                }
+
+                LaunchedEffect(calendarLazyListState, getNowWeekItemIndexExact(now)) {
+                    snapshotFlow { calendarLazyListState.layoutInfo }
+                        .collect { layoutInfo ->
+                            val targetItemIdx = getNowWeekItemIndexExact(now)
+                            val visibleItemsInfo = layoutInfo.visibleItemsInfo
+                            val newPositionStatus = if (visibleItemsInfo.isEmpty())
+                                PositionStatus.Visible
+                            else {
+                                val firstVisibleIdx = visibleItemsInfo.first().index
+                                val lastVisibleIdx = visibleItemsInfo.last().index
+                                if (targetItemIdx < firstVisibleIdx)
+                                    PositionStatus.Above
+                                else {
+                                    if (lastVisibleIdx < targetItemIdx)
+                                        PositionStatus.Below
+                                    else {
+                                        val targetItemInfoIndex = targetItemIdx - firstVisibleIdx
+                                        val targetItemInfo: LazyListItemInfo =
+                                            visibleItemsInfo.elementAt(targetItemInfoIndex)
+                                        val targetItemOffset = targetItemInfo.offset
+                                        val targetItemSize = targetItemInfo.size
+                                        if (contentScrollOffset > targetItemOffset)
+                                            PositionStatus.Above
+                                        else if (layoutInfo.viewportEndOffset - contentScrollOffsetDown < targetItemOffset + targetItemSize)
+                                            PositionStatus.Below
+                                        else
+                                            PositionStatus.Visible
+                                    }
+                                }
+                            }
+                            if (newPositionStatus != todayPosition)
+                                todayPosition = newPositionStatus
+
+                            for (info in visibleItemsInfo) {
+                                if (info.offset >= contentScrollOffset) {
+                                    val newCurrentMonth = getCurrentMonthFromWeekItemIndex(info.index)
+                                    if (newCurrentMonth != currentMonth) {
+                                        currentMonth = newCurrentMonth
+                                    }
+                                    break
+                                }
+                            }
+                        }
+                }
             }
         }
     }
@@ -347,7 +410,7 @@ fun CalendarTopBar(
     dbManager: DbManager,
     tagsFilter: List<Tag>,
     tagsFilterUpdate: (List<Tag>) -> Unit,
-    openSettings: () -> Unit,
+    openDrawer: () -> Unit,
     scrollTo: suspend (LocalDate) -> Unit,
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
@@ -363,9 +426,9 @@ fun CalendarTopBar(
             colors = topBarColors(),
             scrollBehavior = scrollBehavior,
             navigationIcon = {
-                IconButton(onClick = openSettings) {
+                IconButton(onClick = openDrawer) {
                     Icon(
-                        imageVector = Icons.Filled.Settings,
+                        imageVector = Icons.Filled.Menu,
                         contentDescription = null
                     )
                 }
