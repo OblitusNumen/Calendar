@@ -128,10 +128,9 @@ class MainActivity : ComponentActivity() {
         NotificationBroadcastReceiver().onReceive(this, null)
         setContent {
             CalendarTheme {
-                calendarViewModel = viewModel { CalendarViewModel(DbManager(this@MainActivity)) }
                 NavGraph(
                     rememberNavController(),
-                    calendarViewModel!!.dbManager,
+                    DbManager(this@MainActivity),
                     startingEntryId
                 )
             }
@@ -177,9 +176,27 @@ class MainActivity : ComponentActivity() {
             startDestination =
                 if (startingEntryId == null)
                     NavRoutes.Calendar.route
+                // FIXME:
+//                    NavRoutes.Dashboard.route
                 else
                     NavRoutes.EntryDetails.withArgs(startingEntryId.toString())
         ) {
+            composable(route = NavRoutes.Dashboard.route) {
+                DashboardScreen(
+                    dbManager,
+                    { DrawBottomBar(navController) },
+                    { NavRoutes.EntryEdit.navHere(navController, null) },
+                    { NavRoutes.ThatDayDetails.navHere(navController, it) },
+                    { year, monthValue ->
+                        NavRoutes.Agenda.navHere(navController, year, monthValue, null)
+                        log("year: $year, monthValue: $monthValue")
+                    },
+                    { NavRoutes.Entries.navHere(navController) },
+                    { NavRoutes.Tags.navHere(navController) },
+                    { NavRoutes.Settings.navHere(navController) },
+                )
+            }
+
             composable(route = NavRoutes.Calendar.route) {
                 CalendarScreen(
                     dbManager,
@@ -197,21 +214,39 @@ class MainActivity : ComponentActivity() {
                     { NavRoutes.Tags.navHere(navController) },
                     { NavRoutes.Settings.navHere(navController) },
                 )
-                // FIXME:  
-//                val calendarTab = viewModel { CalendarTab(dbManager) }
-//                Scaffold(
-//                    topBar = { calendarTab.topBar { NavRoutes.Settings.navHere(navController) } },
-//                    bottomBar = { drawBottomBar(navController) },
-//                    floatingActionButton = {
-//                        calendarTab.functionButton { NavRoutes.EntryEdit.navHere(navController, null) }
-//                    }) {
-//                    calendarTab.compose(
-//                        { NavRoutes.ThatDayDetails.navHere(navController, it) },
-//                        Modifier.padding(//seems like a hack
-//                            horizontal = PADDING
-//                        )
-//                    )
-//                }
+            }
+
+            composable(route = NavRoutes.Planner.route) {
+                PlannerScreen(
+                    dbManager,
+                    tagsFilter,
+                    { DrawBottomBar(navController) },
+                    { NavRoutes.EntryEdit.navHere(navController, null) },
+                    { NavRoutes.ThatDayDetails.navHere(navController, it) },
+                    { year, monthValue ->
+                        NavRoutes.Agenda.navHere(navController, year, monthValue, null)
+                        log("year: $year, monthValue: $monthValue")
+                    },
+                    { NavRoutes.Entries.navHere(navController) },
+                    { NavRoutes.Tags.navHere(navController) },
+                    { NavRoutes.Settings.navHere(navController) },
+                )
+            }
+
+            composable(route = NavRoutes.TaskDetails.route) {
+                TaskDetailsScreen(
+                    dbManager,
+                    { DrawBottomBar(navController) },
+                    { NavRoutes.EntryEdit.navHere(navController, null) },
+                    { NavRoutes.ThatDayDetails.navHere(navController, it) },
+                    { year, monthValue ->
+                        NavRoutes.Agenda.navHere(navController, year, monthValue, null)
+                        log("year: $year, monthValue: $monthValue")
+                    },
+                    { NavRoutes.Entries.navHere(navController) },
+                    { NavRoutes.Tags.navHere(navController) },
+                    { NavRoutes.Settings.navHere(navController) },
+                )
             }
 
             composable(route = NavRoutes.Agenda.route) { navBackStackEntry -> // FIXME: resolve recurring stack

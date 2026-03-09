@@ -1,9 +1,9 @@
 package oblitusnumen.calendar.ui.model.navigation
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AccountBox
 import androidx.compose.material.icons.outlined.Call
-import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material.icons.outlined.ThumbUp
+import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
@@ -11,7 +11,9 @@ import oblitusnumen.calendar.ui.model.screen.MonthDate
 import java.time.LocalDate
 
 sealed class NavRoutes(private val path: String, val route: String = path) {
+    data object Dashboard : NavRoutes("dashboard")
     data object Calendar : NavRoutes("calendar")
+    data object Planner : NavRoutes("planner")
 
     data object Settings : NavRoutes("settings") {
         fun navHere(navController: NavController) {
@@ -122,6 +124,20 @@ sealed class NavRoutes(private val path: String, val route: String = path) {
         }
     }
 
+    data object TaskDetails : NavRoutes("taskDetails", route = "taskDetails/{task}") {
+        private const val task = "task"
+
+        fun navHere(navController: NavController, taskId: Int?) {
+            navController.navigate(if (taskId != null) withArgs(taskId.toString()) else withArgs("-1"))
+        }
+
+        fun getArgs(navBackStackEntry: NavBackStackEntry): Int? {
+            val taskText = navBackStackEntry.arguments?.getString(task)
+            val taskId = taskText?.toInt()
+            return if (taskId == null || taskId < 0) null else taskId
+        }
+    }
+
     // build navigation path (for screen navigation)
     fun withArgs(vararg args: String): String {
         return buildString {
@@ -144,9 +160,9 @@ sealed class NavRoutes(private val path: String, val route: String = path) {
 
     companion object {
         fun getTopLevelRoutes() = listOf(
+            TopLevelRoute("Dashboard", Dashboard, Icons.Outlined.AccountBox),
             TopLevelRoute("Calendar", Calendar, Icons.Outlined.Call),
-            TopLevelRoute("Tags", Tags, Icons.Outlined.Search),
-            TopLevelRoute("Entries", Entries, Icons.Outlined.ThumbUp)
+            TopLevelRoute("Planner", Planner, Icons.Outlined.CheckCircle)
         )
 
         fun isTopLevel(route: String?): Boolean {
