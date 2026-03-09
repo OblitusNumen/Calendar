@@ -3,7 +3,10 @@ package oblitusnumen.calendar.ui.model.screen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListItemInfo
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -35,10 +38,7 @@ import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.tables.Tag
 import oblitusnumen.calendar.implementation.data.views.ViewDateWithOptions
 import oblitusnumen.calendar.implementation.zonedDateTime
-import oblitusnumen.calendar.ui.ActionButtonWithScroll
-import oblitusnumen.calendar.ui.PositionStatus
-import oblitusnumen.calendar.ui.horizontal
-import oblitusnumen.calendar.ui.measureTextLine
+import oblitusnumen.calendar.ui.*
 import oblitusnumen.calendar.ui.model.DateTimePicker
 import oblitusnumen.calendar.ui.theme.topBarColors
 import java.time.LocalDate
@@ -370,33 +370,7 @@ fun CalendarTopBar(
                     )
                 }
             },
-            title = {
-                var isFilterOpen by remember { mutableStateOf(false) }
-                if (isFilterOpen)
-                    TagFilterMenu(dbManager, tagsFilter, { isFilterOpen = false }, tagsFilterUpdate)
-
-                Row(
-                    Modifier.background(
-                        MaterialTheme.colorScheme.background.copy(alpha = .5f),
-                        shape = RoundedCornerShape(100)
-                    )
-                        .clip(RoundedCornerShape(100))
-                        .height(40.dp).fillMaxWidth().clickable { isFilterOpen = true }
-                ) {
-                    LazyRow(Modifier.weight(1f)/*.clip(RoundedCornerShape(100))*/) {
-                        for (tag in tagsFilter)
-                            item {
-                                DrawTag(dbManager, tag, { isFilterOpen = true }) { tagsFilterUpdate(tagsFilter - tag) }
-                            }
-                    }
-                    Icon(
-                        Icons.Filled.Face,
-                        contentDescription = "filter",
-                        Modifier.size(40.dp),
-                        MaterialTheme.colorScheme.onSurface.copy(alpha = .5f)
-                    )
-                }
-            },
+            title = { TopBarTagFilterTitle(dbManager, tagsFilter, tagsFilterUpdate) },
             actions = {
                 IconButton(onClick = {
                     dateTimePicker.datePick({}, {

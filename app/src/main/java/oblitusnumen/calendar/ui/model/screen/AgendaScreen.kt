@@ -4,7 +4,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListItemInfo
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,7 +15,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Face
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -411,34 +413,7 @@ fun AgendaTopBar(
         colors = topBarColors(),
         scrollBehavior = scrollBehavior,
         navigationIcon = { BackPressButton(backPress) },
-        title = {
-            var isFilterOpen by remember { mutableStateOf(false) }
-            if (isFilterOpen)
-                TagFilterMenu(dbManager, tagsFilter, { isFilterOpen = false }, tagsFilterUpdate)
-
-            Row(
-                Modifier.background(
-                    MaterialTheme.colorScheme.background.copy(alpha = .5f),
-                    shape = RoundedCornerShape(100)
-                )
-                    .clip(RoundedCornerShape(100))
-                    .height(40.dp).fillMaxWidth().clickable { isFilterOpen = true }
-            ) {
-                LazyRow(Modifier.weight(1f)/*.clip(RoundedCornerShape(100))*/) {
-                    for (tag in tagsFilter)
-                        item {
-                            DrawTag(dbManager, tag, { isFilterOpen = true }) { tagsFilterUpdate(tagsFilter - tag) }
-                        }
-                }
-
-                Icon(
-                    Icons.Filled.Face,
-                    contentDescription = "filter",
-                    Modifier.size(40.dp),
-                    MaterialTheme.colorScheme.onSurface.copy(alpha = .5f)
-                )
-            }
-        },
+        title = { TopBarTagFilterTitle(dbManager, tagsFilter, tagsFilterUpdate) },
         actions = {
             IconButton(onClick = {
                 dateTimePicker.datePick({}, {

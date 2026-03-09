@@ -5,9 +5,14 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -23,9 +28,12 @@ import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.Period
 import oblitusnumen.calendar.implementation.data.tables.Date
 import oblitusnumen.calendar.implementation.data.tables.Entry
+import oblitusnumen.calendar.implementation.data.tables.Tag
 import oblitusnumen.calendar.implementation.defaultZoneId
 import oblitusnumen.calendar.ui.model.DateTimePicker
 import oblitusnumen.calendar.ui.model.colorPicker
+import oblitusnumen.calendar.ui.model.screen.DrawTag
+import oblitusnumen.calendar.ui.model.screen.TagFilterMenu
 import java.time.LocalDate
 
 @Composable
@@ -77,6 +85,36 @@ fun DeleteButton(onClick: () -> Unit) {
         Icon(
             imageVector = Icons.Filled.Delete,
             contentDescription = null
+        )
+    }
+}
+
+@Composable
+fun TopBarTagFilterTitle(dbManager: DbManager, tagsFilter: List<Tag>, tagsFilterUpdate: (List<Tag>) -> Unit) {
+    var isFilterOpen by remember { mutableStateOf(false) }
+    if (isFilterOpen)
+        TagFilterMenu(dbManager, tagsFilter, { isFilterOpen = false }, tagsFilterUpdate)
+
+    Row(
+        Modifier.background(
+            MaterialTheme.colorScheme.background.copy(alpha = .5f),
+            shape = RoundedCornerShape(100)
+        )
+            .clip(RoundedCornerShape(100))
+            .height(40.dp).fillMaxWidth().clickable { isFilterOpen = true }
+    ) {
+        LazyRow(Modifier.weight(1f)/*.clip(RoundedCornerShape(100))*/) {
+            for (tag in tagsFilter)
+                item {
+                    DrawTag(dbManager, tag, { isFilterOpen = true }) { tagsFilterUpdate(tagsFilter - tag) }
+                }
+        }
+
+        Icon(
+            Icons.Filled.Face,
+            contentDescription = "filter",
+            Modifier.size(40.dp),
+            MaterialTheme.colorScheme.onSurface.copy(alpha = .5f)
         )
     }
 }
