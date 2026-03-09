@@ -57,7 +57,7 @@ class Date : BaseColumns {
         setTimesRepeat(timesRepeat)
     }
 
-    private constructor(
+    constructor(
         id: Int,
         entryId: Int,
         eventOptionsId: Int,
@@ -67,7 +67,7 @@ class Date : BaseColumns {
         timesRepeat: Long,
         period: Period,
         timeZoneId: ZoneId,
-        exceptionRules: String,
+        exceptionRules: ExceptionRules,
     ) {
         this.id = id
         this.entryId_ = entryId
