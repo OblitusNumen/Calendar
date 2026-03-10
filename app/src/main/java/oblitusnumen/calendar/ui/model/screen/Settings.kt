@@ -14,7 +14,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import oblitusnumen.calendar.implementation.data.DbManager
@@ -26,12 +25,12 @@ import oblitusnumen.calendar.ui.theme.topBarColors
 import java.io.BufferedOutputStream
 import java.io.File
 
-class Settings(private val dbManager: DbManager) : ViewModel() {
-    @Composable
-    fun compose(modifier: Modifier = Modifier, innerPadding: PaddingValues) {
-        LazyColumn(modifier) {
+@Composable
+fun SettingsScreen(dbManager: DbManager, backPress: () -> Unit) {
+    Scaffold(topBar = { SettingsTopBar(backPress) }) { paddingValues ->
+        LazyColumn {
             item {
-                Spacer(modifier = Modifier.height(innerPadding.calculateTopPadding()))
+                Spacer(modifier = Modifier.height(paddingValues.calculateTopPadding()))
             }
             item {
                 Row(Modifier.padding(top = 8.dp, bottom = 4.dp)) {
@@ -186,20 +185,20 @@ class Settings(private val dbManager: DbManager) : ViewModel() {
                 }
             }
             item {
-                Spacer(modifier = Modifier.height(innerPadding.calculateBottomPadding()))
+                Spacer(modifier = Modifier.height(paddingValues.calculateBottomPadding()))
             }
         }
     }
+}
 
-    @OptIn(ExperimentalMaterial3Api::class)
-    @Composable
-    fun topBar(backPress: () -> Unit) {
-        val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
-        CenterAlignedTopAppBar(
-            colors = topBarColors(),
-            scrollBehavior = scrollBehavior,
-            navigationIcon = { BackPressButton(backPress) },
-            title = { Text("Settings", maxLines = 1) },
-        )
-    }
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SettingsTopBar(backPress: () -> Unit) {
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
+    CenterAlignedTopAppBar(
+        colors = topBarColors(),
+        scrollBehavior = scrollBehavior,
+        navigationIcon = { BackPressButton(backPress) },
+        title = { Text("Settings", maxLines = 1) },
+    )
 }

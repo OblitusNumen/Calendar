@@ -353,15 +353,7 @@ class MainActivity : ComponentActivity() {
             }
 
             composable(route = NavRoutes.Settings.route) {
-                val settings = viewModel { Settings(dbManager) }
-                Scaffold(
-                    topBar = { settings.topBar { NavRoutes.backPress(navController) } }) { innerPadding ->
-                    settings.compose(
-                        Modifier.padding(//seems like a hack
-                            horizontal = PADDING
-                        ), innerPadding
-                    )
-                }
+                SettingsScreen(dbManager, { NavRoutes.backPress(navController) })
             }
         }
     }
