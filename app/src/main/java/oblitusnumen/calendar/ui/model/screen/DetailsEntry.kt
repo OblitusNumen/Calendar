@@ -19,9 +19,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.ViewModel
 import oblitusnumen.calendar.implementation.bgColorToTextColor
 import oblitusnumen.calendar.implementation.convertMillisToDate
 import oblitusnumen.calendar.implementation.data.DbManager
@@ -33,42 +31,26 @@ import oblitusnumen.calendar.ui.BackPressButton
 import oblitusnumen.calendar.ui.theme.topBarColors
 import java.time.format.DateTimeFormatter
 
-class DetailsEntry(
-    private val dbManager: DbManager,
-    private val entryID: Int
-) : ViewModel() {
-    private var entry = Entry()
-    private var entryName by mutableStateOf("entry.name".ifEmpty { "[No title]" })
-    private var tags: List<Tag> by mutableStateOf(entry.getTags(dbManager).sortedBy { it.name })
-    private var dates: List<Date> by mutableStateOf(entry.getDates(dbManager).sortedBy { it.epochSecondChainStart })
-    private var notifications: List<Notification> by mutableStateOf(
-        entry.getNotifications(dbManager).sortedBy { it.offset.secondsApproximation() })
-    private var contents by mutableStateOf("entry.getContents()")  // FIXME: this should be List<Content>
+@Composable
+fun DetailsEntryScreen(dbManager: DbManager, entryId: Int, editEntry: () -> Unit, backPress: () -> Unit) {
+    val entry = remember { Entry.byId(dbManager, entryId) }!! // FIXME: replace with View
 
-    @OptIn(ExperimentalLayoutApi::class)
-    @Composable
-    fun compose(backPress: () -> Unit, modifier: Modifier = Modifier) {
-        val contentOffsetTop =
-            with(LocalDensity.current) { WindowInsets.statusBars.getTop(LocalDensity.current).toDp() } + 64.dp
-        val contentOffsetBottom =
-            with(LocalDensity.current) { WindowInsets.navigationBars.getBottom(LocalDensity.current).toDp() }
-        val ok = remember {
-            val entryNullable = Entry.byId(dbManager, entryID)
-            if (entryNullable == null) {
-                backPress()
-                return@remember false
-            }
-            entry = entryNullable
-            entryName = "entry.name.ifEmpty { \"[No title]\" }"
-            tags = entry.getTags(dbManager).sortedBy { it.name }
-            dates = entry.getDates(dbManager).sortedBy { it.epochSecondChainStart }
-            notifications = Notification.forEntry(dbManager, entryID)
-            contents = "entry.getContents()"
-            return@remember true
-        }
-        if (!ok) return
-        Column(modifier.fillMaxWidth().verticalScroll(rememberScrollState()).fillMaxHeight()) {
-            Spacer(Modifier.height(contentOffsetTop))
+    var entryName by remember { mutableStateOf("entry.name".ifEmpty { "[No title]" }) }
+    var tags: List<Tag> by remember { mutableStateOf(entry.getTags(dbManager).sortedBy { it.name }) }
+    var dates: List<Date> by remember {
+        mutableStateOf(
+            entry.getDates(dbManager).sortedBy { it.epochSecondChainStart })
+    }
+    var notifications: List<Notification> by remember {
+        mutableStateOf(
+            entry.getNotifications(dbManager).sortedBy { it.offset.secondsApproximation() })
+    }
+    var contents by remember { mutableStateOf("entry.getContents()") } // FIXME: this should be List<Content>
+
+    Scaffold(topBar = { DetailsEntryTopBar(dbManager, entry, entryName, editEntry, backPress) }) { paddingValues ->
+        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).fillMaxHeight()) {
+            Spacer(Modifier.height(paddingValues.calculateTopPadding()))
+
             // name and color
             val color by remember { mutableStateOf(Color.Red/*entry.getColorOrDefault()*/) }
             SelectionContainer {
@@ -84,6 +66,7 @@ class DetailsEntry(
                     )
                 }
             }
+
             // description
             if (contents.isNotEmpty()) {
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
@@ -96,6 +79,7 @@ class DetailsEntry(
                     )
                 }
             }
+
             // tags
             if (tags.isNotEmpty()) {
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
@@ -105,134 +89,142 @@ class DetailsEntry(
                         Modifier.fillMaxWidth().padding(end = 16.dp)
                     ) {
                         for (tag in tags)
-                            drawTag(dbManager, tag)
+                            DrawTag(dbManager, tag)
                     }
                 }
             }
+
             // dates
             if (dates.isNotEmpty()) {
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
                 for (date in dates)
-                    drawDate(date)
+                    DrawDate(date)
             }
             // notifications
             if (notifications.isNotEmpty()) {
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
                 for (notification in notifications)
-                    drawNotification(notification)
+                    DrawNotification(notification)
             }
-            Spacer(Modifier.height(contentOffsetBottom))
+
+            Spacer(Modifier.height(paddingValues.calculateBottomPadding()))
         }
     }
+}
 
-    @Composable
-    fun drawNotification(notification: Notification) {
+@Composable
+fun DrawNotification(notification: Notification) {
+    Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp)) {
+        Icon(
+            if (notification.sound) Icons.Filled.Notifications else Icons.Outlined.Notifications, null,
+            Modifier.align(Alignment.CenterVertically).padding(8.dp)
+        )
+        Text(
+            modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp)
+                .weight(1f),
+            text = "${notification.offset.count} ${notification.offset.javaClass.simpleName} before",// FIXME: text
+            style = MaterialTheme.typography.bodyLarge
+        )
+    }
+}
+
+@Composable
+fun DrawDate(date: Date) {
+    val textStart = (if (date.isPeriodic) "from " else "") +
+            date.getFirstZoneDateTime().format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm"))
+    val textPeriod: String = if (date.isPeriodic)
+        "every " + date.period.count.toString() + " " + PeriodType(date.period).toString() +
+                if (date.isEndless) "" else
+                    " until " + date.getLastZoneDateTime().format(DateTimeFormatter.ofPattern("dd MMM yyyy"))
+    else
+        PeriodType(date.period).toString()
+    Column(Modifier.padding(bottom = 6.dp)) {
         Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp)) {
             Icon(
-                if (notification.sound) Icons.Filled.Notifications else Icons.Outlined.Notifications, null,
+                Icons.Outlined.Call, "",
                 Modifier.align(Alignment.CenterVertically).padding(8.dp)
             )
             Text(
-                modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp)
+                modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp, vertical = 8.dp)
                     .weight(1f),
-                text = "${notification.offset.count} ${notification.offset.javaClass.simpleName} before",// FIXME: text
+                text = textStart,
                 style = MaterialTheme.typography.bodyLarge
             )
         }
-    }
-
-    @Composable
-    fun drawDate(date: Date) {
-        val textStart = (if (date.isPeriodic) "from " else "") +
-                date.getFirstZoneDateTime().format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm"))
-        val textPeriod: String = if (date.isPeriodic)
-            "every " + date.period.count.toString() + " " + PeriodType(date.period).toString() +
-                    if (date.isEndless) "" else
-                        " until " + date.getLastZoneDateTime().format(DateTimeFormatter.ofPattern("dd MMM yyyy"))
-        else
-            PeriodType(date.period).toString()
-        Column(Modifier.padding(bottom = 6.dp)) {
-            Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp)) {
-                Icon(
-                    Icons.Outlined.Call, "",
-                    Modifier.align(Alignment.CenterVertically).padding(8.dp)
-                )
-                Text(
-                    modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp, vertical = 8.dp)
-                        .weight(1f),
-                    text = textStart,
-                    style = MaterialTheme.typography.bodyLarge
-                )
-            }
-            Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp).padding(horizontal = 40.dp)) {
-                Text(
-                    modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp, vertical = 8.dp)
-                        .weight(1f),
-                    text = textPeriod,
-                    style = MaterialTheme.typography.bodyLarge
-                )
-            }
-            if (date.isPeriodic) {
-                for (epochDay in date.exceptionRules.listAll()) {
-                    val textException = "except " + convertMillisToDate(epochDay * 86400000)
-                    Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp).padding(horizontal = 40.dp)) {
-                        Text(
-                            modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp)
-                                .weight(1f),
-                            text = textException,
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                    }
+        Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp).padding(horizontal = 40.dp)) {
+            Text(
+                modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp, vertical = 8.dp)
+                    .weight(1f),
+                text = textPeriod,
+                style = MaterialTheme.typography.bodyLarge
+            )
+        }
+        if (date.isPeriodic) {
+            for (epochDay in date.exceptionRules.listAll()) {
+                val textException = "except " + convertMillisToDate(epochDay * 86400000)
+                Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp).padding(horizontal = 40.dp)) {
+                    Text(
+                        modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp)
+                            .weight(1f),
+                        text = textException,
+                        style = MaterialTheme.typography.bodyLarge
+                    )
                 }
             }
         }
     }
+}
 
-    @Composable
-    fun drawTag(dbManager: DbManager, tag: Tag) {
-        val bgColor = tag.colorOrDefault(dbManager)
-        InputChip(
-            false,
-            {},
-            {
-                Text(
-                    tag.name, style = MaterialTheme.typography.bodyLarge,
-                    color = bgColorToTextColor(bgColor)
+@Composable
+fun DrawTag(dbManager: DbManager, tag: Tag) {
+    val bgColor = tag.colorOrDefault(dbManager)
+    InputChip(
+        false,
+        {},
+        {
+            Text(
+                tag.name, style = MaterialTheme.typography.bodyLarge,
+                color = bgColorToTextColor(bgColor)
+            )
+        },
+        modifier = Modifier.padding(horizontal = 4.dp),
+        colors = InputChipDefaults.inputChipColors(containerColor = bgColor),
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DetailsEntryTopBar(
+    dbManager: DbManager,
+    entry: Entry,
+    entryName: String,
+    editEntry: () -> Unit,
+    backPress: () -> Unit
+) {// TODO: confirm
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
+    CenterAlignedTopAppBar(
+        colors = topBarColors(),
+        scrollBehavior = scrollBehavior,
+        navigationIcon = { BackPressButton(backPress) },
+        title = { Text(entryName, maxLines = 1) },
+        actions = {
+            IconButton(onClick = {
+                editEntry()
+            }) {
+                Icon(
+                    imageVector = Icons.Filled.Edit,
+                    contentDescription = null
                 )
-            },
-            modifier = Modifier.padding(horizontal = 4.dp),
-            colors = InputChipDefaults.inputChipColors(containerColor = bgColor),
-        )
-    }
-
-    @OptIn(ExperimentalMaterial3Api::class)
-    @Composable
-    fun topBar(backPress: () -> Unit, editEntry: (Int) -> Unit) {// TODO: confirm
-        val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
-        CenterAlignedTopAppBar(
-            colors = topBarColors(),
-            scrollBehavior = scrollBehavior,
-            navigationIcon = { BackPressButton(backPress) },
-            title = { Text(entryName, maxLines = 1) },
-            actions = {
-                IconButton(onClick = {
-                    editEntry(entryID)
-                }) {
-                    Icon(
-                        imageVector = Icons.Filled.Edit,
-                        contentDescription = null
-                    )
-                }
-                IconButton(onClick = {
-                    entry.deleteCascade(dbManager)// FIXME: catch exception
-                    backPress()
-                }) {
-                    Icon(
-                        imageVector = Icons.Filled.Delete,
-                        contentDescription = null
-                    )
-                }
-            },
-        )
-    }
+            }
+            IconButton(onClick = {
+                entry.deleteCascade(dbManager)// FIXME: catch exception
+                backPress()
+            }) {
+                Icon(
+                    imageVector = Icons.Filled.Delete,
+                    contentDescription = null
+                )
+            }
+        },
+    )
 }

@@ -324,5 +324,16 @@ class Entry(
                 return cursor.getInt(cursor.getColumnIndex("eCount"))
             }
         }
+
+        fun exists(dbManager: DbManager, id: Int): Boolean {
+            dbManager.readableDatabase.rawQuery(
+                "SELECT count(*) as eCount " +
+                        "FROM $TABLE_NAME " +
+                        "WHERE $COLUMN_NAME_ID = ?", arrayOf(id.toString())
+            ).use { cursor ->
+                cursor.moveToFirst()
+                return cursor.getInt(cursor.getColumnIndex("eCount")) > 0
+            }
+        }
     }
 }

@@ -290,6 +290,7 @@ class MainActivity : ComponentActivity() {
                         fromDay = null
                     EntryEdit(dbManager, entry, fromDay)
                 }
+
                 Scaffold(topBar = { entryEdit.topBar { NavRoutes.backPress(navController) } }) {
                     entryEdit.compose(
                         Modifier.padding(//seems like a hack
@@ -301,23 +302,17 @@ class MainActivity : ComponentActivity() {
 
             composable(route = NavRoutes.EntryDetails.route) { navBackStackEntry ->
                 val entryId = NavRoutes.EntryDetails.getArgs(navBackStackEntry)
-                if (entryId == null) {
+                if (entryId == null || !Entry.exists(dbManager, entryId)) {
                     NavRoutes.backPress(navController)
                     return@composable
                 }
-                val detailsEntry = viewModel { DetailsEntry(dbManager, entryId) }
-                Scaffold(topBar = {
-                    detailsEntry.topBar(
-                        { NavRoutes.backPress(navController) },
-                        { NavRoutes.EntryEdit.navHere(navController, it) })
-                }) {
-                    detailsEntry.compose(
-                        { NavRoutes.backPress(navController) },
-                        Modifier.padding(//seems like a hack
-                            horizontal = PADDING
-                        )
-                    )
-                }
+
+                DetailsEntryScreen(
+                    dbManager,
+                    entryId,
+                    { NavRoutes.EntryEdit.navHere(navController, entryId) },
+                    { NavRoutes.backPress(navController) }
+                )
             }
 
             composable(route = NavRoutes.Entries.route) {
@@ -343,6 +338,7 @@ class MainActivity : ComponentActivity() {
                 val tagId = NavRoutes.TagEdit.getArgTagId(navBackStackEntry) ?: -1
                 if (tagId < 0)
                     throw RuntimeException("cannot edit non-existing tag")
+
                 TagEditScreen(
                     dbManager,
                     tagId,
