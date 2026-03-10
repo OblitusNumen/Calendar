@@ -11,7 +11,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
@@ -24,7 +23,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -281,23 +279,12 @@ class MainActivity : ComponentActivity() {
 
             composable(route = NavRoutes.EntryEdit.route) { navBackStackEntry ->
                 val entryId = NavRoutes.EntryEdit.getArgEntryId(navBackStackEntry)
-                var fromDay = NavRoutes.EntryEdit.getArgDate4new(navBackStackEntry)
-                val entryEdit = viewModel {
-                    var entry = Entry.byId(dbManager, entryId ?: -1)
-                    if (entry == null) {
-                        entry = Entry()
-                    } else
-                        fromDay = null
-                    EntryEdit(dbManager, entry, fromDay)
-                }
+                val fromDay = if (Entry.exists(dbManager, entryId ?: -1))
+                    null
+                else
+                    NavRoutes.EntryEdit.getArgDate4new(navBackStackEntry)
 
-                Scaffold(topBar = { entryEdit.topBar { NavRoutes.backPress(navController) } }) {
-                    entryEdit.compose(
-                        Modifier.padding(//seems like a hack
-                            horizontal = PADDING
-                        )
-                    )
-                }
+                EditEntryScreen(dbManager, entryId, fromDay, { NavRoutes.backPress(navController) })
             }
 
             composable(route = NavRoutes.EntryDetails.route) { navBackStackEntry ->

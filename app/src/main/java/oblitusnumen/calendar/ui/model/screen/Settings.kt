@@ -20,7 +20,7 @@ import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.zipDirectoryToStream
 import oblitusnumen.calendar.ui.BackPressButton
 import oblitusnumen.calendar.ui.ColorSelectButton
-import oblitusnumen.calendar.ui.model.screen.EntryEdit.Companion.drawNotificationAddMenu
+import oblitusnumen.calendar.ui.DrawNotificationAddMenu
 import oblitusnumen.calendar.ui.theme.topBarColors
 import java.io.BufferedOutputStream
 import java.io.File
@@ -64,7 +64,7 @@ fun SettingsScreen(dbManager: DbManager, backPress: () -> Unit) {
                 var notifications by remember { mutableStateOf(dbManager.defaultNotifications) }
                 var notificationChoose by remember { mutableStateOf(false) }
                 if (notificationChoose)
-                    drawNotificationAddMenu({ offset, sound ->
+                    DrawNotificationAddMenu({ offset, sound ->
                         notificationChoose = false
                         for (notification in notifications) {
                             if (notification.first.toString() == offset.toString()) {

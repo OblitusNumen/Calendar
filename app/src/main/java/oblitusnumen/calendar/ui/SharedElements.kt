@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -13,13 +14,20 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import oblitusnumen.calendar.implementation.bgColorToTextColor
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.Period
+import oblitusnumen.calendar.implementation.data.Period.Once
 import oblitusnumen.calendar.implementation.data.tables.Date
 import oblitusnumen.calendar.implementation.data.tables.Entry
 import oblitusnumen.calendar.implementation.data.tables.Tag
@@ -27,7 +35,9 @@ import oblitusnumen.calendar.implementation.defaultZoneId
 import oblitusnumen.calendar.implementation.getZonedFromEpochSeconds
 import oblitusnumen.calendar.ui.model.DateTimePicker
 import oblitusnumen.calendar.ui.model.colorPicker
+import oblitusnumen.calendar.ui.model.materialSpinner
 import oblitusnumen.calendar.ui.model.screen.DrawTag
+import oblitusnumen.calendar.ui.model.screen.OffsetType
 import oblitusnumen.calendar.ui.model.screen.TagFilterMenu
 import oblitusnumen.calendar.ui.theme.topBarColors
 import java.time.LocalDate
@@ -75,6 +85,89 @@ fun SearchTopBar(
                 }
             }
         },
+    )
+}
+
+@Composable
+fun DrawNotificationAddMenu(onConfirm: (Period, Boolean) -> Unit, onDismiss: () -> Unit) {
+    var silent by remember { mutableStateOf(false) }
+    var offsetCount by remember { mutableStateOf(TextFieldValue("1")) }
+    var selectedOffsetType by remember { mutableStateOf(OffsetType(Once())) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                var offsetCountText = offsetCount.text
+                if (offsetCountText.isEmpty() || offsetCountText.toLong() < 0L) {
+                    if (selectedOffsetType.period is Once)
+                        offsetCountText = "0"
+                    else {// TODO:
+//                            showErrorToast("Could not parse count: '$periodCountText'")
+                        return@TextButton
+                    }
+                }
+                onConfirm(
+                    if (offsetCountText == "0" || selectedOffsetType.period is Once) Once() else {
+                        selectedOffsetType.period.updateCount(offsetCountText.toLong())
+                    }, !silent
+                )
+            }) {
+                Text("OK")
+            }
+        },
+        text = {
+            Column {
+                Row {
+                    //offset text field
+                    val focusRequester = remember { FocusRequester() }
+                    OutlinedTextField(// FIXME: ui paddings
+                        enabled = selectedOffsetType.period !is Once,
+                        modifier = Modifier.width(100.dp).padding(horizontal = 8.dp)
+                            .focusRequester(focusRequester),
+                        value = offsetCount, onValueChange = {
+                            val text = it.text
+                            try {
+                                if (text.toLong() >= 0 && text.length <= 3) offsetCount = it
+                            } catch (_: NumberFormatException) {
+                                if (text.isEmpty())
+                                    offsetCount = it
+                            }
+                        },
+                        textStyle = MaterialTheme.typography.bodyLarge,
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Number,
+                            imeAction = ImeAction.Done
+                        ),
+                        label = { Text("Count") }
+                    )
+
+                    materialSpinner(
+                        "Type", OffsetType.getAll(),
+                        { selectedOffsetType = it },
+                        selectedOffsetType,
+                        Modifier.padding(horizontal = 8.dp).width(150.dp)
+                    )
+
+                    LaunchedEffect(selectedOffsetType) {
+                        if (selectedOffsetType.period !is Once) {
+                            // Place cursor at the end of current text
+                            offsetCount = offsetCount.copy(selection = TextRange(offsetCount.text.length))
+                            focusRequester.requestFocus()
+                        }
+                    }
+                }
+                Row {
+                    Text("silent")
+                    Switch(silent, onCheckedChange = { silent = it })
+                }
+            }
+        }
     )
 }
 
@@ -270,9 +363,9 @@ fun ScheduleDialog(dbManager: DbManager, entry: Entry, onClose: () -> Unit, onSc
                     Date(
                         entry,
                         it.atZone(defaultZoneId()),
-                        Period.Once(),
+                        Once(),
                         1,
-                        Period.Once()
+                        Once()
                     ).create(dbManager)
                     onSchedule()
                 })

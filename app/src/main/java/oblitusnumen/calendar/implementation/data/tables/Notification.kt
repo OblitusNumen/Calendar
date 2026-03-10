@@ -72,7 +72,8 @@ class Notification(
             dbManager.readableDatabase.rawQuery(
                 "SELECT $TABLE_NAME.* " +
                         "FROM $TABLE_NAME " +
-                        "JOIN ${Date.TABLE_NAME} ON $COLUMN_NAME_EVENT_OPTIONS_ID = ${Date.COLUMN_NAME_EVENT_OPTIONS_ID} " +
+                        "JOIN ${Date.TABLE_NAME} " +
+                        "ON $TABLE_NAME.$COLUMN_NAME_EVENT_OPTIONS_ID = ${Date.TABLE_NAME}.${Date.COLUMN_NAME_EVENT_OPTIONS_ID} " +
                         "WHERE ${Date.COLUMN_NAME_ENTRY_ID} = ?", arrayOf(entryID.toString())
             ).use { cursor ->
                 return cursorToList(cursor)
