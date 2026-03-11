@@ -29,9 +29,9 @@ import kotlinx.coroutines.launch
 import oblitusnumen.calendar.R
 import oblitusnumen.calendar.implementation.LIST_CENTER
 import oblitusnumen.calendar.implementation.LIST_LEN
+import oblitusnumen.calendar.implementation.data.DateOccurrence
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.tables.Tag
-import oblitusnumen.calendar.implementation.data.views.DateOccurrence
 import oblitusnumen.calendar.implementation.data.views.ViewDateWithOptions
 import oblitusnumen.calendar.ui.PositionStatus
 import oblitusnumen.calendar.ui.element.ActionButtonWithScroll

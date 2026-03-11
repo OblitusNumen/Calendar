@@ -15,9 +15,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import oblitusnumen.calendar.implementation.LIST_LEN
+import oblitusnumen.calendar.implementation.data.DateOccurrence
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.tables.Tag
-import oblitusnumen.calendar.implementation.data.views.DateOccurrence
 import oblitusnumen.calendar.implementation.data.views.ViewDateWithOptions
 import oblitusnumen.calendar.implementation.getZonedFromEpochSeconds
 import oblitusnumen.calendar.implementation.log
