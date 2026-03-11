@@ -600,7 +600,7 @@ open class Date : BaseColumns {
             return dates
         }
 
-        fun byEntryId(dbManager: DbManager, entryId: Int): List<Date> {
+        fun forEntry(dbManager: DbManager, entryId: Int): List<Date> {
             dbManager.readableDatabase.rawQuery(
                 "SELECT * FROM $TABLE_NAME WHERE $COLUMN_NAME_ENTRY_ID = ?",
                 arrayOf(entryId.toString())

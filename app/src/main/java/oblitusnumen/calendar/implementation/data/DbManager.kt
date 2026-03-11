@@ -83,7 +83,7 @@ class DbManager(val context: Context) :
         for (notification in getAllNotifications()) {
             val fromO = notification.offset.addTo(getZonedFromEpochSeconds(timeStamp), 1).toEpochSecond()
             val dates = dateCache.computeIfAbsent(notification.eventOptionsId!!) {
-                Date.byEntryId(
+                Date.forEntry(
                     this,
                     notification.eventOptionsId!!
                 )
@@ -107,7 +107,7 @@ class DbManager(val context: Context) :
             val fromO = notification.offset.addTo(getZonedFromEpochSeconds(from), 1).toEpochSecond()
             val toO = notification.offset.addTo(getZonedFromEpochSeconds(to), 1).toEpochSecond()
             val dates = dateCache.computeIfAbsent(notification.eventOptionsId!!) {
-                Date.byEntryId(
+                Date.forEntry(
                     this,
                     notification.eventOptionsId!!
                 )

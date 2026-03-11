@@ -36,7 +36,7 @@ open class Entry(
     fun isNotCreated() = id == null
 
     //since function is private isCreated check not needed
-    private fun create(dbManager: DbManager) {
+    fun create(dbManager: DbManager) {
 //        val contentValues = getContentValues()
 //        contentValues.put(COLUMN_NAME_ID, null as Int?)
 //        id = dbManager.writableDatabase.insert(TABLE_NAME, null, contentValues).toInt()
@@ -66,7 +66,7 @@ open class Entry(
 //        }
     }
 
-    private fun update(dbManager: DbManager) {
+    fun update(dbManager: DbManager) {
         dbManager.writableDatabase.update(TABLE_NAME, getContentValues(), "$COLUMN_NAME_ID = ?", arrayOf(id.toString()))
     }
 
@@ -144,7 +144,7 @@ open class Entry(
 
     fun getDates(dbManager: DbManager): List<Date> {
         if (isNotCreated()) return emptyList()
-        return Date.byEntryId(dbManager, id!!)
+        return Date.forEntry(dbManager, id!!)
     }
 
     fun getTags(dbManager: DbManager): List<Tag> {
