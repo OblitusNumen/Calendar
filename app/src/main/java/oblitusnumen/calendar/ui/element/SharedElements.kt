@@ -23,6 +23,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.compose.currentBackStackEntryAsState
 import kotlinx.coroutines.launch
 import oblitusnumen.calendar.implementation.bgColorToTextColor
 import oblitusnumen.calendar.implementation.data.DbManager
@@ -37,6 +40,7 @@ import oblitusnumen.calendar.ui.PositionStatus
 import oblitusnumen.calendar.ui.element.screen.DrawTag
 import oblitusnumen.calendar.ui.element.screen.OffsetType
 import oblitusnumen.calendar.ui.element.screen.TagFilterMenu
+import oblitusnumen.calendar.ui.navigation.NavRoutes
 import oblitusnumen.calendar.ui.theme.topBarColors
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -403,7 +407,7 @@ fun DrawEntryDescriptionAndTags(dbManager: DbManager, contents: String, tags: Li
 }
 
 @Composable
-private fun DrawTag(text: String, bgColor: Color) {
+fun DrawTag(text: String, bgColor: Color) {
     Text(
         modifier = Modifier.padding(horizontal = 2.dp, vertical = 1.5.dp).background(
             bgColor, shape = RoundedCornerShape(10.dp)
@@ -413,4 +417,38 @@ private fun DrawTag(text: String, bgColor: Color) {
         style = MaterialTheme.typography.bodyMedium,
         color = bgColorToTextColor(bgColor)
     )
+}
+
+@Composable
+fun DrawBottomBar(navController: NavController) {
+    NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.9f)) {
+        val navBackStackEntry by navController.currentBackStackEntryAsState()
+        val currentDestination = navBackStackEntry?.destination
+        NavRoutes.getTopLevelRoutes().forEach { topLevelRoute ->
+            NavigationBarItem(
+                icon = { Icon(topLevelRoute.icon, contentDescription = topLevelRoute.name) },
+                label = { Text(topLevelRoute.name) },
+                selected = currentDestination?.route == topLevelRoute.route.route ||
+                        (topLevelRoute.route.route == NavRoutes.Calendar.route && currentDestination?.route == NavRoutes.ThatDayDetails.route),
+                onClick = {
+                    navController.navigate(topLevelRoute.route.route) {
+                        // Pop up to the start destination of the graph to
+                        // avoid building up a large stack of destinations
+                        // on the back stack as users select items
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            if (currentDestination?.route != NavRoutes.ThatDayDetails.route ||
+                                topLevelRoute.route.route != NavRoutes.Calendar.route
+                            )
+                                saveState = true
+                        }
+                        // Avoid multiple copies of the same destination when
+                        // reselecting the same item
+                        launchSingleTop = true
+                        // Restore state when reselecting a previously selected item
+                        restoreState = true
+                    }
+                }
+            )
+        }
+    }
 }

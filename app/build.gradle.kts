@@ -65,6 +65,7 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.9.7")
     implementation("androidx.compose.foundation:foundation:1.10.1")
     implementation("androidx.compose.foundation:foundation:1.10.2")
+    implementation("androidx.navigation:navigation-runtime-ktx:2.9.7")
     testImplementation("junit:junit:4.13.2")
     testImplementation("junit:junit:4.12")
     testImplementation("org.junit.jupiter:junit-jupiter:5.14.0")

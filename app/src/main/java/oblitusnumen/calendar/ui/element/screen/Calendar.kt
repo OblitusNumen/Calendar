@@ -29,7 +29,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
-import oblitusnumen.calendar.MainActivity
 import oblitusnumen.calendar.R
 import oblitusnumen.calendar.implementation.LIST_CENTER
 import oblitusnumen.calendar.implementation.LIST_LEN
@@ -459,7 +458,7 @@ fun CalendarTopBar(
                 .clickable(false) {}
         ) {
             Row(
-                Modifier.padding(horizontal = MainActivity.PADDING).height(IntrinsicSize.Min)
+                Modifier.height(IntrinsicSize.Min)
                     .defaultMinSize(minHeight = 25.dp).fillMaxWidth(),
             ) {
                 repeat(7) {
