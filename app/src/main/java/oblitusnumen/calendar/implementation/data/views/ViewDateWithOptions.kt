@@ -200,7 +200,7 @@ class ViewDateWithOptions(
                                     "GROUP BY eId " +
                                     "HAVING COUNT(DISTINCT ${EntryTagLinks.COLUMN_NAME_TAG_ID}) = ${tagsFilter.size}" +
                                     ") " +
-                                    "on eId=${Date.COLUMN_NAME_ENTRY_ID}" // FIXME: might as well be needed  ${Date.TABLE_NAME}.${Date.COLUMN_NAME_ENTRY_ID}
+                                    "on eId=${Date.COLUMN_NAME_ENTRY_ID} " // FIXME: might as well be needed  ${Date.TABLE_NAME}.${Date.COLUMN_NAME_ENTRY_ID}
                         } +
                         "WHERE ${Date.COLUMN_NAME_EPOCH_SECOND_CHAIN_START} < ? AND ${Date.COLUMN_NAME_EPOCH_SECOND_CHAIN_END} >= ?",
                 arrayOf(
