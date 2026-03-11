@@ -9,7 +9,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import oblitusnumen.calendar.implementation.data.DbManager
-import oblitusnumen.calendar.implementation.data.tables.Entry
+import oblitusnumen.calendar.implementation.data.views.ViewEntryWithOptions
 import oblitusnumen.calendar.ui.element.DrawEntrySelectable
 import oblitusnumen.calendar.ui.element.NewEntryFunctionButton
 import oblitusnumen.calendar.ui.element.ScheduleDialog
@@ -30,13 +30,8 @@ fun EntriesScreen(
         bottomBar = navBar,
         floatingActionButton = { NewEntryFunctionButton(openEditNewEntry) }
     ) { paddingValues ->
-
-        val allEntriesUnsorted = remember { Entry.all(dbManager) }
-        var scheduleCounter by remember { mutableStateOf(0) }
-
-        val nextDates: Map<Int, Long?> =
-            remember(scheduleCounter) { allEntriesUnsorted.associate { it.id!! to it.nextDate(dbManager) } }
-        val allEntries = remember(nextDates) { allEntriesUnsorted.sortedBy { nextDates[it.id] } }
+        var scheduleCounter by remember { mutableIntStateOf(0) }
+        val allEntries = remember(scheduleCounter) { ViewEntryWithOptions.all(dbManager).sortedBy { it.nextDate } }
         val entries = remember(allEntries, searchQuery.value) {
             allEntries.filter {
                 it.getOptions(dbManager).name.contains(
@@ -46,7 +41,7 @@ fun EntriesScreen(
             }
         }
 
-        var scheduleDialogEntry: Entry? by remember { mutableStateOf(null) }
+        var scheduleDialogEntry: ViewEntryWithOptions? by remember { mutableStateOf(null) }
         if (scheduleDialogEntry != null)
             ScheduleDialog(dbManager, scheduleDialogEntry!!, { scheduleDialogEntry = null }) {
                 scheduleCounter++
@@ -61,7 +56,7 @@ fun EntriesScreen(
                 val id = entry.id!!
 
                 DrawEntrySelectable(
-                    entry, nextDates[id], false,// TODO:
+                    entry, false,// TODO:
                     { scheduleDialogEntry = entry },
                     { openEntryDetails(id) }
                 )

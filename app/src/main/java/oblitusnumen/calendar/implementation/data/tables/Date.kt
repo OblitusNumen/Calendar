@@ -17,17 +17,21 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 import kotlin.math.min
 
-class Date : BaseColumns {
+open class Date : BaseColumns {
     var id: Int? = null
         private set
-    var entryId_: Int?
-    var eventOptionsId_: Int?
+    var entryId: Int?
+        private set
+    var eventOptionsId: Int?
+        private set
     var epochSecondChainStart: Long
         private set
     var duration: Period
         private set
-    private var epochSecondChainEnd: Long = 0
-    private var timesRepeat: Long = 1
+    protected var epochSecondChainEnd: Long = 0
+        private set
+    protected var timesRepeat: Long = 1
+        private set
     var period: Period
         private set
     var timeZoneId: ZoneId
@@ -36,7 +40,7 @@ class Date : BaseColumns {
         private set
     private var entryCache: Entry? = null
     fun getEntry(dbManager: DbManager): Entry {
-        if (entryCache == null) entryCache = Entry.byId(dbManager, entryId_!!)!!
+        if (entryCache == null) entryCache = Entry.byId(dbManager, entryId!!)!!
         return entryCache!!
     }
 
@@ -47,8 +51,8 @@ class Date : BaseColumns {
         timesRepeat: Long,
         period: Period
     ) {
-        this.entryId_ = entry.id
-        this.eventOptionsId_ = entry.defaultOptionsId
+        this.entryId = entry.id
+        this.eventOptionsId = entry.defaultOptionsId
         this.epochSecondChainStart = time.toEpochSecond()
         this.duration = duration
         this.period = period
@@ -70,8 +74,8 @@ class Date : BaseColumns {
         exceptionRules: ExceptionRules,
     ) {
         this.id = id
-        this.entryId_ = entryId
-        this.eventOptionsId_ = eventOptionsId
+        this.entryId = entryId
+        this.eventOptionsId = eventOptionsId
         this.epochSecondChainStart = epochSecondChainStart
         this.duration = duration
         this.epochSecondChainEnd = epochSecondChainEnd
@@ -83,8 +87,8 @@ class Date : BaseColumns {
 
     private fun getContentValues(): ContentValues {
         val contentValues = ContentValues()
-        contentValues.put(COLUMN_NAME_ENTRY_ID, entryId_)
-        contentValues.put(COLUMN_NAME_EVENT_OPTIONS_ID, eventOptionsId_)
+        contentValues.put(COLUMN_NAME_ENTRY_ID, entryId)
+        contentValues.put(COLUMN_NAME_EVENT_OPTIONS_ID, eventOptionsId)
         contentValues.put(COLUMN_NAME_EPOCH_SECOND_CHAIN_START, epochSecondChainStart)
         contentValues.put(COLUMN_NAME_DURATION, duration.toString())
         contentValues.put(COLUMN_NAME_EPOCH_SECOND_CHAIN_END, epochSecondChainEnd)
@@ -182,6 +186,39 @@ class Date : BaseColumns {
         return dates
     }
 
+    fun allIntersectingRange(start: Long, end: Long): Collection<ZonedDateTime> {
+        val result = mutableListOf<ZonedDateTime>()
+
+        if (duration is Period.Once) {
+            anyInRange(start, end)?.let { result.add(it) }
+            return result
+        }
+
+        val start = duration.addTo(Instant.ofEpochSecond(start).atZone(timeZoneId), -1).toEpochSecond()
+        val anyZonedDateTime = getZonedDateTimeInRange(start, end) ?: return emptyList()
+
+        var zonedDateTime = anyZonedDateTime
+        while (start < zonedDateTime.toEpochSecond()) {
+            if (checkZonedDateTime(zonedDateTime))
+                result.add(zonedDateTime)
+            zonedDateTime = period.addTo(zonedDateTime, -1)
+        }
+        zonedDateTime = period.addTo(anyZonedDateTime, 1)
+        while (zonedDateTime.toEpochSecond() < end) {
+            if (checkZonedDateTime(zonedDateTime))
+                result.add(zonedDateTime)
+            zonedDateTime = period.addTo(zonedDateTime, 1)
+        }
+        return result
+    }
+
+    private fun checkZonedDateTime(zonedDateTime: ZonedDateTime): Boolean =
+        !(exceptionRules.containsDate(zonedDateTime.toEpochDays()) ||
+                (period is Period.Weekday && !(period as Period.Weekday).verifyWeekday(// FIXME: works wacky for cases when more than one event in range
+                    getFirstZoneDateTime().toLocalDate(),
+                    zonedDateTime.toLocalDate()
+                )))// FIXME: works wacky for cases when more than one event in range
+
     private fun getZonedDateTimeInRange(start: Long, finish: Long): ZonedDateTime? { //any(?) in range
         if (finish <= this.epochSecondChainStart || timesRepeat == 0L) return null
         if (this.epochSecondChainEnd == this.epochSecondChainStart) return if (this.epochSecondChainStart >= start) getZoneDateTime(
@@ -190,12 +227,11 @@ class Date : BaseColumns {
         val periodExpect = (this.epochSecondChainEnd - this.epochSecondChainStart) / (timesRepeat - 1)
         val idxExpect = (finish - this.epochSecondChainStart) / periodExpect
         //mult_frac will overflow with period 1D after a few million years, but who cares about that
-        val timeEst =
-            multFrac(
-                this.epochSecondChainEnd - this.epochSecondChainStart,
-                idxExpect,
-                timesRepeat
-            ) + this.epochSecondChainStart
+        val timeEst = multFrac(
+            this.epochSecondChainEnd - this.epochSecondChainStart,
+            idxExpect,
+            timesRepeat
+        ) + this.epochSecondChainStart
         val idxDiff = (timeEst - start) / periodExpect
         val idx = min((timesRepeat - 1), idxExpect - idxDiff)
         val zdtIdx = getZoneDateTime(idx)
@@ -223,6 +259,7 @@ class Date : BaseColumns {
         return anyInRange(startOfDay.toEpochSecond(), startOfDay.plusDays(1).toEpochSecond())
     }
 
+    // TODO: extract static methods
     fun anyInRange(start: Long, finish: Long): ZonedDateTime? {// FIXME: measure performance (weekdays especially)
         val zonedDateTime = getZonedDateTimeInRange(start, finish)
         val period = this.period

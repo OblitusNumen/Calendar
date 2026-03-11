@@ -180,7 +180,7 @@ fun DrawDay(
                         occurrence,
                         size, ids[occurrence],
                         {
-                            val date = occurrence.date.date
+                            val date = occurrence.date
                             date.addExceptions(occurrence.occurrenceZoned.toLocalDate())
                             date.update(dbManager)
                         }
@@ -260,7 +260,7 @@ fun DrawEntry(dbManager: DbManager, occurrence: DateOccurrence, openEntryInfo: (
         DrawEntryDescriptionAndTags(
             dbManager,
             dateMeta.getContents(dbManager),
-            Tag.forEntry(dbManager, dateMeta.entryId)
+            Tag.forEntry(dbManager, dateMeta.entryId!!)
         )
 
         if (excludeDateShown)
@@ -272,7 +272,7 @@ fun DrawEntry(dbManager: DbManager, occurrence: DateOccurrence, openEntryInfo: (
 //                    onClose()
 //                    loadDates()
                 // TODO:
-                val date = dateMeta.date
+                val date = dateMeta
                 date.addExceptions(occurrence.occurrenceZoned.toLocalDate())
                 date.update(dbManager)
                 hack = true

@@ -8,7 +8,7 @@ import oblitusnumen.calendar.implementation.data.DbManager
 import java.io.IOException
 import java.time.ZonedDateTime
 
-class Entry(
+open class Entry(
     id: Int? = null,
     defaultOptionsId: Int? = null,
     var isTask: Boolean = false,

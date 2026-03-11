@@ -294,7 +294,7 @@ fun DisplayWeek(
 
     Row {
         val dates =
-            ViewDateWithOptions.getAll(
+            ViewDateWithOptions.all(
                 dbManager,
                 zonedDateTime(date).toEpochSecond(),
                 zonedDateTime(date.plusWeeks(1)).toEpochSecond(),

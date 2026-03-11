@@ -32,8 +32,8 @@ import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.Period
 import oblitusnumen.calendar.implementation.data.Period.Once
 import oblitusnumen.calendar.implementation.data.tables.Date
-import oblitusnumen.calendar.implementation.data.tables.Entry
 import oblitusnumen.calendar.implementation.data.tables.Tag
+import oblitusnumen.calendar.implementation.data.views.ViewEntryWithOptions
 import oblitusnumen.calendar.implementation.defaultZoneId
 import oblitusnumen.calendar.implementation.getZonedFromEpochSeconds
 import oblitusnumen.calendar.ui.PositionStatus
@@ -176,15 +176,14 @@ fun DrawNotificationAddMenu(onConfirm: (Period, Boolean) -> Unit, onDismiss: () 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun DrawEntrySelectable(
-    entry: Entry,
-    nextDate: Long?,
+    entryView: ViewEntryWithOptions,
     selected: Boolean,
     onLongClick: () -> Unit,
     onClick: () -> Unit,
 ) { //fixme Entry can not be created without DB
     var nextDateText by remember {
         val nextDateText =
-            when (val nextDate = nextDate) {
+            when (val nextDate = entryView.nextDate) {
                 null -> ""
                 -1L -> "Ended"
                 else -> getZonedFromEpochSeconds(nextDate).format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm"))
@@ -348,7 +347,7 @@ fun ActionButtonWithScroll(onClick: () -> Unit, scrollTo: suspend (LocalDate) ->
 }
 
 @Composable
-fun ScheduleDialog(dbManager: DbManager, entry: Entry, onClose: () -> Unit, onSchedule: () -> Unit) {
+fun ScheduleDialog(dbManager: DbManager, entry: ViewEntryWithOptions, onClose: () -> Unit, onSchedule: () -> Unit) {
     val dateTimePicker = remember { DateTimePicker() }
     dateTimePicker.tryCompose()
 

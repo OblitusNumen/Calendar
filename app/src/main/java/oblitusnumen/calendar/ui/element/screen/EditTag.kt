@@ -19,6 +19,7 @@ import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.tables.Entry
 import oblitusnumen.calendar.implementation.data.tables.Tag
 import oblitusnumen.calendar.implementation.data.views.EditViewTag
+import oblitusnumen.calendar.implementation.data.views.ViewEntryWithOptions
 import oblitusnumen.calendar.implementation.log
 import oblitusnumen.calendar.ui.element.*
 import oblitusnumen.calendar.ui.theme.topBarColors
@@ -38,18 +39,13 @@ fun TagEditScreen(
     val selectedEntries: MutableState<Set<Int>> =
         remember(editable, edits.entryAssociations) { mutableStateOf(setOf()) }
 
-    val allEntriesUnsorted = remember { Entry.all(dbManager) }
-    var scheduleCounter by remember { mutableStateOf(0) }
-
-    val nextDates: Map<Int, Long?> =
-        remember(scheduleCounter) { allEntriesUnsorted.associate { it.id!! to it.nextDate(dbManager) } }
-    val allEntries = remember(nextDates) { allEntriesUnsorted.sortedBy { nextDates[it.id] } }
+    var scheduleCounter by remember { mutableIntStateOf(0) }
+    val allEntries = remember(scheduleCounter) { ViewEntryWithOptions.all(dbManager).sortedBy { it.nextDate } }
 
     var addEntriesDialogShown by remember { mutableStateOf(false) }
     if (addEntriesDialogShown)
         AddEntriesDialog(
             allEntries.filter { it.id !in edits.entryAssociations },
-            nextDates,
             { edits.addEntryAssociations(*it.toIntArray()) }
         ) { addEntriesDialogShown = false }
 
@@ -89,13 +85,12 @@ fun TagEditScreen(
         floatingActionButton = { if (editable) TagEditActionButton { addEntriesDialogShown = true } }
     ) { paddingValues ->
         val tagEntries = remember(edits.entryAssociations) { allEntries.filter { it.id in edits.entryAssociations } }
-        log("allEntriesUnsorted: $allEntriesUnsorted")
         log("allEntries: $allEntries")
         log("tagEntries: $tagEntries")
         log("edits.entryAssociations: ${edits.entryAssociations.size}")
         var selectedEntries by selectedEntries
 
-        var scheduleDialogEntry: Entry? by remember { mutableStateOf(null) }
+        var scheduleDialogEntry: ViewEntryWithOptions? by remember { mutableStateOf(null) }
         if (scheduleDialogEntry != null)
             ScheduleDialog(dbManager, scheduleDialogEntry!!, { scheduleDialogEntry = null }) {
                 scheduleCounter++
@@ -105,16 +100,16 @@ fun TagEditScreen(
         LazyColumn {
             item { Spacer(Modifier.height(paddingValues.calculateTopPadding())) }
             items(tagEntries.size) { index ->
-                val entry = tagEntries[index]
-                val id = entry.id!!
+                val entryView = tagEntries[index]
+                val id = entryView.id!!
                 val selected = id in selectedEntries
 
                 DrawEntrySelectable(
-                    entry, nextDates[id], selected,
+                    entryView, selected,
                     if (editable) {
                         { selectedEntries += id }
                     } else {
-                        { scheduleDialogEntry = entry }
+                        { scheduleDialogEntry = entryView }
                     },
                     if (editable) {
                         {
@@ -297,8 +292,7 @@ fun TagEditActionButton(onClick: () -> Unit) {
 
 @Composable
 fun AddEntriesDialog(
-    allEntries: List<Entry>,
-    nextDates: Map<Int, Long?>,
+    allEntries: List<ViewEntryWithOptions>,
     addEntries: (Set<Int>) -> Unit,
     onClose: () -> Unit
 ) {
@@ -342,13 +336,12 @@ fun AddEntriesDialog(
 
                 LazyColumn {
                     items(allEntries.size) { index ->
-                        val entry = allEntries[index]
-                        val id = entry.id!!
+                        val entryView = allEntries[index]
+                        val id = entryView.id!!
                         val selected = id in selectedEntries
 
                         DrawEntrySelectable(
-                            entry,
-                            nextDates[id],
+                            entryView,
                             selected,
                             { selectedEntries += id },
                             { if (selected) selectedEntries -= id else selectedEntries += id }
