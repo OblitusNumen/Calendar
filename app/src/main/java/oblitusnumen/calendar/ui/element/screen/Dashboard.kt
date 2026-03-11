@@ -1,4 +1,4 @@
-package oblitusnumen.calendar.ui.model.screen
+package oblitusnumen.calendar.ui.element.screen
 
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height

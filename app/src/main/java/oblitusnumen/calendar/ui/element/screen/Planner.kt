@@ -1,17 +1,20 @@
-package oblitusnumen.calendar.ui.model.screen
+package oblitusnumen.calendar.ui.element.screen
 
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Modifier
 import oblitusnumen.calendar.implementation.data.DbManager
+import oblitusnumen.calendar.implementation.data.tables.Tag
 import java.time.LocalDate
 
 @Composable
-fun TaskDetailsScreen(
+fun PlannerScreen(
     dbManager: DbManager,
+    tagsFilter: MutableState<List<Tag>>,
     navBar: @Composable () -> Unit,
     newEntry: () -> Unit,
     openThatDayInfo: (LocalDate) -> Unit,
@@ -20,7 +23,11 @@ fun TaskDetailsScreen(
     openTagsScreen: () -> Unit,
     openSettings: () -> Unit,
 ) {
-    Scaffold { paddingValues ->
+    Scaffold(
+        topBar = {},
+        bottomBar = navBar,
+        floatingActionButton = {}
+    ) { paddingValues ->
         LazyColumn {
             item {
                 Spacer(Modifier.height(paddingValues.calculateTopPadding()))

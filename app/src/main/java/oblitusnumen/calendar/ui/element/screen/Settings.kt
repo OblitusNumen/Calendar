@@ -1,4 +1,4 @@
-package oblitusnumen.calendar.ui.model.screen
+package oblitusnumen.calendar.ui.element.screen
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -18,9 +18,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.zipDirectoryToStream
-import oblitusnumen.calendar.ui.BackPressButton
-import oblitusnumen.calendar.ui.ColorSelectButton
-import oblitusnumen.calendar.ui.DrawNotificationAddMenu
+import oblitusnumen.calendar.ui.element.BackPressButton
+import oblitusnumen.calendar.ui.element.ColorSelectButton
+import oblitusnumen.calendar.ui.element.DrawNotificationAddMenu
 import oblitusnumen.calendar.ui.theme.topBarColors
 import java.io.BufferedOutputStream
 import java.io.File

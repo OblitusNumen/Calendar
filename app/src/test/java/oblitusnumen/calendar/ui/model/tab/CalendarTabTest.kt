@@ -1,8 +1,8 @@
 package oblitusnumen.calendar.ui.model.tab
 
 import junit.framework.TestCase
-import oblitusnumen.calendar.ui.model.screen.getNowMonthItemWeekIndex
-import oblitusnumen.calendar.ui.model.screen.getNowWeekItemIndexExact
+import oblitusnumen.calendar.ui.element.screen.getNowMonthItemWeekIndex
+import oblitusnumen.calendar.ui.element.screen.getNowWeekItemIndexExact
 import java.time.LocalDate
 import java.time.Month
 

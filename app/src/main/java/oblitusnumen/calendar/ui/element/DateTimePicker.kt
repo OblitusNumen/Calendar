@@ -1,4 +1,4 @@
-package oblitusnumen.calendar.ui.model
+package oblitusnumen.calendar.ui.element
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding

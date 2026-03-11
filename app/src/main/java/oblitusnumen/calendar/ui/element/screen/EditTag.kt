@@ -1,4 +1,4 @@
-package oblitusnumen.calendar.ui.model.screen
+package oblitusnumen.calendar.ui.element.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -20,7 +20,7 @@ import oblitusnumen.calendar.implementation.data.tables.Entry
 import oblitusnumen.calendar.implementation.data.tables.Tag
 import oblitusnumen.calendar.implementation.data.views.EditViewTag
 import oblitusnumen.calendar.implementation.log
-import oblitusnumen.calendar.ui.*
+import oblitusnumen.calendar.ui.element.*
 import oblitusnumen.calendar.ui.theme.topBarColors
 
 @Composable

@@ -1,4 +1,4 @@
-package oblitusnumen.calendar.ui.model.screen
+package oblitusnumen.calendar.ui.element.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -27,7 +27,7 @@ import oblitusnumen.calendar.implementation.data.tables.Date
 import oblitusnumen.calendar.implementation.data.tables.Entry
 import oblitusnumen.calendar.implementation.data.tables.Notification
 import oblitusnumen.calendar.implementation.data.tables.Tag
-import oblitusnumen.calendar.ui.BackPressButton
+import oblitusnumen.calendar.ui.element.BackPressButton
 import oblitusnumen.calendar.ui.theme.topBarColors
 import java.time.format.DateTimeFormatter
 

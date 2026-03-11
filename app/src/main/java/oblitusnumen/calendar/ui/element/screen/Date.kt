@@ -1,4 +1,4 @@
-package oblitusnumen.calendar.ui.model.screen
+package oblitusnumen.calendar.ui.element.screen
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -21,10 +21,10 @@ import oblitusnumen.calendar.implementation.data.views.DateOccurrence
 import oblitusnumen.calendar.implementation.data.views.ViewDateWithOptions
 import oblitusnumen.calendar.implementation.getZonedFromEpochSeconds
 import oblitusnumen.calendar.implementation.log
-import oblitusnumen.calendar.ui.BackPressButton
-import oblitusnumen.calendar.ui.DrawEntryDescriptionAndTags
-import oblitusnumen.calendar.ui.NewEntryFunctionButton
 import oblitusnumen.calendar.ui.dpByDpForPixelPerfect
+import oblitusnumen.calendar.ui.element.BackPressButton
+import oblitusnumen.calendar.ui.element.DrawEntryDescriptionAndTags
+import oblitusnumen.calendar.ui.element.NewEntryFunctionButton
 import oblitusnumen.calendar.ui.theme.topBarColors
 import java.time.Duration
 import java.time.LocalDate

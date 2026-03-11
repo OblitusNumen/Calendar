@@ -1,4 +1,4 @@
-package oblitusnumen.calendar.ui.model.navigation
+package oblitusnumen.calendar.ui.navigation
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccountBox
@@ -7,7 +7,7 @@ import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
-import oblitusnumen.calendar.ui.model.screen.MonthDate
+import oblitusnumen.calendar.ui.element.screen.MonthDate
 import java.time.LocalDate
 
 sealed class NavRoutes(private val path: String, val route: String = path) {

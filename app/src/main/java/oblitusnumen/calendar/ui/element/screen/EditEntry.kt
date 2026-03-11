@@ -1,4 +1,4 @@
-package oblitusnumen.calendar.ui.model.screen
+package oblitusnumen.calendar.ui.element.screen
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -32,12 +32,7 @@ import oblitusnumen.calendar.implementation.data.tables.Date
 import oblitusnumen.calendar.implementation.data.tables.Entry
 import oblitusnumen.calendar.implementation.data.tables.Notification
 import oblitusnumen.calendar.implementation.data.tables.Tag
-import oblitusnumen.calendar.ui.BackPressButton
-import oblitusnumen.calendar.ui.DrawNotificationAddMenu
-import oblitusnumen.calendar.ui.EditDoneButton
-import oblitusnumen.calendar.ui.model.DateTimePicker
-import oblitusnumen.calendar.ui.model.colorPicker
-import oblitusnumen.calendar.ui.model.materialSpinner
+import oblitusnumen.calendar.ui.element.*
 import oblitusnumen.calendar.ui.theme.topBarColors
 import java.time.LocalDate
 import java.time.ZoneId

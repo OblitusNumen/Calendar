@@ -35,8 +35,8 @@ import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.tables.Entry
 import oblitusnumen.calendar.implementation.data.tables.Tag
 import oblitusnumen.calendar.implementation.notifications.NotificationBroadcastReceiver
-import oblitusnumen.calendar.ui.model.navigation.NavRoutes
-import oblitusnumen.calendar.ui.model.screen.*
+import oblitusnumen.calendar.ui.element.screen.*
+import oblitusnumen.calendar.ui.navigation.NavRoutes
 import oblitusnumen.calendar.ui.theme.CalendarTheme
 import java.io.File
 import java.time.LocalDate

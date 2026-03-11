@@ -1,4 +1,4 @@
-package oblitusnumen.calendar.ui.model.screen
+package oblitusnumen.calendar.ui.element.screen
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -28,8 +28,8 @@ import androidx.compose.ui.unit.dp
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.tables.Tag
 import oblitusnumen.calendar.implementation.log
-import oblitusnumen.calendar.ui.SearchTopBar
-import oblitusnumen.calendar.ui.model.colorPicker
+import oblitusnumen.calendar.ui.element.SearchTopBar
+import oblitusnumen.calendar.ui.element.colorPicker
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable

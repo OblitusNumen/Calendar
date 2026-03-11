@@ -1,4 +1,4 @@
-package oblitusnumen.calendar.ui.model.screen
+package oblitusnumen.calendar.ui.element.screen
 
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -10,10 +10,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.tables.Entry
-import oblitusnumen.calendar.ui.DrawEntrySelectable
-import oblitusnumen.calendar.ui.NewEntryFunctionButton
-import oblitusnumen.calendar.ui.ScheduleDialog
-import oblitusnumen.calendar.ui.SearchTopBar
+import oblitusnumen.calendar.ui.element.DrawEntrySelectable
+import oblitusnumen.calendar.ui.element.NewEntryFunctionButton
+import oblitusnumen.calendar.ui.element.ScheduleDialog
+import oblitusnumen.calendar.ui.element.SearchTopBar
 
 @Composable
 fun EntriesScreen(
