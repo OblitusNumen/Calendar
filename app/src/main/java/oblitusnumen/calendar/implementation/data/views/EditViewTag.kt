@@ -7,6 +7,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.core.database.sqlite.transaction
 import oblitusnumen.calendar.implementation.data.DbManager
+import oblitusnumen.calendar.implementation.data.Modification
 import oblitusnumen.calendar.implementation.data.tables.Entry
 import oblitusnumen.calendar.implementation.data.tables.EntryTagLinks
 import oblitusnumen.calendar.implementation.data.tables.Tag
@@ -89,8 +90,4 @@ class EditViewTag(dbManager: DbManager, val tagId: Int) {
     fun delete(dbManager: DbManager) {
         tag.deleteCascade(dbManager)
     }
-}
-
-enum class Modification {
-    ADD, DELETE
 }

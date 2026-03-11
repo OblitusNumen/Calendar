@@ -2,13 +2,17 @@ package oblitusnumen.calendar.implementation.data.views
 
 import androidx.compose.ui.graphics.Color
 import oblitusnumen.calendar.implementation.*
+import oblitusnumen.calendar.implementation.data.DateOccurrence
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.ExceptionRules
 import oblitusnumen.calendar.implementation.data.Period
 import oblitusnumen.calendar.implementation.data.tables.Date
 import oblitusnumen.calendar.implementation.data.tables.EntryTagLinks
 import oblitusnumen.calendar.implementation.data.tables.EventOptions
-import java.time.*
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.ZonedDateTime
 import java.util.*
 import kotlin.math.min
 
@@ -299,13 +303,4 @@ class ViewDateWithOptions(
             return result.toList()
         }
     }
-}
-
-data class DateOccurrence(
-    val occurrence: LocalDateTime,
-    val occurrenceZoned: ZonedDateTime,
-    val date: ViewDateWithOptions
-) {
-    fun startEpochSecond() = occurrenceZoned.toEpochSecond()
-    fun endEpochSecond() = date.duration.addTo(occurrenceZoned, 1).toEpochSecond()
 }
