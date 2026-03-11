@@ -1,13 +1,12 @@
 package oblitusnumen.calendar.implementation.data.views
 
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.core.database.sqlite.transaction
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.Modification
+import oblitusnumen.calendar.implementation.data.SetModificationMutableState
 import oblitusnumen.calendar.implementation.data.tables.Entry
 import oblitusnumen.calendar.implementation.data.tables.EntryTagLinks
 import oblitusnumen.calendar.implementation.data.tables.Tag
@@ -18,10 +17,11 @@ import oblitusnumen.calendar.implementation.log
 class EditViewTag(dbManager: DbManager, val tagId: Int) {
     val tagName: MutableState<String>
     val tagColor: MutableState<Color?>
-    private var cachedAssociations: Set<Int> = Entry.forTag(dbManager, tagId).toSet()
-    private val entries: MutableMap<Int, Modification> = mutableMapOf()
-    var entryAssociations: Set<Int> by mutableStateOf(cachedAssociations)
-        private set
+
+    private val entryMods: SetModificationMutableState<Int> =
+        SetModificationMutableState(Entry.forTag(dbManager, tagId).toSet())
+    val entryAssociations = entryMods.value
+
     val tag
         get() = Tag(tagName.value, tagId, tagColor.value)
 
@@ -32,59 +32,25 @@ class EditViewTag(dbManager: DbManager, val tagId: Int) {
         log("EditViewTag init: $entryAssociations")
     }
 
-    private fun bakeIds() {
-        entryAssociations = cachedAssociations.toMutableSet().apply {
-            for (entry in entries) {
-                when (entry.value) {
-                    Modification.ADD -> this.add(entry.key)
-                    Modification.DELETE -> this.remove(entry.key)
-                }
-            }
-        }
-    }
-
     fun addEntryAssociations(vararg ids: Int) {
-        var update = false
-        for (id in ids) {
-            if (entries[id] == Modification.DELETE) {
-                entries.remove(id)
-                update = true
-            } else if (!cachedAssociations.contains(id)) {
-                entries[id] = Modification.ADD
-                update = true
-            }
-        }
-        if (update)
-            bakeIds()
+        entryMods.add(*ids.toTypedArray())
     }
 
     fun rmEntryAssociations(vararg ids: Int) {
-        var update = false
-        for (id in ids) {
-            if (entries[id] == Modification.ADD) {
-                entries.remove(id)
-                update = true
-            } else if (cachedAssociations.contains(id)) {
-                entries[id] = Modification.DELETE
-                update = true
-            }
-        }
-        if (update)
-            bakeIds()
+        entryMods.rm(*ids.toTypedArray())
     }
 
     fun commit(dbManager: DbManager) {
         dbManager.writableDatabase.transaction {
             tag.update(dbManager)
-            for (entry in entries) {
-                when (entry.value) {
-                    Modification.ADD -> EntryTagLinks.create(dbManager, entry.key, tagId)
-                    Modification.DELETE -> EntryTagLinks.delete(dbManager, entry.key, tagId)
+            entryMods.forEachModification { entry, modification ->
+                when (modification) {
+                    Modification.ADD -> EntryTagLinks.create(dbManager, entry, tagId)
+                    Modification.DELETE -> EntryTagLinks.delete(dbManager, entry, tagId)
                 }
             }
         }
-        entries.clear()
-        cachedAssociations = entryAssociations
+        entryMods.commit()
     }
 
     fun delete(dbManager: DbManager) {
