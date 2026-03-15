@@ -43,11 +43,6 @@ class ViewDateWithOptions(
 ) {
     val displayName: String = name.ifEmpty { "[No title]" } // FIXME:
 
-    fun getContents(dbManager: DbManager): String {
-        // TODO:
-        return "STUB"
-    }
-
 //    private fun getZonedDateTimeInRange(start: Long, finish: Long): ZonedDateTime? { //any(?) in range
 //        val index = getIndexInRange(start, finish) ?: return null
 //        return getZoneDateTime(index)

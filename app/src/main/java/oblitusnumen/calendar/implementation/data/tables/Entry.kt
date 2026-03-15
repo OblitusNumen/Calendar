@@ -20,6 +20,14 @@ open class Entry(
 
     private var optionsCache: EventOptions? = null
 
+    private var contents: String? = null
+
+    fun getContents(dbManager: DbManager): String {
+        if (contents == null)
+            contents = EventOptions.contentsById(dbManager, defaultOptionsId!!)
+        return contents!!
+    }
+
     fun getOptions(dbManager: DbManager): EventOptions {
         if (optionsCache == null)
             optionsCache = EventOptions.byId(dbManager, defaultOptionsId!!)
@@ -81,7 +89,8 @@ open class Entry(
         id = null
     }
 
-    fun getNotifications(dbManager: DbManager): List<Notification> = Notification.forEntry(dbManager, id!!)
+    fun getNotifications(dbManager: DbManager): List<Notification> =
+        Notification.forOptions(dbManager, defaultOptionsId!!)
 
     fun getDates(dbManager: DbManager): List<Date> {
         if (isNotCreated()) return emptyList()

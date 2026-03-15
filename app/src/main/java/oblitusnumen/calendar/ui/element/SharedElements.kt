@@ -93,7 +93,8 @@ fun SearchTopBar(
 @Composable
 fun DrawNotificationAddMenu(onConfirm: (Period, Boolean) -> Unit, onDismiss: () -> Unit) {
     var silent by remember { mutableStateOf(false) }
-    var offsetCount: Long by remember { mutableStateOf(0) }
+    val initialCount = 1L
+    var offsetCount: Long by remember { mutableStateOf(initialCount) }
     var selectedOffsetType by remember { mutableStateOf(OffsetType(Once())) }
 
     AlertDialog(
@@ -114,6 +115,7 @@ fun DrawNotificationAddMenu(onConfirm: (Period, Boolean) -> Unit, onDismiss: () 
                     }
                 else
                     offsetCount
+
                 onConfirm(
                     if (count == 0L || selectedOffsetType.period is Once)
                         Once()
@@ -128,7 +130,7 @@ fun DrawNotificationAddMenu(onConfirm: (Period, Boolean) -> Unit, onDismiss: () 
         },
         text = {
             Column {
-                OffsetSelector(OffsetType(Once()), 1, { selectedOffsetType = it }, { offsetCount = it })
+                OffsetSelector(OffsetType(Once()), initialCount, { selectedOffsetType = it }, { offsetCount = it })
 
                 Row {
                     Text("silent")
@@ -294,17 +296,17 @@ fun DrawEntrySelectable(
             )
         ) {
             Row(Modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 8.dp)) {
-//                    Box(
-//                        Modifier.padding(end = 8.dp).size(24.dp).background(entry.getColorOrDefault(), CircleShape)
-//                            .border(0.dp, entry.getColorOrDefault(), CircleShape).align(Alignment.CenterVertically)
-//                    )
-//                    Text(
-//                        modifier = Modifier.weight(1.0f).padding(horizontal = 8.dp).align(Alignment.CenterVertically),
-//                        text = entry.name.ifEmpty { "[No title]" },
-//                        style = MaterialTheme.typography.headlineSmall,
-//                        overflow = TextOverflow.Ellipsis,
-//                        maxLines = 1,
-//                    )
+                Box(
+                    Modifier.padding(end = 8.dp).size(24.dp).background(entryView.color, CircleShape)
+                        .border(0.dp, entryView.color, CircleShape).align(Alignment.CenterVertically)
+                )
+                Text(
+                    modifier = Modifier.weight(1.0f).padding(horizontal = 8.dp).align(Alignment.CenterVertically),
+                    text = entryView.displayName,
+                    style = MaterialTheme.typography.headlineSmall,
+                    overflow = TextOverflow.Ellipsis,
+                    maxLines = 1,
+                )
                 Text(
                     modifier = Modifier.align(Alignment.CenterVertically),
                     text = nextDateText,

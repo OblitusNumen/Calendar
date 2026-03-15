@@ -31,9 +31,9 @@ open class Date : BaseColumns {
         private set
     var duration: Period
         private set
-    protected var epochSecondChainEnd: Long = 0
+    var epochSecondChainEnd: Long = 0
         private set
-    protected var timesRepeat: Long = 1
+    var timesRepeat: Long = 1
         private set
     var period: Period
         private set
@@ -152,6 +152,14 @@ open class Date : BaseColumns {
     fun setEntry(entry: Entry) {
         this.entryId = entry.id
         this.eventOptionsId = entry.defaultOptionsId
+    }
+
+    private var contents: String? = null
+
+    fun getContents(dbManager: DbManager): String {
+        if (contents == null)
+            contents = EventOptions.contentsById(dbManager, eventOptionsId!!)
+        return contents!!
     }
 
     private fun getZoneDateTime(idx: Long): ZonedDateTime {
@@ -542,8 +550,10 @@ open class Date : BaseColumns {
         }
     }
 
-    fun toUiState(uiIdGenerator: EntryEditState.UiIdGenerator) = DateState(
-        uiIdGenerator.next(),
+    fun toUiState(uiIdGenerator: EntryEditState.UiIdGenerator) = toUiState(uiIdGenerator.next())
+
+    fun toUiState(uiId: String) = DateState(
+        uiId,
         id,
         entryId,
         eventOptionsId,

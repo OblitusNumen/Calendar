@@ -85,13 +85,11 @@ class Notification : BaseColumns {
             return notifications
         }
 
-        fun forEntry(dbManager: DbManager, entryID: Int): List<Notification> {
+        fun forOptions(dbManager: DbManager, eventOptionsId: Int): List<Notification> {
             dbManager.readableDatabase.rawQuery(
                 "SELECT $TABLE_NAME.* " +
                         "FROM $TABLE_NAME " +
-                        "JOIN ${Date.TABLE_NAME} " +
-                        "ON $TABLE_NAME.$COLUMN_NAME_EVENT_OPTIONS_ID = ${Date.TABLE_NAME}.${Date.COLUMN_NAME_EVENT_OPTIONS_ID} " +
-                        "WHERE ${Date.COLUMN_NAME_ENTRY_ID} = ?", arrayOf(entryID.toString())
+                        "WHERE $COLUMN_NAME_EVENT_OPTIONS_ID = ?", arrayOf(eventOptionsId.toString())
             ).use { cursor ->
                 return cursorToList(cursor)
             }

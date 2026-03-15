@@ -6,7 +6,6 @@ import androidx.compose.ui.text.input.TextFieldValue
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.tables.*
 import oblitusnumen.calendar.implementation.data.views.ViewEntryWithOptions
-import oblitusnumen.calendar.implementation.log
 import java.util.concurrent.atomic.AtomicInteger
 
 @Immutable
@@ -66,23 +65,36 @@ data class EntryEditState(
             val datesOld =
                 Date.forEntry(dbManager, entryId!!).groupingBy { it.id }.reduce { _, accumulator, _ -> accumulator }
             for (d in datesOld.values) {
-                if (!datesNew.contains(d.id)) d.delete(dbManager)
+                if (!datesNew.contains(d.id))
+                    d.delete(dbManager)
             }
             for (d in dateStates) {
-                datesOld[d.id]?.update(dbManager) ?: d.toDbEntity().apply { setEntry(entry) }.create(dbManager)
+                d.toDbEntity().apply {
+                    setEntry(entry)
+                    if (datesOld.containsKey(d.id))
+                        this.update(dbManager)
+                    else
+                        this.create(dbManager)
+                }
             }
 
             //setting notifications
             val notificationsNew = notificationStates.map { it.offset.toString() }.toSet()
             val notificationsOld =
-                Notification.forEntry(dbManager, entryId!!).groupingBy { it.offset.toString() }
+                Notification.forOptions(dbManager, optionsId!!).groupingBy { it.offset.toString() }
                     .reduce { _, accumulator, _ -> accumulator }
             for (n in notificationsOld.values) {
-                if (!notificationsNew.contains(n.offset.toString())) n.delete(dbManager)
+                if (!notificationsNew.contains(n.offset.toString()))
+                    n.delete(dbManager)
             }
             for (n in notificationStates) {
-                notificationsOld[n.offset.toString()]?.update(dbManager) ?: n.toDbEntity()
-                    .apply { setOptionsId(optionsId!!) }.create(dbManager)
+                n.toDbEntity().apply {
+                    setOptionsId(optionsId!!)
+                    if (notificationsOld.containsKey(n.offset.toString()))
+                        this.update(dbManager)
+                    else
+                        this.create(dbManager)
+                }
             }
         }
 
@@ -114,7 +126,7 @@ data class EntryEditState(
                 entry?.isTask ?: isTask!!,
                 TextFieldValue(entry?.name ?: ""),
                 entry?.color ?: dbManager.defaultEntryColor,
-                TextFieldValue("entry.getContents()"),
+                TextFieldValue(entry?.getContents(dbManager) ?: ""),
                 entryId?.let { Tag.forEntry(dbManager, entryId).sortedBy { it.name } } ?: emptyList(),
                 entry?.getDates(dbManager)?.map { it.toUiState(uiIdGenerator) }?.sorted()
                     ?: emptyList(),

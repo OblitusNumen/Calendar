@@ -31,6 +31,7 @@ import oblitusnumen.calendar.implementation.data.Period.*
 import oblitusnumen.calendar.implementation.data.tables.Date
 import oblitusnumen.calendar.implementation.data.tables.Tag
 import oblitusnumen.calendar.ui.element.*
+import oblitusnumen.calendar.ui.state.DateState
 import oblitusnumen.calendar.ui.theme.topBarColors
 import oblitusnumen.calendar.ui.viewmodel.EntryEditViewModel
 import java.time.LocalDate
@@ -47,21 +48,23 @@ fun EditEntryScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    val periodSelectorDate = remember { mutableStateOf<Date?>(null) }
+    val periodSelectorDate = remember { mutableStateOf<DateState?>(null) }
     val dateTimePicker = remember { DateTimePicker() }
 
     remember {
         if (pendingDate != null)
-            dateTimePicker.timePick({}, {
-                val newDate = Date(
-                    ZonedDateTime.of(it.atDate(pendingDate), ZoneId.systemDefault()),
-                    Once(),
-                    1,
-                    Once()
-                )
-                periodSelectorDate.value = newDate
-                viewModel.addDate(newDate)
-            })
+            dateTimePicker.timePick(
+                {},
+                {
+                    periodSelectorDate.value = viewModel.addDate(
+                        Date(
+                            ZonedDateTime.of(it.atDate(pendingDate), ZoneId.systemDefault()),
+                            Once(),
+                            1,
+                            Once()
+                        )
+                    )
+                })
     }
     dateTimePicker.tryCompose()
 
@@ -140,20 +143,26 @@ fun EditEntryScreen(
             for (date in state.dateStates)
                 key(date.uiId) {
                     // FIXME:  toDbEntity() is a hack; do the fix in other places
-                    DrawDate(date.toDbEntity(), periodSelectorDate, dateTimePicker) { viewModel.rmDate(date.uiId) }
+                    DrawDate(date, periodSelectorDate, dateTimePicker, { viewModel.rmDate(date.uiId) }) {
+                        viewModel.updateDate(date.uiId, it)
+                    }
                 }
-            Box(Modifier.defaultMinSize(minHeight = 52.dp).fillMaxWidth()/*.padding(top = 8.dp)*/.clickable {
-                dateTimePicker.dateTimePick({}, {
-                    val newDate = Date(
-                        ZonedDateTime.of(it, ZoneId.systemDefault()),
-                        Once(),
-                        1,
-                        Once()
-                    )
-                    periodSelectorDate.value = newDate
-                    viewModel.addDate(newDate)
-                })
-            }) {
+            Box(
+                Modifier.defaultMinSize(minHeight = 52.dp).fillMaxWidth()/*.padding(top = 8.dp)*/.clickable {
+                    dateTimePicker.dateTimePick(
+                        {},
+                        {
+                            periodSelectorDate.value =
+                                viewModel.addDate(
+                                    Date(
+                                        ZonedDateTime.of(it, ZoneId.systemDefault()),
+                                        Once(),
+                                        1,
+                                        Once()
+                                    )
+                                )
+                        })
+                }) {
                 Text(
                     modifier = Modifier.align(Alignment.CenterStart)
                         .padding(horizontal = 44.dp, vertical = 16.dp),
@@ -287,14 +296,15 @@ fun TagChooseMenu(dbManager: DbManager, tags: List<Tag>, onClose: () -> Unit, on
 
 @Composable
 fun DrawDate(
-    date: Date,
-    periodSelectorDate: MutableState<Date?>,
+    date: DateState,
+    periodSelectorDate: MutableState<DateState?>,
     dateTimePicker: DateTimePicker,
     onRmDate: () -> Unit,
+    onUpdateDate: (DateState) -> Unit,
 ) {
     var periodSelectorDate by remember { periodSelectorDate }
     if (periodSelectorDate == date)
-        PeriodSelectorDialog({ periodSelectorDate = null }, { periodSelectorDate = null }, date)
+        PeriodSelectorDialog(date, { periodSelectorDate = null }, { periodSelectorDate = null }, onUpdateDate)
     val dateStartText = (if (date.isPeriodic) "from " else "") +
             date.getFirstZoneDateTime().format(DateTimeFormatter.ofPattern("dd MMM yyyy "))
     val timeText = date.getFirstZoneDateTime().format(DateTimeFormatter.ofPattern("HH:mm"))
@@ -306,9 +316,6 @@ fun DrawDate(
         PeriodType(date.period).toString()
 
     Column(Modifier.padding(bottom = 6.dp)) {
-        var updated by remember { mutableStateOf(false) }
-        updated// fixme this is hack...
-
         Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp)) {
             Icon(
                 Icons.Outlined.Call, "",
@@ -322,13 +329,14 @@ fun DrawDate(
                 modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp, vertical = 8.dp)
                     .weight(.5f).clickable {
                         dateTimePicker.datePick({}, {
-                            date.setRange(
-                                startOfDayStart = ZonedDateTime.of(
-                                    it.atTime(localDateTime.toLocalTime()),
-                                    date.timeZoneId
+                            onUpdateDate(
+                                date.setRange(
+                                    startOfDayStart = ZonedDateTime.of(
+                                        it.atTime(localDateTime.toLocalTime()),
+                                        date.timeZoneId
+                                    )
                                 )
                             )
-                            updated = !updated
                         }, localDateTime.toLocalDate())
                     },
                 text = dateStartText,
@@ -340,13 +348,14 @@ fun DrawDate(
                 modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp, vertical = 8.dp)
                     .weight(.5f).clickable {
                         dateTimePicker.timePick({}, {
-                            date.setRange(
-                                startOfDayStart = ZonedDateTime.of(
-                                    it.atDate(localDateTime.toLocalDate()),
-                                    date.timeZoneId
+                            onUpdateDate(
+                                date.setRange(
+                                    startOfDayStart = ZonedDateTime.of(
+                                        it.atDate(localDateTime.toLocalDate()),
+                                        date.timeZoneId
+                                    )
                                 )
                             )
-                            updated = !updated
                         }, localDateTime.toLocalTime())
                     },
                 text = timeText,
@@ -385,8 +394,7 @@ fun DrawDate(
                     IconButton(
                         modifier = Modifier.align(Alignment.CenterVertically),
                         onClick = {
-                            date.removeExceptions(LocalDate.ofEpochDay(epochDay))
-                            updated = !updated
+                            onUpdateDate(date.removeExceptions(LocalDate.ofEpochDay(epochDay)))
                         },
                         content = { Icon(Icons.Filled.Clear, contentDescription = null) }
                     )
@@ -395,8 +403,7 @@ fun DrawDate(
 
             Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp).clickable {
                 dateTimePicker.datePick({}, {
-                    date.addExceptions(it)
-                    updated = !updated
+                    onUpdateDate(date.addExceptions(it))
                 })
             }.padding(horizontal = 40.dp)) {
                 Text(
@@ -428,7 +435,12 @@ fun DrawWeekdayButton(active: MutableState<Boolean>, text: String) {
 }
 
 @Composable
-fun PeriodSelectorDialog(onConfirm: () -> Unit, onDismiss: () -> Unit, date: Date) {
+fun PeriodSelectorDialog(
+    date: DateState,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+    onUpdateDate: (DateState) -> Unit,
+) {
     val initialPeriodCount = if (date.period is Once) 1 else date.period.count
     val initialPeriodType = PeriodType(date.period)
     var selectedPeriodCount: Long by remember { mutableStateOf(initialPeriodCount) }
@@ -484,40 +496,44 @@ fun PeriodSelectorDialog(onConfirm: () -> Unit, onDismiss: () -> Unit, date: Dat
                 else
                     selectedPeriodCount
 
-                date.setPeriod(
-                    if (selectedPeriodType.period is Weekday) {
-                        val weekdayDays = (if (monSelected.value) Weekday.WD_MON else 0) +
-                                (if (tueSelected.value) Weekday.WD_TUE else 0) +
-                                (if (wedSelected.value) Weekday.WD_WED else 0) +
-                                (if (thuSelected.value) Weekday.WD_THU else 0) +
-                                (if (friSelected.value) Weekday.WD_FRI else 0) +
-                                (if (satSelected.value) Weekday.WD_SAT else 0) +
-                                (if (sunSelected.value) Weekday.WD_SUN else 0)
-                        Weekday(
-                            count,
-                            if (weekdayDays == 0L)
-                                Weekday.dayOfWeekIndexToEnum(date.getFirstZoneDateTime().dayOfWeek.value)
-                            else
-                                weekdayDays
-                        )
-                    } else
-                        selectedPeriodType.period.updateCount(count)
+                onUpdateDate(
+                    date.setPeriod(
+                        if (selectedPeriodType.period is Weekday) {
+                            val weekdayDays = (if (monSelected.value) Weekday.WD_MON else 0) +
+                                    (if (tueSelected.value) Weekday.WD_TUE else 0) +
+                                    (if (wedSelected.value) Weekday.WD_WED else 0) +
+                                    (if (thuSelected.value) Weekday.WD_THU else 0) +
+                                    (if (friSelected.value) Weekday.WD_FRI else 0) +
+                                    (if (satSelected.value) Weekday.WD_SAT else 0) +
+                                    (if (sunSelected.value) Weekday.WD_SUN else 0)
+                            Weekday(
+                                count,
+                                if (weekdayDays == 0L)
+                                    Weekday.dayOfWeekIndexToEnum(date.getFirstZoneDateTime().dayOfWeek.value)
+                                else
+                                    weekdayDays
+                            )
+                        } else
+                            selectedPeriodType.period.updateCount(count)
+                    )
                 )
 
                 if (date.isPeriodic) {
-                    when (endVariantSelectedOption) {
-                        DateSequenceEndVariant.ENDLESS -> date.makeEndless()
-                        DateSequenceEndVariant.BY_DATE -> date.setRange(
-                            startOfDayEnd = ZonedDateTime.of(
-                                LocalDate.ofEpochDay(selectedMillis / 86400000).atStartOfDay(),
-                                date.getFirstZoneDateTime().zone
+                    onUpdateDate(
+                        when (endVariantSelectedOption) {
+                            DateSequenceEndVariant.ENDLESS -> date.makeEndless()
+                            DateSequenceEndVariant.BY_DATE -> date.setRange(
+                                startOfDayEnd = ZonedDateTime.of(
+                                    LocalDate.ofEpochDay(selectedMillis / 86400000).atStartOfDay(),
+                                    date.getFirstZoneDateTime().zone
+                                )
                             )
-                        )
 
-                        DateSequenceEndVariant.OCCURRENCES -> {
-                            date.setTimesRepeatUI(if (occurrencesCount.isEmpty()) 1 else occurrencesCount.toLong())
+                            DateSequenceEndVariant.OCCURRENCES -> {
+                                date.setTimesRepeatUI(if (occurrencesCount.isEmpty()) 1 else occurrencesCount.toLong())
+                            }
                         }
-                    }
+                    )
                 }
 
                 onConfirm()

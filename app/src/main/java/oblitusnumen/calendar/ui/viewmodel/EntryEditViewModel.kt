@@ -13,6 +13,7 @@ import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.Period
 import oblitusnumen.calendar.implementation.data.tables.Date
 import oblitusnumen.calendar.implementation.data.tables.Tag
+import oblitusnumen.calendar.ui.state.DateState
 import oblitusnumen.calendar.ui.state.EntryEditState
 import oblitusnumen.calendar.ui.state.NotificationState
 
@@ -28,10 +29,17 @@ class EntryEditViewModel(initialState: EntryEditState) : ViewModel() {
 
     fun setTags(tags: List<Tag>): Unit = _state.update { it.copy(tags = tags.sortedBy { it.name }) }
 
-    fun addDate(date: Date): Unit =
-        _state.update { it.copy(dateStates = (it.dateStates + date.toUiState(it.uiIdGenerator)).sorted()) }
+    fun addDate(date: Date): DateState {
+        val dateState = date.toUiState(_state.value.uiIdGenerator)
+        _state.update { it.copy(dateStates = (it.dateStates + dateState).sorted()) }
+        return dateState
+    }
 
     fun rmDate(id: String): Unit = _state.update { it.copy(dateStates = it.dateStates.filter { it.uiId != id }) }
+
+    fun updateDate(id: String, dateState: DateState) {
+        _state.update { it.copy(dateStates = it.dateStates.map { if (it.uiId == id) dateState else it }) }
+    }
 
     fun addNotification(offset: Period, sound: Boolean): Unit =
         _state.update {

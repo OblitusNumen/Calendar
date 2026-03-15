@@ -15,10 +15,10 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Call
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import oblitusnumen.calendar.implementation.bgColorToTextColor
 import oblitusnumen.calendar.implementation.convertMillisToDate
@@ -27,32 +27,31 @@ import oblitusnumen.calendar.implementation.data.tables.Date
 import oblitusnumen.calendar.implementation.data.tables.Entry
 import oblitusnumen.calendar.implementation.data.tables.Notification
 import oblitusnumen.calendar.implementation.data.tables.Tag
+import oblitusnumen.calendar.implementation.data.views.ViewEntryWithOptions
 import oblitusnumen.calendar.ui.element.BackPressButton
 import oblitusnumen.calendar.ui.theme.topBarColors
 import java.time.format.DateTimeFormatter
 
 @Composable
 fun DetailsEntryScreen(dbManager: DbManager, entryId: Int, editEntry: () -> Unit, backPress: () -> Unit) {
-    val entry = remember { Entry.byId(dbManager, entryId) }!! // FIXME: replace with View
+    val entry = remember { ViewEntryWithOptions.byId(dbManager, entryId) }!! // FIXME: replace with View
 
-    var entryName by remember { mutableStateOf("entry.name".ifEmpty { "[No title]" }) }
-    var tags: List<Tag> by remember { mutableStateOf(entry.getTags(dbManager).sortedBy { it.name }) }
-    var dates: List<Date> by remember {
-        mutableStateOf(
-            entry.getDates(dbManager).sortedBy { it.epochSecondChainStart })
+    val entryName = remember { entry.displayName }
+    val tags: List<Tag> = remember { entry.getTags(dbManager).sortedBy { it.name } }
+    val dates: List<Date> = remember {
+        entry.getDates(dbManager).sortedBy { it.epochSecondChainStart }
     }
-    var notifications: List<Notification> by remember {
-        mutableStateOf(
-            entry.getNotifications(dbManager).sortedBy { it.offset.secondsApproximation() })
+    val notifications: List<Notification> = remember {
+        entry.getNotifications(dbManager).sortedBy { it.offset.secondsApproximation() }
     }
-    var contents by remember { mutableStateOf("entry.getContents()") } // FIXME: this should be List<Content>
+    val contents = remember { entry.getContents(dbManager) } // FIXME: this should be List<Content>
 
     Scaffold(topBar = { DetailsEntryTopBar(dbManager, entry, entryName, editEntry, backPress) }) { paddingValues ->
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).fillMaxHeight()) {
             Spacer(Modifier.height(paddingValues.calculateTopPadding()))
 
             // name and color
-            val color by remember { mutableStateOf(Color.Red/*entry.getColorOrDefault()*/) }
+            val color = remember { entry.color }
             SelectionContainer {
                 Row {
                     Box(

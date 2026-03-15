@@ -4,7 +4,9 @@ import androidx.compose.runtime.Immutable
 import oblitusnumen.calendar.implementation.data.ExceptionRules
 import oblitusnumen.calendar.implementation.data.Period
 import oblitusnumen.calendar.implementation.data.tables.Date
+import java.time.LocalDate
 import java.time.ZoneId
+import java.time.ZonedDateTime
 
 @Immutable
 data class DateState(
@@ -48,4 +50,22 @@ data class DateState(
     val isEndless: Boolean = toDbEntity().isEndless
     fun getFirstZoneDateTime() = toDbEntity().getFirstZoneDateTime()
     fun getLastZoneDateTime() = toDbEntity().getLastZoneDateTime()
+    fun getTimesRepeatUI() = toDbEntity().getTimesRepeatUI()
+    fun addExceptions(date: LocalDate) =
+        copy(exceptionRules = exceptionRules.apply { addDates(date.toEpochDay(), date.toEpochDay()) })
+
+    fun removeExceptions(date: LocalDate): DateState =
+        copy(exceptionRules = exceptionRules.apply { removeDates(date.toEpochDay(), date.toEpochDay()) })
+
+    fun setRange(startOfDayStart: ZonedDateTime? = null, startOfDayEnd: ZonedDateTime? = null): DateState =
+        toDbEntity().apply { setRange(startOfDayStart, startOfDayEnd) }.toUiState(uiId)
+
+    fun setPeriod(period: Period): DateState =
+        toDbEntity().apply { setPeriod(period) }.toUiState(uiId)
+
+    fun makeEndless(): DateState =
+        toDbEntity().apply { makeEndless() }.toUiState(uiId)
+
+    fun setTimesRepeatUI(timesRepeat: Long): DateState =
+        toDbEntity().apply { setTimesRepeatUI(timesRepeat) }.toUiState(uiId)
 }
