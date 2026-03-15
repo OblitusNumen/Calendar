@@ -7,7 +7,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -294,7 +294,7 @@ fun DateTopBar(day: LocalDate, openAgenda: () -> Unit, backPress: () -> Unit) {
                 Text("Date $day", Modifier.weight(1f).align(Alignment.CenterVertically), maxLines = 1)
 
                 IconButton(openAgenda, Modifier.align(Alignment.CenterVertically)) {
-                    Icon(Icons.Filled.KeyboardArrowRight, "open month agenda")
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, "open month agenda")
                 }
             }
         },
