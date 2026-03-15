@@ -2,8 +2,8 @@ package oblitusnumen.calendar.implementation.data.tables
 
 import android.content.ContentValues
 import android.database.Cursor
+import android.database.sqlite.SQLiteDatabase
 import android.provider.BaseColumns
-import androidx.compose.ui.graphics.Color
 import oblitusnumen.calendar.implementation.data.DbManager
 import java.io.IOException
 import java.time.ZonedDateTime
@@ -37,33 +37,14 @@ open class Entry(
 
     //since function is private isCreated check not needed
     fun create(dbManager: DbManager) {
-//        val contentValues = getContentValues()
-//        contentValues.put(COLUMN_NAME_ID, null as Int?)
-//        id = dbManager.writableDatabase.insert(TABLE_NAME, null, contentValues).toInt()
-//        if (!getDirectory(dbManager).mkdirs() || !getContentsFile(dbManager).createNewFile()) {
-//            this.id = null
-//            try {
-//                if (getDirectory(dbManager).exists()) rmRecursively(getDirectory(dbManager))
-//                dbManager.writableDatabase.execSQL(
-//                    "DELETE FROM $TABLE_NAME WHERE $COLUMN_NAME_ID = ?",
-//                    arrayOf(id.toString())
-//                )
-//            } catch (_: Exception) {
-//            }
-//            throw IOException("could not setup directory for entry $id, filename: ${getDirectory(dbManager)}")
-//        }
-    }
-
-    private fun tryUpdateContents(dbManager: DbManager, contents: String) {// FIXME: atomic saves
-//        try {
-//            FileOutputStream(getContentsFile(dbManager)).use { fos ->
-//                fos.write(contents.toByteArray())
-//                fos.flush()
-//                fos.fd.sync()
-//            }
-//        } catch (e: IOException) {
-//            throw IOException("could not save contents for entry $id", e)
-//        }
+        val contentValues = getContentValues()
+        contentValues.put(COLUMN_NAME_ID, null as Int?)
+        id = dbManager.writableDatabase.insertWithOnConflict(
+            TABLE_NAME,
+            null,
+            contentValues,
+            SQLiteDatabase.CONFLICT_REPLACE
+        ).toInt()
     }
 
     fun update(dbManager: DbManager) {
@@ -96,49 +77,9 @@ open class Entry(
     }
 
     private fun delete(dbManager: DbManager) {
-//        if (getDirectory(dbManager).exists()) rmRecursively(getDirectory(dbManager))
-        dbManager.writableDatabase.execSQL(
-            "DELETE FROM $TABLE_NAME WHERE $COLUMN_NAME_ID = ?",
-            arrayOf(id.toString())
-        )
+        dbManager.writableDatabase.delete(TABLE_NAME, "$COLUMN_NAME_ID = ?", arrayOf(id.toString()))
+        id = null
     }
-
-    fun fixup(dbManager: DbManager) {
-//        when (state) {// FIXME: maybe differ new and deleted
-//            STATE_NEW, STATE_DELETED -> {
-//                delete(dbManager)
-//            }
-//
-//            STATE_UPDATING -> {
-//                // FIXME: repair file system
-//                state = STATE_NORMAL
-//                update(dbManager)
-//            }
-//
-//            else -> throw IllegalStateException("unknown state $state")
-//        }
-    }
-
-//    fun getDirectory(dbManager: DbManager): File = File(dbManager.filesDir, id.toString())
-
-//    fun getContentsFile(dbManager: DbManager): File = File(getDirectory(dbManager), CONTENTS_FILENAME)
-
-//    fun getContents(dbManager: DbManager): String { //todo contents should not be a just a string
-//        if (!getContentsFile(dbManager).exists()) return ""
-//        try {
-//            FileInputStream(getContentsFile(dbManager)).use { fis ->
-//                val buffer = ByteArray(4096) // Buffer to hold file data
-//                val content = StringBuilder()
-//                var bytesRead: Int
-//                while ((fis.read(buffer).also { bytesRead = it }) != -1) {
-//                    content.append(String(buffer, 0, bytesRead)) // Convert bytes to string
-//                }
-//                return content.toString() // Return the complete content as a string
-//            }
-//        } catch (e: IOException) {
-//            throw RuntimeException(e)
-//        }
-//    }
 
     fun getNotifications(dbManager: DbManager): List<Notification> = Notification.forEntry(dbManager, id!!)
 
@@ -156,83 +97,6 @@ open class Entry(
         ).use { cursor ->
             return Tag.cursorToList(cursor)
         }
-    }
-
-    @Throws(IOException::class)
-    fun set(
-        dbManager: DbManager,
-        name: String,
-        excludeFromCalendarView: Boolean,
-        color: Color?,
-        tags: Iterable<Tag>,
-        dates: Iterable<Date>,
-        notifications: Iterable<Notification>,
-        contents: String
-    ) {
-//        if (isNotCreated()) {
-//            create(dbManager)
-//        } else {
-//            state = STATE_UPDATING
-//            update(dbManager)
-//        }
-//        tryUpdateContents(dbManager, contents)
-//        dbManager.writableDatabase.transaction {
-//            //setting entry
-//            this@Entry.state = STATE_NORMAL
-//            this@Entry.name = name
-//            this@Entry.excludeFromCalendarView = excludeFromCalendarView
-//            this@Entry.color = color
-//            update(dbManager)
-//
-//            //setting tags
-//            val tagsNew = tags.map { it.id }.toSet()
-//            val tagsOld = getTags(dbManager).groupingBy { it.id }.reduce { _, accumulator, _ -> accumulator }
-//            for (tId in tagsOld.keys) {
-//                if (!tagsNew.contains(tId)) rmTag(dbManager, tId!!)
-//            }
-//            for (t in tags) {
-//                if (!tagsOld.containsKey(t.id)) {
-//                    t.createIfNotExists()
-//                    addTag(dbManager, t.id!!)
-//                }
-//            }
-//
-//            //setting dates
-//            val datesNew = dates.map { it.id }.toSet()
-//            val datesOld = getDates(dbManager).groupingBy { it.id }.reduce { _, accumulator, _ -> accumulator }
-//            for (d in datesOld.values) {
-//                if (!datesNew.contains(d.id)) d.delete()
-//            }
-//            for (d in dates) {
-//                if (datesOld.containsKey(d.id)) d.update() else {
-//                    d.entryId = id
-//                    d.create()
-//                }
-//            }
-//
-//            //setting notifications
-//            val notificationsNew = notifications.map { it.offset.toString() }.toSet()
-//            val notificationsOld =
-//                getNotifications(dbManager).groupingBy { it.offset.toString() }.reduce { _, accumulator, _ -> accumulator }
-//            for (n in notificationsOld.values) {
-//                if (!notificationsNew.contains(n.offset.toString())) n.delete()
-//            }
-//            for (n in notifications) {
-//                if (notificationsOld.containsKey(n.offset.toString())) n.update() else {
-//                    n.eventOptionsId = id
-//                    n.create()
-//                }
-//            }
-//        }
-//        dbManager.tryScheduleNotification()
-    }
-
-    private fun addTag(dbManager: DbManager, tagId: Int) {
-        EntryTagLinks.create(dbManager, id!!, tagId)
-    }
-
-    private fun rmTag(dbManager: DbManager, tagId: Int) {
-        EntryTagLinks.delete(dbManager, id!!, tagId)
     }
 
     /**

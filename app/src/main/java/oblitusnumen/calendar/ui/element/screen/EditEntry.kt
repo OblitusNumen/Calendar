@@ -67,7 +67,10 @@ fun EditEntryScreen(
 
     Scaffold(topBar = {
         EditEntryTopBar(
-            { viewModel.commitToDb(dbManager) },
+            {
+                backPress()
+                viewModel.commitToDb(dbManager)
+            },
             backPress
         )
     }) { paddingValues ->
