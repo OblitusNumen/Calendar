@@ -138,7 +138,7 @@ fun EditTag(
                         tags.value =
                             (tags.value + tag).sortedBy { it.name }.sortedByDescending { tagsWithEntryCount[it] }
                     }
-                    tag.createIfNotExists()
+                    tag.createIfNotExists(dbManager)
                     tag.set(dbManager, name, color)
                     tagNames.add(tag.name)
                     onClose()

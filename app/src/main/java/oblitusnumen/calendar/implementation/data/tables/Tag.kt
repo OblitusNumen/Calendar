@@ -54,8 +54,8 @@ class Tag(
         dbManager.writableDatabase.delete(TABLE_NAME, "$COLUMN_NAME_ID = ?", arrayOf(id.toString()))
     }
 
-    fun createIfNotExists() {
-//        if (id == null) create()
+    fun createIfNotExists(dbManager: DbManager) {
+        if (id == null) create(dbManager)
     }
 
     fun set(dbManager: DbManager, name: String, color: Color) {
