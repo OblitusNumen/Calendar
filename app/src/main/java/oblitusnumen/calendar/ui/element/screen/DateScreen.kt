@@ -187,7 +187,7 @@ fun DrawDay(
                     ) {
                         // FIXME:
                         a()
-//                        openEntryInfoByDateOccurrence(occurrence)
+                        openEntryInfoByDateOccurrence(occurrence)
                     }
 //                        DrawEntry(dbManager, occurrence) { openEntryInfoByDateOccurrence(occurrence) }
                 }
