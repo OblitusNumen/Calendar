@@ -1,27 +1,27 @@
 package oblitusnumen.calendar.implementation.data
 
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 
-class ListModificationMutableState<T>(initialValue: List<T>) {
+class ListModificationMutableState<T>(initialValue: List<T>, val comparator: Comparator<T>? = null) {
     private var cached: List<T> = initialValue
     private val mods: MutableList<T> = mutableListOf()
     private val modValues: MutableMap<T, Modification> = mutableMapOf()
-    var value: List<T> by mutableStateOf(cached)
+    var value: MutableState<List<T>> =
+        mutableStateOf(cached.let { if (comparator == null) it else it.sortedWith(comparator) })
         private set
 
     val modifications: Map<T, Modification> = modValues
 
     private fun bake() {
-        value = cached.toMutableList().apply {
+        value.value = cached.toMutableList().apply {
             for (v in mods) {
                 when (modValues[v]!!) {
                     Modification.ADD -> this.add(v)
                     Modification.DELETE -> this.remove(v)
                 }
             }
-        }
+        }.let { if (comparator == null) it else it.sortedWith(comparator) }
     }
 
     fun add(vararg vals: T) {
@@ -59,12 +59,20 @@ class ListModificationMutableState<T>(initialValue: List<T>) {
     }
 
     fun forEachModification(action: (T, Modification) -> Unit) {
-        modValues.forEach { action(it.key, it.value) }
+        for (it in modValues) {
+            action(it.key, it.value)
+        }
+    }
+
+    fun forEach(action: (T, Modification?) -> Unit) {
+        for (v in value.value) {
+            action(v, modValues[v])
+        }
     }
 
     fun commit() {
         mods.clear()
         modValues.clear()
-        cached = value
+        cached = value.value
     }
 }

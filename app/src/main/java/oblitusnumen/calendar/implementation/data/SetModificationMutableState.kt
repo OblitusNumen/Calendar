@@ -1,19 +1,18 @@
 package oblitusnumen.calendar.implementation.data
 
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 
 class SetModificationMutableState<T>(initialValue: Set<T>) {
     private var cached: Set<T> = initialValue
     private val mods: MutableMap<T, Modification> = mutableMapOf()
-    var value: Set<T> by mutableStateOf(cached)
+    var value: MutableState<Set<T>> = mutableStateOf(cached)
         private set
 
     val modifications: Map<T, Modification> = mods
 
     private fun bake() {
-        value = cached.toMutableSet().apply {
+        value.value = cached.toMutableSet().apply {
             for (m in mods) {
                 when (m.value) {
                     Modification.ADD -> this.add(m.key)
@@ -59,6 +58,6 @@ class SetModificationMutableState<T>(initialValue: Set<T>) {
 
     fun commit() {
         mods.clear()
-        cached = value
+        cached = value.value
     }
 }
