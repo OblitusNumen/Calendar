@@ -1,6 +1,7 @@
 package oblitusnumen.calendar.implementation.data.views
 
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.Color
 import androidx.core.database.sqlite.transaction
@@ -20,7 +21,7 @@ class EditViewTag(dbManager: DbManager, val tagId: Int) {
 
     private val entryMods: SetModificationMutableState<Int> =
         SetModificationMutableState(Entry.forTag(dbManager, tagId).toSet())
-    val entryAssociations = entryMods.value
+    val entryAssociations by entryMods.value
 
     val tag
         get() = Tag(tagName.value, tagId, tagColor.value)

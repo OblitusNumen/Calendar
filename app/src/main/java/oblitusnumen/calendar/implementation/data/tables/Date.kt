@@ -10,6 +10,8 @@ import oblitusnumen.calendar.implementation.data.Period
 import oblitusnumen.calendar.implementation.multFrac
 import oblitusnumen.calendar.implementation.toEpochDays
 import oblitusnumen.calendar.implementation.toWeekNumber
+import oblitusnumen.calendar.ui.state.DateState
+import oblitusnumen.calendar.ui.state.EntryEditState
 import org.jetbrains.annotations.TestOnly
 import java.time.Instant
 import java.time.LocalDate
@@ -17,6 +19,7 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 import kotlin.math.min
 
+// TODO: make all tables immutable ?
 open class Date : BaseColumns {
     var id: Int? = null
         private set
@@ -45,26 +48,28 @@ open class Date : BaseColumns {
     }
 
     constructor(
-        entry: Entry,
         time: ZonedDateTime,
         duration: Period,
         timesRepeat: Long,
-        period: Period
+        period: Period,
+        entry: Entry? = null,
     ) {
-        this.entryId = entry.id
-        this.eventOptionsId = entry.defaultOptionsId
+        this.entryId = null
+        this.eventOptionsId = null
         this.epochSecondChainStart = time.toEpochSecond()
         this.duration = duration
         this.period = period
         this.timeZoneId = time.zone
         this.exceptionRules = ExceptionRules()
+        if (entry != null)
+            setEntry(entry)
         setTimesRepeat(timesRepeat)
     }
 
     constructor(
-        id: Int,
-        entryId: Int,
-        eventOptionsId: Int,
+        id: Int?,
+        entryId: Int?,
+        eventOptionsId: Int?,
         epochSecondChainStart: Long,
         duration: Period,
         epochSecondChainEnd: Long,
@@ -146,6 +151,11 @@ open class Date : BaseColumns {
 
     val isEmpty: Boolean
         get() = timesRepeat <= 0
+
+    fun setEntry(entry: Entry) {
+        this.entryId = entry.id
+        this.eventOptionsId = entry.defaultOptionsId
+    }
 
     private fun getZoneDateTime(idx: Long): ZonedDateTime {
         return period.addTo(Instant.ofEpochSecond(epochSecondChainStart).atZone(timeZoneId), idx)
@@ -534,6 +544,20 @@ open class Date : BaseColumns {
             }
         }
     }
+
+    fun toUiState(uiIdGenerator: EntryEditState.UiIdGenerator) = DateState(
+        uiIdGenerator.next(),
+        id,
+        entryId,
+        eventOptionsId,
+        epochSecondChainStart,
+        duration,
+        epochSecondChainEnd,
+        timesRepeat,
+        period,
+        timeZoneId,
+        exceptionRules
+    )
 
     companion object {
         const val TABLE_NAME: String = "Dates"

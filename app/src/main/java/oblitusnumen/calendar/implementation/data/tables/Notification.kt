@@ -3,15 +3,25 @@ package oblitusnumen.calendar.implementation.data.tables
 import android.content.ContentValues
 import android.database.Cursor
 import android.provider.BaseColumns
+import androidx.compose.runtime.Immutable
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.Period
+import oblitusnumen.calendar.ui.state.EntryEditState
+import oblitusnumen.calendar.ui.state.NotificationState
 
 
-class Notification(
-    var eventOptionsId: Int?,
-    var offset: Period,
-    var sound: Boolean = true
-) : BaseColumns {
+@Immutable
+class Notification : BaseColumns {
+    var eventOptionsId: Int?
+    var offset: Period
+    var sound: Boolean
+
+    constructor(eventOptionsId: Int?, offset: Period, sound: Boolean = true) {
+        this.eventOptionsId = eventOptionsId
+        this.offset = offset
+        this.sound = sound
+    }
+
     fun create(dbManager: DbManager) {
         val contentValues = ContentValues()
         contentValues.put(COLUMN_NAME_EVENT_OPTIONS_ID, eventOptionsId)
@@ -33,6 +43,13 @@ class Notification(
             arrayOf(eventOptionsId.toString(), offset.toString())
         )
     }
+
+    fun setOptionsId(optionsId: Int) {
+        eventOptionsId = optionsId
+    }
+
+    fun toUiState(uiIdGenerator: EntryEditState.UiIdGenerator) =
+        NotificationState(uiIdGenerator.next(), eventOptionsId, offset, sound)
 
     companion object {
         const val TABLE_NAME: String = "Notifications"

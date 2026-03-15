@@ -521,9 +521,8 @@ fun TagFilterMenu(dbManager: DbManager, chosenTags: List<Tag>, onClose: () -> Un
 
                     for (tag in chosenTags) {
                         DrawTag(
-                            dbManager,
                             tag,
-                            allTags[tag]!!,
+                            allTags[tag]!!.colorOrDefault(dbManager),
                             true
                         ) { if (it) chosenTags += tag else chosenTags -= tag }
                     }
@@ -534,9 +533,8 @@ fun TagFilterMenu(dbManager: DbManager, chosenTags: List<Tag>, onClose: () -> Un
                                 true
                             ) && tag.name != searchTag
                         ) DrawTag(
-                            dbManager,
                             tag.name,
-                            tag,
+                            tag.colorOrDefault(dbManager),
                             false
                         ) { if (it) chosenTags += tag.name else chosenTags -= tag.name }
                     }
@@ -547,9 +545,8 @@ fun TagFilterMenu(dbManager: DbManager, chosenTags: List<Tag>, onClose: () -> Un
 }
 
 @Composable
-fun DrawTag(dbManager: DbManager, name: String, tag: Tag, chosen: Boolean, onChooseToggle: (Boolean) -> Unit) {
+fun DrawTag(name: String, color: Color, chosen: Boolean, onChooseToggle: (Boolean) -> Unit) {
     var selected by remember(name) { mutableStateOf(chosen) }
-    val bgColor = tag.colorOrDefault(dbManager)
 
     InputChip(
         selected,
@@ -560,46 +557,17 @@ fun DrawTag(dbManager: DbManager, name: String, tag: Tag, chosen: Boolean, onCho
         {
             Text(
                 name, style = MaterialTheme.typography.bodyLarge,
-                color = bgColorToTextColor(bgColor)
+                color = bgColorToTextColor(color)
             )
         },
         modifier = Modifier.padding(horizontal = 4.dp),
         trailingIcon = {
             if (selected) Icon(
                 Icons.Filled.Done, null,
-                tint = bgColorToTextColor(bgColor)
+                tint = bgColorToTextColor(color)
             )
         },
-        colors = InputChipDefaults.inputChipColors(containerColor = bgColor, selectedContainerColor = bgColor),
-    )
-}
-
-@Composable
-fun DrawTag(dbManager: DbManager, tag: Tag, openFilter: () -> Unit, rmTag: () -> Unit) {
-    val bgColor = tag.colorOrDefault(dbManager)
-
-    InputChip(
-        false,
-        openFilter,
-        {
-            Box {
-                Text(
-                    tag.name, modifier = Modifier.align(Alignment.Center), style = MaterialTheme.typography.bodyMedium,
-                    color = bgColorToTextColor(bgColor)
-                )
-            }
-        },
-        modifier = Modifier.padding(horizontal = 4.dp, vertical = 6.dp),
-        trailingIcon = {
-            IconButton(onClick = rmTag, Modifier.size(24.dp)) {
-                Icon(
-                    Icons.Filled.Clear, null,
-                    Modifier.size(24.dp),
-                    tint = bgColorToTextColor(bgColor)
-                )
-            }
-        },
-        colors = InputChipDefaults.inputChipColors(containerColor = bgColor),
+        colors = InputChipDefaults.inputChipColors(containerColor = color, selectedContainerColor = color),
     )
 }
 

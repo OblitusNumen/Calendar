@@ -1,12 +1,14 @@
 package oblitusnumen.calendar.ui.element.screen
 
-import androidx.compose.foundation.*
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Call
@@ -15,47 +17,36 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import oblitusnumen.calendar.implementation.bgColorToTextColor
 import oblitusnumen.calendar.implementation.convertMillisToDate
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.Period
 import oblitusnumen.calendar.implementation.data.Period.*
 import oblitusnumen.calendar.implementation.data.tables.Date
-import oblitusnumen.calendar.implementation.data.tables.Entry
-import oblitusnumen.calendar.implementation.data.tables.Notification
 import oblitusnumen.calendar.implementation.data.tables.Tag
 import oblitusnumen.calendar.ui.element.*
 import oblitusnumen.calendar.ui.theme.topBarColors
+import oblitusnumen.calendar.ui.viewmodel.EntryEditViewModel
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
 @Composable
-fun EditEntryScreen(dbManager: DbManager, entryId: Int?, pendingDate: LocalDate?, backPress: () -> Unit) {
-    val entry = remember { entryId?.let { Entry.byId(dbManager, it) } ?: Entry() }
-    var entryName by remember { mutableStateOf(TextFieldValue("entry.name")) }
-    var color by remember { mutableStateOf(Color.Red/*entry.getColorOrDefault()*/) }
-    var tags = remember { mutableStateOf(entry.getTags(dbManager).sortedBy { it.name }) }
-    val dates = remember { mutableStateOf(entry.getDates(dbManager).sortedBy { it.epochSecondChainStart }) }
-    var notifications: List<Notification> by remember {
-        mutableStateOf(run {
-            if (entry.isNotCreated())
-                dbManager.defaultNotifications.map { Notification(null, it.first, it.second) }
-            else
-                entry.getNotifications(dbManager).sortedBy { it.offset.secondsApproximation() }
-        })
-    }
-    var contents by remember { mutableStateOf(TextFieldValue("entry.getContents()")) }  // FIXME: this should be List<Content>
-    val hideInCalendarView: MutableState<Boolean> = remember { mutableStateOf(false/*entry.excludeFromCalendarView*/) }
+fun EditEntryScreen(
+    dbManager: DbManager,
+    viewModel: EntryEditViewModel = viewModel(),
+    pendingDate: LocalDate?,
+    backPress: () -> Unit
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+
     val periodSelectorDate = remember { mutableStateOf<Date?>(null) }
     val dateTimePicker = remember { DateTimePicker() }
 
@@ -63,28 +54,20 @@ fun EditEntryScreen(dbManager: DbManager, entryId: Int?, pendingDate: LocalDate?
         if (pendingDate != null)
             dateTimePicker.timePick({}, {
                 val newDate = Date(
-                    entry,
                     ZonedDateTime.of(it.atDate(pendingDate), ZoneId.systemDefault()),
                     Once(),
                     1,
                     Once()
                 )
                 periodSelectorDate.value = newDate
-                dates.value += newDate
+                viewModel.addDate(newDate)
             })
     }
     dateTimePicker.tryCompose()
 
     Scaffold(topBar = {
         EditEntryTopBar(
-            dbManager,
-            entry,
-            entryName,
-            color,
-            tags.value,
-            dates.value,
-            notifications,
-            contents,
+            { viewModel.commitToDb(dbManager) },
             backPress
         )
     }) { paddingValues ->
@@ -94,29 +77,17 @@ fun EditEntryScreen(dbManager: DbManager, entryId: Int?, pendingDate: LocalDate?
             // name
             OutlinedTextField(
                 modifier = Modifier.fillMaxWidth().padding(12.dp),
-                value = entryName, onValueChange = {
+                value = state.name, onValueChange = {
                     if (!it.text.contains('\n'))
-                        entryName = it
+                        viewModel.setName(it)
                 },
                 textStyle = MaterialTheme.typography.titleLarge,
                 label = { Text("Enter event name") },
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 trailingIcon = {
-                    var colorPickerShown by remember { mutableStateOf(false) }
-                    Box(
-                        Modifier.padding(horizontal = 8.dp)
-                            .background(color, CircleShape).border(0.dp, color, CircleShape).size(48.dp).clickable {
-                                colorPickerShown = true
-                            }
-                    )
-
-                    if (colorPickerShown)
-                        colorPicker(color, true) {
-                            if (it != null) {
-                                color = it
-                            }
-                            colorPickerShown = false
-                        }
+                    ColorSelectButton(state.color, true) {
+                        viewModel.setColor(it)
+                    }
                 }
             )
 
@@ -124,30 +95,32 @@ fun EditEntryScreen(dbManager: DbManager, entryId: Int?, pendingDate: LocalDate?
             OutlinedTextField(
                 modifier = Modifier.defaultMinSize(minHeight = 52.dp).fillMaxWidth().padding(horizontal = 12.dp)
                     .padding(bottom = 12.dp),
-                value = contents, onValueChange = {
-                    contents = it
+                value = state.contents, onValueChange = {
+                    viewModel.setContents(it)
                 },
                 textStyle = MaterialTheme.typography.bodyLarge,
                 label = { Text("Enter description") },
                 minLines = 5
             )
-            HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
-
-            // hide from calendar view
-            CheckboxOption(hideInCalendarView, "Hide from calendar view")
+//            HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
+//
+//            // hide from calendar view
+//            CheckboxOption(hideInCalendarView, "Hide from calendar view")
 
             // tags
             var tagChoose by remember { mutableStateOf(false) }
-            if (tagChoose) TagChooseMenu(dbManager, tags.value, { tagChoose = false }, { tags.value = it })
+            if (tagChoose) TagChooseMenu(dbManager, state.tags, { tagChoose = false }, { viewModel.setTags(it) })
+
             Row {
                 Icon(Icons.Filled.Star, "Tags", Modifier.padding(8.dp))
                 FlowRow(
                     Modifier.fillMaxWidth().padding(end = 16.dp)
                 ) {
-                    for (tag in tags.value)
-                        DrawTag(dbManager, tags, tag)
+                    for (tag in state.tags)
+                        DrawTag(tag.name, tag.colorOrDefault(dbManager)) { viewModel.setTags(state.tags - tag) }
                 }
             }
+
             Box(Modifier.fillMaxWidth().padding(top = 8.dp).clickable {
                 tagChoose = true
             }) {
@@ -161,19 +134,21 @@ fun EditEntryScreen(dbManager: DbManager, entryId: Int?, pendingDate: LocalDate?
             HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
 
             // dates
-            for (date in dates.value)
-                DrawDate(date)
+            for (date in state.dateStates)
+                key(date.uiId) {
+                    // FIXME:  toDbEntity() is a hack; do the fix in other places
+                    DrawDate(date.toDbEntity(), periodSelectorDate, dateTimePicker) { viewModel.rmDate(date.uiId) }
+                }
             Box(Modifier.defaultMinSize(minHeight = 52.dp).fillMaxWidth()/*.padding(top = 8.dp)*/.clickable {
                 dateTimePicker.dateTimePick({}, {
                     val newDate = Date(
-                        entry,
                         ZonedDateTime.of(it, ZoneId.systemDefault()),
                         Once(),
                         1,
                         Once()
                     )
                     periodSelectorDate.value = newDate
-                    dates.value += newDate
+                    viewModel.addDate(newDate)
                 })
             }) {
                 Text(
@@ -189,24 +164,19 @@ fun EditEntryScreen(dbManager: DbManager, entryId: Int?, pendingDate: LocalDate?
             var notificationChoose by remember { mutableStateOf(false) }
             if (notificationChoose) DrawNotificationAddMenu({ offset, sound ->
                 notificationChoose = false
-                for (notification in notifications) {
+                for (notification in state.notificationStates) {
                     if (notification.offset.toString() == offset.toString()) {
-                        notifications -= notification
-                        break
+                        viewModel.setNotificationSound(notification.uiId, sound)
+                        return@DrawNotificationAddMenu
                     }
                 }
-                notifications = (notifications + Notification(
-                    entry.id,
-                    offset,
-                    sound
-                )).sortedBy { it.offset.secondsApproximation() }
+                viewModel.addNotification(offset, sound)
             }, { notificationChoose = false })
             var updated by remember { mutableStateOf(false) }
             updated// fixme this is hack...
-            for (notification in notifications) {
+            for (notification in state.notificationStates) key(notification.uiId) {
                 Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp).clickable {
-                    notification.sound = !notification.sound
-                    updated = !updated
+                    viewModel.setNotificationSound(notification.uiId, !notification.sound)
                 }) {
                     Icon(
                         if (notification.sound) Icons.Filled.Notifications else Icons.Outlined.Notifications, null,
@@ -221,7 +191,7 @@ fun EditEntryScreen(dbManager: DbManager, entryId: Int?, pendingDate: LocalDate?
                     IconButton(
                         modifier = Modifier.align(Alignment.CenterVertically),
                         onClick = {
-                            notifications -= notification
+                            viewModel.rmNotification(notification.uiId)
                         },
                         content = { Icon(Icons.Filled.Clear, contentDescription = null) })
                 }
@@ -244,7 +214,7 @@ fun EditEntryScreen(dbManager: DbManager, entryId: Int?, pendingDate: LocalDate?
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun TagChooseMenu(dbManager: DbManager, tags: List<Tag>, onClose: () -> Unit, tagAcceptor: (List<Tag>) -> Unit) {
+fun TagChooseMenu(dbManager: DbManager, tags: List<Tag>, onClose: () -> Unit, onTagsChange: (List<Tag>) -> Unit) {
     val allTags = Tag.all(dbManager).groupingBy { it.name }.reduce { _, accumulator, _ -> accumulator }
     val chosenTags: MutableSet<String> = tags.map { it.name }.toMutableSet()
     var searchTag by remember { mutableStateOf("") }
@@ -259,9 +229,7 @@ fun TagChooseMenu(dbManager: DbManager, tags: List<Tag>, onClose: () -> Unit, ta
         confirmButton = {
             TextButton(onClick = {
                 onClose()
-                tagAcceptor(chosenTags.map {
-                    allTags.getOrElse(it) { Tag(it) }
-                })
+                onTagsChange(chosenTags.map { allTags[it] ?: Tag(it) })
             }) {
                 Text("OK")
             }
@@ -285,14 +253,17 @@ fun TagChooseMenu(dbManager: DbManager, tags: List<Tag>, onClose: () -> Unit, ta
                     searchTag // FIXME: yet another filthy hack
                     if (searchTag.isNotEmpty() && !chosenTags.contains(searchTag)) {
                         DrawTag(
-                            dbManager,
                             searchTag,
-                            null,
+                            dbManager.defaultTagColor,
                             false
                         ) { if (it) chosenTags += searchTag else chosenTags -= searchTag }
                     }
                     for (tag in chosenTags) {
-                        DrawTag(dbManager, tag, allTags[tag], true) { if (it) chosenTags += tag else chosenTags -= tag }
+                        DrawTag(
+                            tag,
+                            allTags[tag]!!.colorOrDefault(dbManager),
+                            true
+                        ) { if (it) chosenTags += tag else chosenTags -= tag }
                     }
                     for (tag in allTags.values) {
                         if (!chosenTags.contains(tag.name) && tag.name.contains(
@@ -300,9 +271,8 @@ fun TagChooseMenu(dbManager: DbManager, tags: List<Tag>, onClose: () -> Unit, ta
                                 true
                             ) && tag.name != searchTag
                         ) DrawTag(
-                            dbManager,
                             tag.name,
-                            tag,
+                            tag.colorOrDefault(dbManager),
                             false
                         ) { if (it) chosenTags += tag.name else chosenTags -= tag.name }
                     }
@@ -313,44 +283,15 @@ fun TagChooseMenu(dbManager: DbManager, tags: List<Tag>, onClose: () -> Unit, ta
 }
 
 @Composable
-fun DrawTag(dbManager: DbManager, name: String, tag: Tag?, chosen: Boolean, onChooseToggle: (Boolean) -> Unit) {
-    var selected by remember(name) { mutableStateOf(chosen) }
-    val bgColor = tag?.colorOrDefault(dbManager) ?: dbManager.defaultTagColor
-    InputChip(
-        selected,
-        {
-            selected = !selected
-            onChooseToggle(selected)
-        },
-        {
-            Text(
-                name, style = MaterialTheme.typography.bodyLarge,
-                color = bgColorToTextColor(bgColor)
-            )
-        },
-        modifier = Modifier.padding(horizontal = 4.dp),
-        trailingIcon = {
-            if (selected) Icon(
-                Icons.Filled.Done, null,
-                tint = bgColorToTextColor(bgColor)
-            )
-        },
-        colors = InputChipDefaults.inputChipColors(containerColor = bgColor, selectedContainerColor = bgColor),
-    )
-}
-
-@Composable
 fun DrawDate(
-    dateTimePicker: DateTimePicker,
     date: Date,
     periodSelectorDate: MutableState<Date?>,
-    dates: MutableState<List<Date>>
+    dateTimePicker: DateTimePicker,
+    onRmDate: () -> Unit,
 ) {
-    var dates by dates
     var periodSelectorDate by remember { periodSelectorDate }
     if (periodSelectorDate == date)
         PeriodSelectorDialog({ periodSelectorDate = null }, { periodSelectorDate = null }, date)
-    var updated by remember { mutableStateOf(false) }
     val dateStartText = (if (date.isPeriodic) "from " else "") +
             date.getFirstZoneDateTime().format(DateTimeFormatter.ofPattern("dd MMM yyyy "))
     val timeText = date.getFirstZoneDateTime().format(DateTimeFormatter.ofPattern("HH:mm"))
@@ -360,15 +301,20 @@ fun DrawDate(
                     " until " + date.getLastZoneDateTime().format(DateTimeFormatter.ofPattern("dd MMM yyyy"))
     else
         PeriodType(date.period).toString()
+
     Column(Modifier.padding(bottom = 6.dp)) {
+        var updated by remember { mutableStateOf(false) }
         updated// fixme this is hack...
+
         Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp)) {
             Icon(
                 Icons.Outlined.Call, "",
                 Modifier.align(Alignment.CenterVertically).padding(8.dp)
             )
+
             // pick date
             val localDateTime = date.getFirstZoneDateTime().toLocalDateTime()
+
             Text(
                 modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp, vertical = 8.dp)
                     .weight(.5f).clickable {
@@ -385,6 +331,7 @@ fun DrawDate(
                 text = dateStartText,
                 style = MaterialTheme.typography.bodyLarge
             )
+
             // pick time
             Text(
                 modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp, vertical = 8.dp)
@@ -402,11 +349,13 @@ fun DrawDate(
                 text = timeText,
                 style = MaterialTheme.typography.bodyLarge
             )
+
             IconButton(
                 modifier = Modifier.align(Alignment.CenterVertically),
-                onClick = { dates -= date },
+                onClick = { onRmDate() },
                 content = { Icon(Icons.Filled.Clear, contentDescription = null) })
         }
+
         // choose period
         Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp).clickable {
             periodSelectorDate = date
@@ -421,6 +370,7 @@ fun DrawDate(
         if (date.isPeriodic) {
             for (epochDay in date.exceptionRules.listAll()) {
                 val textException = "except " + convertMillisToDate(epochDay * 86400000)
+
                 Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp).padding(horizontal = 40.dp)) {
                     Text(
                         modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp)
@@ -428,15 +378,18 @@ fun DrawDate(
                         text = textException,
                         style = MaterialTheme.typography.bodyLarge
                     )
+
                     IconButton(
                         modifier = Modifier.align(Alignment.CenterVertically),
                         onClick = {
                             date.removeExceptions(LocalDate.ofEpochDay(epochDay))
                             updated = !updated
                         },
-                        content = { Icon(Icons.Filled.Clear, contentDescription = null) })
+                        content = { Icon(Icons.Filled.Clear, contentDescription = null) }
+                    )
                 }
             }
+
             Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp).clickable {
                 dateTimePicker.datePick({}, {
                     date.addExceptions(it)
@@ -473,19 +426,12 @@ fun DrawWeekdayButton(active: MutableState<Boolean>, text: String) {
 
 @Composable
 fun PeriodSelectorDialog(onConfirm: () -> Unit, onDismiss: () -> Unit, date: Date) {
-    var periodCount by remember {
-        mutableStateOf(
-            TextFieldValue(
-                if (date.period is Once)
-                    "1"
-                else
-                    date.period.count.toString()
-            )
-        )
-    }
-    var selectedPeriod by remember { mutableStateOf(PeriodType(date.period)) }
-    var selectedMillis by
-    remember {
+    val initialPeriodCount = if (date.period is Once) 1 else date.period.count
+    val initialPeriodType = PeriodType(date.period)
+    var selectedPeriodCount: Long by remember { mutableStateOf(initialPeriodCount) }
+    var selectedPeriodType by remember { mutableStateOf(initialPeriodType) }
+
+    var selectedMillis by remember {
         mutableStateOf(
             (if (date.isEndless) date.getFirstZoneDateTime() else date.getLastZoneDateTime()).toLocalDate()
                 .toEpochDay() * 86_400_000
@@ -498,6 +444,7 @@ fun PeriodSelectorDialog(onConfirm: () -> Unit, onDismiss: () -> Unit, date: Dat
             else DateSequenceEndVariant.BY_DATE
         )
     }
+
     val datePeriod = date.period
     val dayOfWeek = date.getFirstZoneDateTime().dayOfWeek.value
     val monSelected =
@@ -514,6 +461,7 @@ fun PeriodSelectorDialog(onConfirm: () -> Unit, onDismiss: () -> Unit, date: Dat
         remember { mutableStateOf(if (datePeriod is Weekday) datePeriod.testWeekday(Weekday.WD_SAT) else dayOfWeek == 6) }
     val sunSelected =
         remember { mutableStateOf(if (datePeriod is Weekday) datePeriod.testWeekday(Weekday.WD_SUN) else dayOfWeek == 7) }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         dismissButton = {
@@ -523,17 +471,18 @@ fun PeriodSelectorDialog(onConfirm: () -> Unit, onDismiss: () -> Unit, date: Dat
         },
         confirmButton = {
             TextButton(onClick = {
-                var periodCountText = periodCount.text
-                if (periodCountText.isEmpty() || periodCountText.toLong() <= 0L) {
-                    if (selectedPeriod.period is Once)
-                        periodCountText = "0"
+                val count = if (selectedPeriodCount <= 0)
+                    if (selectedPeriodType.period is Once)
+                        0
                     else {// TODO:
-//                            showErrorToast("Could not parse count: '$periodCountText'")
+//                    showErrorToast("Could not parse count: '$periodCountText'")
                         return@TextButton
                     }
-                }
+                else
+                    selectedPeriodCount
+
                 date.setPeriod(
-                    if (selectedPeriod.period is Weekday) {
+                    if (selectedPeriodType.period is Weekday) {
                         val weekdayDays = (if (monSelected.value) Weekday.WD_MON else 0) +
                                 (if (tueSelected.value) Weekday.WD_TUE else 0) +
                                 (if (wedSelected.value) Weekday.WD_WED else 0) +
@@ -542,15 +491,16 @@ fun PeriodSelectorDialog(onConfirm: () -> Unit, onDismiss: () -> Unit, date: Dat
                                 (if (satSelected.value) Weekday.WD_SAT else 0) +
                                 (if (sunSelected.value) Weekday.WD_SUN else 0)
                         Weekday(
-                            periodCountText.toLong(),
+                            count,
                             if (weekdayDays == 0L)
                                 Weekday.dayOfWeekIndexToEnum(date.getFirstZoneDateTime().dayOfWeek.value)
                             else
                                 weekdayDays
                         )
                     } else
-                        selectedPeriod.period.updateCount(periodCountText.toLong())
+                        selectedPeriodType.period.updateCount(count)
                 )
+
                 if (date.isPeriodic) {
                     when (endVariantSelectedOption) {
                         DateSequenceEndVariant.ENDLESS -> date.makeEndless()
@@ -566,6 +516,7 @@ fun PeriodSelectorDialog(onConfirm: () -> Unit, onDismiss: () -> Unit, date: Dat
                         }
                     }
                 }
+
                 onConfirm()
             }) {
                 Text("OK")
@@ -573,47 +524,14 @@ fun PeriodSelectorDialog(onConfirm: () -> Unit, onDismiss: () -> Unit, date: Dat
         },
         text = {
             Column {
-                Row {
-                    //period count text field
-                    val focusRequester = remember { FocusRequester() }
-                    OutlinedTextField(
-                        enabled = selectedPeriod.period !is Once,
-                        modifier = Modifier.width(100.dp).padding(horizontal = 8.dp).focusRequester(focusRequester),
-                        value = periodCount, onValueChange = {
-                            val text = it.text
-                            try {
-                                if (text.toLong() >= 0 && text.length <= 3) periodCount = it
-                            } catch (_: NumberFormatException) {
-                                if (text.isEmpty())
-                                    periodCount = it
-                            }
-                        },
-                        textStyle = MaterialTheme.typography.bodyLarge,
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Number,
-                            imeAction = ImeAction.Done
-                        ),
-                        label = { Text("Count") }
-                    )
+                PeriodSelector(
+                    initialPeriodType,
+                    initialPeriodCount,
+                    { selectedPeriodType = it },
+                    { selectedPeriodCount = it }
+                )
 
-                    materialSpinner(
-                        "Type", PeriodType.getAll(),
-                        {
-                            selectedPeriod = it
-                        },
-                        selectedPeriod,
-                        Modifier.padding(horizontal = 8.dp).width(150.dp)
-                    )
-
-                    LaunchedEffect(selectedPeriod) {
-                        if (selectedPeriod.period !is Once) {
-                            // Place cursor at the end of current text
-                            periodCount = periodCount.copy(selection = TextRange(periodCount.text.length))
-                            focusRequester.requestFocus()
-                        }
-                    }
-                }
-                if (selectedPeriod.period is Weekday) {
+                if (selectedPeriodType.period is Weekday) {
                     Row {
                         DrawWeekdayButton(monSelected, "Mon")
                         DrawWeekdayButton(tueSelected, "Tue")
@@ -624,14 +542,16 @@ fun PeriodSelectorDialog(onConfirm: () -> Unit, onDismiss: () -> Unit, date: Dat
                         DrawWeekdayButton(sunSelected, "Sun")
                     }
                 }
+
                 HorizontalDivider(
                     modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp).padding(top = 8.dp)
                 )
+
                 //end variant selection
                 //endless radiobutton
                 Row(
                     Modifier.fillMaxWidth().clickable {
-                        if (selectedPeriod.period !is Once) endVariantSelectedOption =
+                        if (selectedPeriodType.period !is Once) endVariantSelectedOption =
                             DateSequenceEndVariant.ENDLESS
                     }
                 ) {
@@ -639,21 +559,22 @@ fun PeriodSelectorDialog(onConfirm: () -> Unit, onDismiss: () -> Unit, date: Dat
                         selected = (endVariantSelectedOption == DateSequenceEndVariant.ENDLESS),
                         onClick = { endVariantSelectedOption = DateSequenceEndVariant.ENDLESS },
                         Modifier.align(Alignment.CenterVertically),
-                        enabled = selectedPeriod.period !is Once
+                        enabled = selectedPeriodType.period !is Once
                     )
                     Text(
                         "Endless",
                         Modifier.padding(vertical = 4.dp, horizontal = 16.dp).align(Alignment.CenterVertically),
                         style = MaterialTheme.typography.bodyLarge,
-                        color = if (selectedPeriod.period !is Once) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(
+                        color = if (selectedPeriodType.period !is Once) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(
                             alpha = .4F
                         )
                     )
                 }
+
                 //end date radiobutton
                 Row(
                     Modifier.fillMaxWidth().clickable {
-                        if (selectedPeriod.period !is Once) endVariantSelectedOption =
+                        if (selectedPeriodType.period !is Once) endVariantSelectedOption =
                             DateSequenceEndVariant.BY_DATE
                     }
                 ) {
@@ -661,20 +582,21 @@ fun PeriodSelectorDialog(onConfirm: () -> Unit, onDismiss: () -> Unit, date: Dat
                         selected = (endVariantSelectedOption == DateSequenceEndVariant.BY_DATE),
                         onClick = { endVariantSelectedOption = DateSequenceEndVariant.BY_DATE },
                         Modifier.align(Alignment.CenterVertically),
-                        enabled = selectedPeriod.period !is Once
+                        enabled = selectedPeriodType.period !is Once
                     )
                     DateTimePicker.datePickerField(
                         selectedMillis, "End date",
-                        selectedPeriod.period !is Once
+                        selectedPeriodType.period !is Once
                     ) {
                         endVariantSelectedOption = DateSequenceEndVariant.BY_DATE
                         selectedMillis = it
                     }
                 }
+
                 //occurrences radiobutton
                 Row(
                     Modifier.fillMaxWidth().clickable {
-                        if (selectedPeriod.period !is Once) endVariantSelectedOption =
+                        if (selectedPeriodType.period !is Once) endVariantSelectedOption =
                             DateSequenceEndVariant.OCCURRENCES
                     }
                 ) {
@@ -682,10 +604,11 @@ fun PeriodSelectorDialog(onConfirm: () -> Unit, onDismiss: () -> Unit, date: Dat
                         selected = (endVariantSelectedOption == DateSequenceEndVariant.OCCURRENCES),
                         onClick = { endVariantSelectedOption = DateSequenceEndVariant.OCCURRENCES },
                         Modifier.align(Alignment.CenterVertically),
-                        enabled = selectedPeriod.period !is Once
+                        enabled = selectedPeriodType.period !is Once
                     )
+
                     OutlinedTextField(
-                        enabled = selectedPeriod.period !is Once,
+                        enabled = selectedPeriodType.period !is Once,
                         modifier = Modifier.fillMaxWidth().padding(8.dp),
                         value = occurrencesCount,
                         onValueChange = {
@@ -712,26 +635,24 @@ fun PeriodSelectorDialog(onConfirm: () -> Unit, onDismiss: () -> Unit, date: Dat
 }
 
 @Composable
-fun DrawTag(dbManager: DbManager, tags: MutableState<List<Tag>>, tag: Tag) {
-    var tags by tags
-    val bgColor = tag.colorOrDefault(dbManager)
+fun DrawTag(name: String, color: Color, onRemove: () -> Unit) {
     InputChip(
         false,
-        { tags = tags - tag },
+        onRemove,
         {
             Text(
-                tag.name, style = MaterialTheme.typography.bodyLarge,
-                color = bgColorToTextColor(bgColor)
+                name, style = MaterialTheme.typography.bodyLarge,
+                color = bgColorToTextColor(color)
             )
         },
         modifier = Modifier.padding(horizontal = 4.dp),
         trailingIcon = {
             Icon(
                 Icons.Filled.Clear, null,
-                tint = bgColorToTextColor(bgColor)
+                tint = bgColorToTextColor(color)
             )
         },
-        colors = InputChipDefaults.inputChipColors(containerColor = bgColor),
+        colors = InputChipDefaults.inputChipColors(containerColor = color),
     )
 }
 
@@ -749,6 +670,7 @@ fun CheckboxOption(checked: MutableState<Boolean>, label: String) {
             onCheckedChange = { checked.value = it },
             modifier = Modifier.align(Alignment.CenterVertically)
         )
+
         Text(label, modifier = Modifier.align(Alignment.CenterVertically))
     }
 }
@@ -756,37 +678,17 @@ fun CheckboxOption(checked: MutableState<Boolean>, label: String) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditEntryTopBar(
-    dbManager: DbManager,
-    entry: Entry,
-    entryName: TextFieldValue,
-    color: Color,
-    tags: List<Tag>,
-    dates: List<Date>,
-    notifications: List<Notification>,
-    contents: TextFieldValue,
+    onDone: () -> Unit,
     backPress: () -> Unit
 ) {// TODO: confirm
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
+
     CenterAlignedTopAppBar(
         colors = topBarColors(),
         scrollBehavior = scrollBehavior,
         navigationIcon = { BackPressButton(backPress) },
         title = { Text("Edit event", maxLines = 1) },
-        actions = {
-            EditDoneButton {
-                entry.set(
-                    dbManager,
-                    entryName.text,
-                    false,
-                    color,
-                    tags,
-                    dates,
-                    notifications,
-                    contents.text
-                )// FIXME: catch exception
-                backPress()
-            }
-        },
+        actions = { EditDoneButton(onDone) },
     )
 }
 

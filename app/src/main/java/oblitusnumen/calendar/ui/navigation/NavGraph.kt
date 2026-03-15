@@ -10,6 +10,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -21,6 +22,8 @@ import oblitusnumen.calendar.implementation.toColor
 import oblitusnumen.calendar.implementation.toInt
 import oblitusnumen.calendar.ui.element.DrawBottomBar
 import oblitusnumen.calendar.ui.element.screen.*
+import oblitusnumen.calendar.ui.state.EntryEditState
+import oblitusnumen.calendar.ui.viewmodel.EntryEditViewModel
 import java.time.LocalDate
 
 @Composable
@@ -172,7 +175,9 @@ fun NavigationGraph(navController: NavHostController, dbManager: DbManager, star
             else
                 NavRoutes.EntryEdit.getArgDate4new(navBackStackEntry)
 
-            EditEntryScreen(dbManager, entryId, fromDay, { NavRoutes.backPress(navController) })
+            viewModel { EntryEditViewModel(EntryEditState.initial(dbManager, entryId, false)) }
+
+            EditEntryScreen(dbManager, viewModel(), fromDay, { NavRoutes.backPress(navController) })
         }
 
         composable(route = NavRoutes.EntryDetails.route) { navBackStackEntry ->

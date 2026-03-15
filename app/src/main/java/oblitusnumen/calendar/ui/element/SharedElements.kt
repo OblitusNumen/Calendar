@@ -37,8 +37,8 @@ import oblitusnumen.calendar.implementation.data.views.ViewEntryWithOptions
 import oblitusnumen.calendar.implementation.defaultZoneId
 import oblitusnumen.calendar.implementation.getZonedFromEpochSeconds
 import oblitusnumen.calendar.ui.PositionStatus
-import oblitusnumen.calendar.ui.element.screen.DrawTag
 import oblitusnumen.calendar.ui.element.screen.OffsetType
+import oblitusnumen.calendar.ui.element.screen.PeriodType
 import oblitusnumen.calendar.ui.element.screen.TagFilterMenu
 import oblitusnumen.calendar.ui.navigation.NavRoutes
 import oblitusnumen.calendar.ui.theme.topBarColors
@@ -93,7 +93,7 @@ fun SearchTopBar(
 @Composable
 fun DrawNotificationAddMenu(onConfirm: (Period, Boolean) -> Unit, onDismiss: () -> Unit) {
     var silent by remember { mutableStateOf(false) }
-    var offsetCount by remember { mutableStateOf(TextFieldValue("1")) }
+    var offsetCount: Long by remember { mutableStateOf(0) }
     var selectedOffsetType by remember { mutableStateOf(OffsetType(Once())) }
 
     AlertDialog(
@@ -105,19 +105,22 @@ fun DrawNotificationAddMenu(onConfirm: (Period, Boolean) -> Unit, onDismiss: () 
         },
         confirmButton = {
             TextButton(onClick = {
-                var offsetCountText = offsetCount.text
-                if (offsetCountText.isEmpty() || offsetCountText.toLong() < 0L) {
+                val count = if (offsetCount < 0)
                     if (selectedOffsetType.period is Once)
-                        offsetCountText = "0"
+                        0
                     else {// TODO:
-//                            showErrorToast("Could not parse count: '$periodCountText'")
+//                    showErrorToast("Could not parse count: '$periodCountText'")
                         return@TextButton
                     }
-                }
+                else
+                    offsetCount
                 onConfirm(
-                    if (offsetCountText == "0" || selectedOffsetType.period is Once) Once() else {
-                        selectedOffsetType.period.updateCount(offsetCountText.toLong())
-                    }, !silent
+                    if (count == 0L || selectedOffsetType.period is Once)
+                        Once()
+                    else {
+                        selectedOffsetType.period.updateCount(count)
+                    },
+                    !silent
                 )
             }) {
                 Text("OK")
@@ -125,45 +128,8 @@ fun DrawNotificationAddMenu(onConfirm: (Period, Boolean) -> Unit, onDismiss: () 
         },
         text = {
             Column {
-                Row {
-                    //offset text field
-                    val focusRequester = remember { FocusRequester() }
-                    OutlinedTextField(// FIXME: ui paddings
-                        enabled = selectedOffsetType.period !is Once,
-                        modifier = Modifier.width(100.dp).padding(horizontal = 8.dp)
-                            .focusRequester(focusRequester),
-                        value = offsetCount, onValueChange = {
-                            val text = it.text
-                            try {
-                                if (text.toLong() >= 0 && text.length <= 3) offsetCount = it
-                            } catch (_: NumberFormatException) {
-                                if (text.isEmpty())
-                                    offsetCount = it
-                            }
-                        },
-                        textStyle = MaterialTheme.typography.bodyLarge,
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Number,
-                            imeAction = ImeAction.Done
-                        ),
-                        label = { Text("Count") }
-                    )
+                OffsetSelector(OffsetType(Once()), 1, { selectedOffsetType = it }, { offsetCount = it })
 
-                    materialSpinner(
-                        "Type", OffsetType.getAll(),
-                        { selectedOffsetType = it },
-                        selectedOffsetType,
-                        Modifier.padding(horizontal = 8.dp).width(150.dp)
-                    )
-
-                    LaunchedEffect(selectedOffsetType) {
-                        if (selectedOffsetType.period !is Once) {
-                            // Place cursor at the end of current text
-                            offsetCount = offsetCount.copy(selection = TextRange(offsetCount.text.length))
-                            focusRequester.requestFocus()
-                        }
-                    }
-                }
                 Row {
                     Text("silent")
                     Switch(silent, onCheckedChange = { silent = it })
@@ -171,6 +137,131 @@ fun DrawNotificationAddMenu(onConfirm: (Period, Boolean) -> Unit, onDismiss: () 
             }
         }
     )
+}
+
+
+@Composable
+fun PeriodSelector(
+    initialPeriodType: PeriodType,
+    initialCount: Long?,
+    onSelectPeriodType: (PeriodType) -> Unit,
+    onSetCount: (Long) -> Unit
+) {
+    var offsetCount: TextFieldValue by remember { mutableStateOf(TextFieldValue(initialCount?.let { "$it" } ?: "")) }
+    var selectedPeriodType by remember { mutableStateOf(initialPeriodType) }
+
+    val onSetCount = { newCount: TextFieldValue ->
+        offsetCount = newCount
+        val offsetCountText = newCount.text
+        onSetCount(if (offsetCountText.isEmpty() || offsetCountText.toLong() < 0L) -1 else offsetCountText.toLong())
+    }
+    val onSelectPeriodType = { newPeriodType: PeriodType ->
+        selectedPeriodType = newPeriodType
+        onSelectPeriodType(newPeriodType)
+    }
+
+    Row {
+        //offset text field
+        val focusRequester = remember { FocusRequester() }
+        OutlinedTextField(// FIXME: ui paddings
+            enabled = selectedPeriodType.period !is Once,
+            modifier = Modifier.width(100.dp).padding(horizontal = 8.dp)
+                .focusRequester(focusRequester),
+            value = offsetCount, onValueChange = {
+                val text = it.text
+                try {
+                    if (text.toLong() >= 0 && text.length <= 3)
+                        onSetCount(it)
+                } catch (_: NumberFormatException) {
+                    if (text.isEmpty())
+                        onSetCount(it)
+                }
+            },
+            textStyle = MaterialTheme.typography.bodyLarge,
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Number,
+                imeAction = ImeAction.Done
+            ),
+            label = { Text("Count") }
+        )
+
+        materialSpinner(
+            "Type", PeriodType.getAll(),
+            onSelectPeriodType,
+            selectedPeriodType,
+            Modifier.padding(horizontal = 8.dp).width(150.dp)
+        )
+
+        LaunchedEffect(selectedPeriodType) {
+            if (selectedPeriodType.period !is Once) {
+                // Place cursor at the end of current text
+                offsetCount = offsetCount.copy(selection = TextRange(offsetCount.text.length))
+                focusRequester.requestFocus()
+            }
+        }
+    }
+}
+
+@Composable
+fun OffsetSelector(
+    initialOffsetType: OffsetType,
+    initialCount: Long?,
+    onSelectOffsetType: (OffsetType) -> Unit,
+    onSetCount: (Long) -> Unit
+) {
+    var offsetCount: TextFieldValue by remember { mutableStateOf(TextFieldValue(initialCount?.let { "$it" } ?: "")) }
+    var selectedOffsetType by remember { mutableStateOf(initialOffsetType) }
+
+    val onSetCount = { newCount: TextFieldValue ->
+        offsetCount = newCount
+        val offsetCountText = newCount.text
+        onSetCount(if (offsetCountText.isEmpty() || offsetCountText.toLong() < 0L) -1 else offsetCountText.toLong())
+    }
+    val onSelectOffsetType = { newOffsetType: OffsetType ->
+        selectedOffsetType = newOffsetType
+        onSelectOffsetType(newOffsetType)
+    }
+
+    Row {
+        //offset text field
+        val focusRequester = remember { FocusRequester() }
+        OutlinedTextField(// FIXME: ui paddings
+            enabled = selectedOffsetType.period !is Once,
+            modifier = Modifier.width(100.dp).padding(horizontal = 8.dp)
+                .focusRequester(focusRequester),
+            value = offsetCount, onValueChange = {
+                val text = it.text
+                try {
+                    if (text.toLong() >= 0 && text.length <= 3)
+                        onSetCount(it)
+                } catch (_: NumberFormatException) {
+                    if (text.isEmpty())
+                        onSetCount(it)
+                }
+            },
+            textStyle = MaterialTheme.typography.bodyLarge,
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Number,
+                imeAction = ImeAction.Done
+            ),
+            label = { Text("Count") }
+        )
+
+        materialSpinner(
+            "Type", OffsetType.getAll(),
+            onSelectOffsetType,
+            selectedOffsetType,
+            Modifier.padding(horizontal = 8.dp).width(150.dp)
+        )
+
+        LaunchedEffect(selectedOffsetType) {
+            if (selectedOffsetType.period !is Once) {
+                // Place cursor at the end of current text
+                offsetCount = offsetCount.copy(selection = TextRange(offsetCount.text.length))
+                focusRequester.requestFocus()
+            }
+        }
+    }
 }
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
@@ -302,7 +393,9 @@ fun TopBarTagFilterTitle(dbManager: DbManager, tagsFilter: List<Tag>, tagsFilter
         LazyRow(Modifier.weight(1f)/*.clip(RoundedCornerShape(100))*/) {
             for (tag in tagsFilter)
                 item {
-                    DrawTag(dbManager, tag, { isFilterOpen = true }) { tagsFilterUpdate(tagsFilter - tag) }
+                    DrawTag(tag.name, tag.colorOrDefault(dbManager), { isFilterOpen = true }) {
+                        tagsFilterUpdate(tagsFilter - tag)
+                    }
                 }
         }
 
@@ -313,6 +406,33 @@ fun TopBarTagFilterTitle(dbManager: DbManager, tagsFilter: List<Tag>, tagsFilter
             MaterialTheme.colorScheme.onSurface.copy(alpha = .5f)
         )
     }
+}
+
+@Composable
+fun DrawTag(name: String, color: Color, openFilter: () -> Unit, rmTag: () -> Unit) {
+    InputChip(
+        false,
+        openFilter,
+        {
+            Box {
+                Text(
+                    name, modifier = Modifier.align(Alignment.Center), style = MaterialTheme.typography.bodyMedium,
+                    color = bgColorToTextColor(color)
+                )
+            }
+        },
+        modifier = Modifier.padding(horizontal = 4.dp, vertical = 6.dp),
+        trailingIcon = {
+            IconButton(onClick = rmTag, Modifier.size(24.dp)) {
+                Icon(
+                    Icons.Filled.Clear, null,
+                    Modifier.size(24.dp),
+                    tint = bgColorToTextColor(color)
+                )
+            }
+        },
+        colors = InputChipDefaults.inputChipColors(containerColor = color),
+    )
 }
 
 @Composable
@@ -362,11 +482,11 @@ fun ScheduleDialog(dbManager: DbManager, entry: ViewEntryWithOptions, onClose: (
                 dialogShown = false
                 dateTimePicker.dateTimePick(onClose, {
                     Date(
-                        entry,
                         it.atZone(defaultZoneId()),
                         Once(),
                         1,
-                        Once()
+                        Once(),
+                        entry,
                     ).create(dbManager)
                     onSchedule()
                 })

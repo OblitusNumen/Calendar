@@ -23,6 +23,8 @@ fun Int.toColor(): Color? = if (this == -1) null else Color(this or 0xFF000000.t
 
 fun Color?.toInt(): Int = if (this == null) -1 else (this.toArgb() and 0xFFFFFF)
 
+fun <T : Comparable<T>> List<T>.sorted() = this.sortedBy { it }
+
 fun rmRecursively(file: File) {
     if (file.isDirectory) {
         val listFiles = file.listFiles() ?: throw IllegalStateException("never occurs")

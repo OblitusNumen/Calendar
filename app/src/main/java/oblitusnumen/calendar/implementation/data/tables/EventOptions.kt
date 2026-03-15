@@ -8,13 +8,19 @@ import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.toColor
 import oblitusnumen.calendar.implementation.toInt
 
-class EventOptions private constructor(
-    id: Int? = null,
-    private val state: Int = STATE_NEW,
-    var name: String = "",
-    var color: Color? = null
-) : BaseColumns {
-    var id: Int? = id
+class EventOptions : BaseColumns {
+    private val state: Int
+    var name: String
+    var color: Color?
+
+    constructor(id: Int? = null, state: Int = STATE_NEW, name: String = "", color: Color? = null) {
+        this.state = state
+        this.name = name
+        this.color = color
+        this.id = id
+    }
+
+    var id: Int?
         private set
 
     private fun getContentValues(): ContentValues {
@@ -23,6 +29,16 @@ class EventOptions private constructor(
         contentValues.put(COLUMN_NAME_NAME, name)
         contentValues.put(COLUMN_NAME_COLOR, color.toInt())
         return contentValues
+    }
+
+    fun isNotCreated() = id == null
+
+    fun create(dbManager: DbManager) {
+        // TODO:
+    }
+
+    fun update(dbManager: DbManager) {
+        // TODO:
     }
 
     companion object {
