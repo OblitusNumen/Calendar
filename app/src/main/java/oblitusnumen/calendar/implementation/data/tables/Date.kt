@@ -136,10 +136,7 @@ open class Date : BaseColumns {
     }
 
     fun delete(dbManager: DbManager) {
-        dbManager.writableDatabase.execSQL(
-            "DELETE FROM $TABLE_NAME WHERE $COLUMN_NAME_ID = ?",
-            arrayOf(id.toString())
-        )
+        dbManager.writableDatabase.delete(TABLE_NAME, "$COLUMN_NAME_ID = ?", arrayOf(id.toString()))
         id = null
     }
 
