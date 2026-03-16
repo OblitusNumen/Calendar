@@ -212,6 +212,8 @@ open class Date : BaseColumns {
 
         val start = duration.addTo(Instant.ofEpochSecond(start).atZone(timeZoneId), -1).toEpochSecond()
         val anyZonedDateTime = getZonedDateTimeInRange(start, end) ?: return emptyList()
+        if (!isPeriodic)
+            return result.apply { add(anyZonedDateTime) }
 
         var zonedDateTime = anyZonedDateTime
         while (start < zonedDateTime.toEpochSecond()) {
