@@ -95,5 +95,13 @@ class Notification : BaseColumns {
                 return cursorToList(cursor)
             }
         }
+
+        fun deleteAll(dbManager: DbManager, eventOptionsId: Int) {
+            dbManager.writableDatabase.delete(
+                TABLE_NAME,
+                "$COLUMN_NAME_EVENT_OPTIONS_ID = ?",
+                arrayOf(eventOptionsId.toString())
+            )
+        }
     }
 }

@@ -2,6 +2,7 @@ package oblitusnumen.calendar.implementation.data.tables
 
 import android.content.ContentValues
 import android.database.Cursor
+import android.database.sqlite.SQLiteDatabase
 import android.provider.BaseColumns
 import androidx.compose.ui.graphics.Color
 import androidx.core.database.sqlite.transaction
@@ -67,7 +68,7 @@ class EventOptions : BaseColumns {
     }
 
     @Throws(IOException::class)
-    fun createWithTransaction(dbManager: DbManager, onCreatedTransaction: (id: Int) -> Unit) {
+    fun createWithTransaction(dbManager: DbManager, onCreatedTransaction: SQLiteDatabase.(id: Int) -> Unit) {
         if (isCreated())
             throw IllegalStateException("alreadyCreated")
 
@@ -75,17 +76,19 @@ class EventOptions : BaseColumns {
         contentValues.put(COLUMN_NAME_ID, null as Int?)
         id = dbManager.writableDatabase.insert(TABLE_NAME, null, contentValues).toInt()
 
-        if (!getDirectory(dbManager).mkdirs() || !getContentsFile(dbManager).createNewFile()) {
+        val directory = getDirectory(dbManager)
+        if (!directory.mkdirs() || !getContentsFile(dbManager).createNewFile()) {
             this.id = null
             try {
-                if (getDirectory(dbManager).exists()) rmRecursively(getDirectory(dbManager))
-                dbManager.writableDatabase.execSQL(
-                    "DELETE FROM $TABLE_NAME WHERE $COLUMN_NAME_ID = ?",
+                if (directory.exists()) rmRecursively(directory)
+                dbManager.writableDatabase.delete(
+                    TABLE_NAME,
+                    "$COLUMN_NAME_ID = ?",
                     arrayOf(id.toString())
                 )
             } catch (_: Exception) {
             }
-            throw IOException("could not setup directory for entry $id, filename: ${getDirectory(dbManager)}")
+            throw IOException("could not setup directory for entry $id, filename: $directory")
         }
 
         writeContents(getContentsFile(dbManager))
@@ -97,7 +100,7 @@ class EventOptions : BaseColumns {
         }
     }
 
-    fun updateWithTransaction(dbManager: DbManager, updateTransaction: () -> Unit) {
+    fun updateWithTransaction(dbManager: DbManager, updateTransaction: SQLiteDatabase.() -> Unit) {
         normalizeFiles(dbManager)
 
         updateState(dbManager, STATE_UPDATING)
@@ -114,14 +117,14 @@ class EventOptions : BaseColumns {
         normalizeFiles(dbManager)
     }
 
-    fun deleteWithTransaction(dbManager: DbManager, deleteTransaction: () -> Unit) {
+    fun deleteCascadeWithTransaction(dbManager: DbManager, deleteTransaction: SQLiteDatabase.() -> Unit) {
         dbManager.writableDatabase.transaction {
             deleteTransaction()
+            Notification.deleteAll(dbManager, id!!)
             updateState(dbManager, STATE_DELETED)
         }
 
-        if (getDirectory(dbManager).exists())
-            getDirectory(dbManager).deleteRecursively()
+        getDirectory(dbManager).apply { if (exists()) deleteRecursively() }
 
         delete(dbManager)
     }
@@ -264,6 +267,56 @@ class EventOptions : BaseColumns {
             } catch (e: IOException) {
                 throw RuntimeException(e)
             }
+        }
+
+        fun deleteCascadeForEntryWithTransaction(
+            dbManager: DbManager,
+            entryId: Int,
+            deleteTransaction: SQLiteDatabase.() -> Unit
+        ) {
+            val optionIds: MutableSet<Int> = mutableSetOf()
+
+            dbManager.writableDatabase.transaction {
+                rawQuery(
+                    "select distinct ${Date.COLUMN_NAME_EVENT_OPTIONS_ID} as eoId from ${Date.TABLE_NAME} " +
+                            "where ${Date.COLUMN_NAME_ENTRY_ID} = ?", arrayOf(entryId.toString())
+                ).use { cursor ->
+                    val idIdx = cursor.getColumnIndex("eoId")
+
+                    while (cursor.moveToNext())
+                        optionIds.add(cursor.getInt(idIdx))
+                }
+                rawQuery(
+                    "select ${Entry.COLUMN_NAME_DEFAULT_OPTIONS_ID} as eoId from ${Entry.TABLE_NAME} " +
+                            "where ${Entry.COLUMN_NAME_ID} = ?", arrayOf(entryId.toString())
+                ).use { cursor ->
+                    val idIdx = cursor.getColumnIndex("eoId")
+
+                    if (cursor.moveToFirst())
+                        optionIds.add(cursor.getInt(idIdx))
+                }
+
+                deleteTransaction()
+
+                for (id in optionIds)
+                    Notification.deleteAll(dbManager, id)
+
+                update(
+                    TABLE_NAME,
+                    ContentValues().also { it.put(COLUMN_NAME_STATE, STATE_DELETED) },
+                    "$COLUMN_NAME_ID IN(${optionIds.joinToString(", ") { "?" }})",
+                    arrayOf(*optionIds.map { it.toString() }.toTypedArray())
+                )
+            }
+
+            for (id in optionIds)
+                directoryById(dbManager, id).apply { if (exists()) deleteRecursively() }
+
+            dbManager.writableDatabase.delete(
+                TABLE_NAME,
+                "$COLUMN_NAME_ID IN(${optionIds.joinToString(", ") { "?" }})",
+                arrayOf(*optionIds.map { it.toString() }.toTypedArray())
+            )
         }
     }
 }

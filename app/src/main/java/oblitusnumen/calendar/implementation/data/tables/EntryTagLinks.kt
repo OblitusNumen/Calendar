@@ -33,5 +33,13 @@ class EntryTagLinks : BaseColumns {
                 arrayOf(entryId.toString(), tagId.toString())
             )
         }
+
+        fun deleteAll(dbManager: DbManager, entryId: Int) {
+            dbManager.writableDatabase.delete(
+                TABLE_NAME,
+                "$COLUMN_NAME_ENTRY_ID = ?",
+                arrayOf(entryId.toString())
+            )
+        }
     }
 }

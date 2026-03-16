@@ -1,5 +1,6 @@
 package oblitusnumen.calendar.ui.state
 
+import android.database.sqlite.SQLiteDatabase
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.TextFieldValue
@@ -34,7 +35,7 @@ data class EntryEditState(
         // TODO:
         val options = options
 
-        val updateTransaction: () -> Unit = {
+        val updateTransaction: SQLiteDatabase.() -> Unit = {
             val entry = entry
 
             val entryNotCreated = entry.isNotCreated()
@@ -66,7 +67,7 @@ data class EntryEditState(
                 Date.forEntry(dbManager, entryId!!).groupingBy { it.id }.reduce { _, accumulator, _ -> accumulator }
             for (d in datesOld.values) {
                 if (!datesNew.contains(d.id))
-                    d.delete(dbManager)
+                    d.deleteCascade(dbManager)
             }
             for (d in dateStates) {
                 d.toDbEntity().apply {

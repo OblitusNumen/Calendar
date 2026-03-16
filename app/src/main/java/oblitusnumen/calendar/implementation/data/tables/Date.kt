@@ -124,7 +124,7 @@ open class Date : BaseColumns {
         fixDateRange()
         fixExceptionList()
         if (isEmpty) {
-            delete(dbManager)
+            deleteCascade(dbManager)
             return
         }
         dbManager.writableDatabase.update(
@@ -135,7 +135,8 @@ open class Date : BaseColumns {
         )
     }
 
-    fun delete(dbManager: DbManager) {
+    fun deleteCascade(dbManager: DbManager) {
+        // FIXME: add cascade
         dbManager.writableDatabase.delete(TABLE_NAME, "$COLUMN_NAME_ID = ?", arrayOf(id.toString()))
         id = null
     }
@@ -664,6 +665,14 @@ open class Date : BaseColumns {
                 period,
                 timeZoneId,
                 ExceptionRules(exceptionRules)
+            )
+        }
+
+        fun deleteAll(dbManager: DbManager, entryId: Int) {
+            dbManager.writableDatabase.delete(
+                TABLE_NAME,
+                "$COLUMN_NAME_ENTRY_ID = ?",
+                arrayOf(entryId.toString())
             )
         }
     }

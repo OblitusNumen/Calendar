@@ -62,25 +62,15 @@ open class Entry(
     @Throws(IOException::class)
     fun deleteCascade(dbManager: DbManager) {
         if (isNotCreated()) return
-        // FIXME: code stacking
-//        dbManager.writableDatabase.transaction {
-//            state = STATE_DELETED
-//            update(dbManager)
-//            dbManager.writableDatabase.execSQL(
-//                "DELETE FROM ${EntryTagLinks.TABLE_NAME} WHERE ${EntryTagLinks.COLUMN_NAME_ENTRY_ID} = ?",
-//                arrayOf(id.toString())
-//            )
-//            dbManager.writableDatabase.execSQL(
-//                "DELETE FROM ${Notification.TABLE_NAME} WHERE ${Notification.COLUMN_NAME_ENTRY_ID} = ?",
-//                arrayOf(id.toString())
-//            )
-//            dbManager.writableDatabase.execSQL(
-//                "DELETE FROM ${Date.TABLE_NAME} WHERE ${Date.COLUMN_NAME_ENTRY_ID} = ?",
-//                arrayOf(id.toString())
-//            )
-//        }
-        delete(dbManager)
-        id = null
+
+        EventOptions.deleteCascadeForEntryWithTransaction(dbManager, id!!) {
+            if (isTask)
+                Task.deleteCascade(dbManager, id!!)
+            EntryTagLinks.deleteAll(dbManager, id!!)
+            Date.deleteAll(dbManager, id!!)
+            delete(dbManager)
+        }
+
         dbManager.tryScheduleNotification()
     }
 
