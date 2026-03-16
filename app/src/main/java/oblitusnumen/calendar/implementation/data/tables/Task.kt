@@ -119,7 +119,7 @@ class Task(
             dbManager.writableDatabase.transaction {
                 TaskLog.deleteAll(dbManager, entryId)
                 TaskDependencies.deleteAll(dbManager, entryId)
-                delete(TABLE_NAME,"$COLUMN_NAME_ENTRY_ID = ?", arrayOf(entryId.toString()))
+                delete(TABLE_NAME, "$COLUMN_NAME_ENTRY_ID = ?", arrayOf(entryId.toString()))
             }
         }
 
