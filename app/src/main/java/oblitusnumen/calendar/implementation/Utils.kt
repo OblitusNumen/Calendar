@@ -64,8 +64,9 @@ fun setLogFile(c: Context) {
 
 fun log(tag: String?, o: Any?) {
     Log.v(tag, o.toString())
-    if (logfile != null)
-        logfile!!.appendText("[${LocalDateTime.now()}] $tag: $o\n")
+    // FIXME: for testing
+//    if (logfile != null)
+//        logfile!!.appendText("[${LocalDateTime.now()}] $tag: $o\n")
 }
 
 private fun colorToLuminance(color: Color): Double {
