@@ -22,6 +22,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -614,4 +615,29 @@ fun BottomBar(navController: NavController) {
             )
         }
     }
+}
+
+@Preview
+@Composable
+fun TagChipPreview() {
+    TagChip("tag 0", Color.Green)
+}
+
+@Preview
+@Composable
+fun TagPreview() {
+    Tag("tag 1", Color.Red)
+}
+
+@Preview
+@Composable
+fun RemovableTagPreview() {
+    RemovableTagChip("tag 2", Color.Yellow, {}) {}
+}
+
+@Preview
+@Composable
+fun SelectableTagPreview() {
+    var chosen by remember { mutableStateOf(true) }
+    SelectableTagChip("tag 3", Color.Blue, chosen, { chosen = !chosen })
 }
