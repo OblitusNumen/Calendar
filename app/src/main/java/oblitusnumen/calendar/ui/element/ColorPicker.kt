@@ -27,7 +27,7 @@ import oblitusnumen.calendar.implementation.toInt
 import kotlin.math.ceil
 
 @Composable
-fun colorPicker(initialColor: Color, allowCustomColor: Boolean, onColorPicked: (Color?) -> Unit) {
+fun ColorPicker(initialColor: Color, allowCustomColor: Boolean, onColorPicked: (Color?) -> Unit) {
     var pickCustom by remember { mutableStateOf(false) }
     if (!pickCustom) {
         Dialog(onDismissRequest = { onColorPicked(null) }) {
@@ -51,7 +51,7 @@ fun colorPicker(initialColor: Color, allowCustomColor: Boolean, onColorPicked: (
                                     presetColors.size % countInRow
                             ) {
                                 val presetColor = presetColors[rowNumber * countInRow + it]
-                                drawColorBox(
+                                ColorBox(
                                     presetColor,
                                     initialColor == presetColor,
                                     Modifier.align(Alignment.CenterVertically)
@@ -65,7 +65,7 @@ fun colorPicker(initialColor: Color, allowCustomColor: Boolean, onColorPicked: (
                     }
                     if (allowCustomColor) {
                         Row(modifier = Modifier.padding(16.dp).clickable { pickCustom = true }) {
-                            drawColorBox(
+                            ColorBox(
                                 initialColor,
                                 !presetColors.contains(initialColor),
                                 Modifier.align(Alignment.CenterVertically)
@@ -83,12 +83,12 @@ fun colorPicker(initialColor: Color, allowCustomColor: Boolean, onColorPicked: (
             }
         }
     } else {
-        pickCustomColor(onColorPicked, initialColor)
+        PickCustomColor(onColorPicked, initialColor)
     }
 }
 
 @Composable
-fun drawColorBox(presetColor: Color, selected: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
+fun ColorBox(presetColor: Color, selected: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
     val modifier1 =
         if (selected)
             modifier.border(4.dp, MaterialTheme.colorScheme.primary)
@@ -98,7 +98,7 @@ fun drawColorBox(presetColor: Color, selected: Boolean, modifier: Modifier = Mod
 }
 
 @Composable
-fun pickCustomColor(onColorPicked: (Color?) -> Unit, initialColor: Color) {
+fun PickCustomColor(onColorPicked: (Color?) -> Unit, initialColor: Color) {
     val pickedColor = remember { mutableStateOf(initialColor) }
     val hasError = remember { mutableStateOf(false) }
     AlertDialog(
@@ -124,9 +124,9 @@ fun pickCustomColor(onColorPicked: (Color?) -> Unit, initialColor: Color) {
                         Modifier.align(Alignment.CenterVertically).background(pickedColor.value, CircleShape)
                             .border(0.dp, pickedColor.value, CircleShape).size(48.dp).padding(horizontal = 8.dp)
                     )
-                    colorTextField(hasError, focusManager, pickedColor.value) { pickedColor.value = it }
+                    ColorTextField(hasError, focusManager, pickedColor.value) { pickedColor.value = it }
                 }
-                colorWheel(pickedColor.value) {
+                ColorWheel(pickedColor.value) {
                     pickedColor.value = it
                     focusManager.clearFocus()
                 }
@@ -137,7 +137,7 @@ fun pickCustomColor(onColorPicked: (Color?) -> Unit, initialColor: Color) {
 
 @OptIn(ExperimentalStdlibApi::class)
 @Composable
-fun colorTextField(
+fun ColorTextField(
     hasError: MutableState<Boolean>,
     focusManager: FocusManager,
     pickedColor: Color,
@@ -182,7 +182,7 @@ fun colorTextField(
 }
 
 @Composable
-fun colorWheel(color: Color, onColorChanged: (Color) -> Unit) {// FIXME: initial color is not being set
+fun ColorWheel(color: Color, onColorChanged: (Color) -> Unit) {// FIXME: initial color is not being set
     val controller = rememberColorPickerController()
     HsvColorPicker(
         modifier = Modifier.fillMaxWidth().height(450.dp).padding(10.dp),

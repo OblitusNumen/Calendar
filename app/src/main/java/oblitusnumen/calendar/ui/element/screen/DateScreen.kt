@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import oblitusnumen.calendar.implementation.LIST_LEN
+import oblitusnumen.calendar.implementation.bgColorToTextColor
 import oblitusnumen.calendar.implementation.data.DateOccurrence
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.tables.Tag
@@ -23,7 +24,7 @@ import oblitusnumen.calendar.implementation.getZonedFromEpochSeconds
 import oblitusnumen.calendar.implementation.log
 import oblitusnumen.calendar.ui.dpByDpForPixelPerfect
 import oblitusnumen.calendar.ui.element.BackPressButton
-import oblitusnumen.calendar.ui.element.DrawEntryDescriptionAndTags
+import oblitusnumen.calendar.ui.element.EntryDescriptionAndTags
 import oblitusnumen.calendar.ui.element.NewEntryFunctionButton
 import oblitusnumen.calendar.ui.theme.topBarColors
 import java.time.Duration
@@ -79,7 +80,7 @@ fun DateScreen(
                             }
                         }
                         Box {
-                            DrawDay(dbManager, day, openEntryInfoByDateOccurrence)
+                            Day(dbManager, day, openEntryInfoByDateOccurrence)
                         }
                     }
                 }
@@ -103,7 +104,7 @@ fun DateScreen(
 }
 
 @Composable
-fun DrawDay(
+fun Day(
     dbManager: DbManager,
     day: LocalDate,
     openEntryInfoByDateOccurrence: (DateOccurrence) -> Unit
@@ -112,7 +113,7 @@ fun DrawDay(
     val ids = remember { mutableMapOf<DateOccurrence, Int>() }
     val columns: List<List<DateOccurrence>> = remember {
         val dates = ViewDateWithOptions.occurrencesIntersectingDay(dbManager, day).sortedBy { it.occurrence }
-        ids.putAll(dates.associate { it to dates.indexOf(it) })
+        ids.putAll(dates.associateWith { dates.indexOf(it) })
         val columns = mutableListOf<MutableList<DateOccurrence>>()
         for (date in dates) {
             var assigned = false
@@ -176,7 +177,7 @@ fun DrawDay(
                     endOfLastMinutesOffset = endMinutesOffset
                     endOfLast = end
 
-                    DrawEntryBox(
+                    EntryBox(
                         occurrence,
                         size, ids[occurrence],
                         {
@@ -197,7 +198,7 @@ fun DrawDay(
 }
 
 @Composable
-fun DrawEntryBox(
+fun EntryBox(
     occurrence: DateOccurrence,
     minutesSize: Int,
     id: Int?,
@@ -222,7 +223,7 @@ fun DrawEntryBox(
 }
 
 @Composable
-fun DrawEntry(dbManager: DbManager, occurrence: DateOccurrence, openEntryInfo: () -> Unit) { //todo maybe show desc too?
+fun Entry(dbManager: DbManager, occurrence: DateOccurrence, openEntryInfo: () -> Unit) { //todo maybe show desc too?
     var hack by remember { mutableStateOf(false) }
     var excludeDateShown by remember(hack) { mutableStateOf(false) }
     val dateMeta = occurrence.date
@@ -257,7 +258,7 @@ fun DrawEntry(dbManager: DbManager, occurrence: DateOccurrence, openEntryInfo: (
             )
         }
 
-        DrawEntryDescriptionAndTags(
+        EntryDescriptionAndTags(
             dbManager,
             dateMeta.getContents(dbManager),
             Tag.forEntry(dbManager, dateMeta.entryId!!)

@@ -20,7 +20,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import oblitusnumen.calendar.implementation.bgColorToTextColor
 import oblitusnumen.calendar.implementation.convertMillisToDate
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.tables.Date
@@ -29,6 +28,7 @@ import oblitusnumen.calendar.implementation.data.tables.Notification
 import oblitusnumen.calendar.implementation.data.tables.Tag
 import oblitusnumen.calendar.implementation.data.views.ViewEntryWithOptions
 import oblitusnumen.calendar.ui.element.BackPressButton
+import oblitusnumen.calendar.ui.element.TagChip
 import oblitusnumen.calendar.ui.theme.topBarColors
 import java.time.format.DateTimeFormatter
 
@@ -88,7 +88,7 @@ fun DetailsEntryScreen(dbManager: DbManager, entryId: Int, editEntry: () -> Unit
                         Modifier.fillMaxWidth().padding(end = 16.dp)
                     ) {
                         for (tag in tags)
-                            DrawTag(dbManager, tag)
+                            TagChip(tag.name, tag.colorOrDefault(dbManager))
                     }
                 }
             }
@@ -97,13 +97,13 @@ fun DetailsEntryScreen(dbManager: DbManager, entryId: Int, editEntry: () -> Unit
             if (dates.isNotEmpty()) {
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
                 for (date in dates)
-                    DrawDate(date)
+                    Date(date)
             }
             // notifications
             if (notifications.isNotEmpty()) {
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
                 for (notification in notifications)
-                    DrawNotification(notification)
+                    Notification(notification)
             }
 
             Spacer(Modifier.height(paddingValues.calculateBottomPadding()))
@@ -112,7 +112,7 @@ fun DetailsEntryScreen(dbManager: DbManager, entryId: Int, editEntry: () -> Unit
 }
 
 @Composable
-fun DrawNotification(notification: Notification) {
+fun Notification(notification: Notification) {
     Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp)) {
         Icon(
             if (notification.sound) Icons.Filled.Notifications else Icons.Outlined.Notifications, null,
@@ -128,7 +128,7 @@ fun DrawNotification(notification: Notification) {
 }
 
 @Composable
-fun DrawDate(date: Date) {
+fun Date(date: Date) {
     val textStart = (if (date.isPeriodic) "from " else "") +
             date.getFirstZoneDateTime().format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm"))
     val textPeriod: String = if (date.isPeriodic)
@@ -172,23 +172,6 @@ fun DrawDate(date: Date) {
             }
         }
     }
-}
-
-@Composable
-fun DrawTag(dbManager: DbManager, tag: Tag) {
-    val bgColor = tag.colorOrDefault(dbManager)
-    InputChip(
-        false,
-        {},
-        {
-            Text(
-                tag.name, style = MaterialTheme.typography.bodyLarge,
-                color = bgColorToTextColor(bgColor)
-            )
-        },
-        modifier = Modifier.padding(horizontal = 4.dp),
-        colors = InputChipDefaults.inputChipColors(containerColor = bgColor),
-    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

@@ -91,7 +91,7 @@ fun SearchTopBar(
 }
 
 @Composable
-fun DrawNotificationAddMenu(onConfirm: (Period, Boolean) -> Unit, onDismiss: () -> Unit) {
+fun NotificationAddMenu(onConfirm: (Period, Boolean) -> Unit, onDismiss: () -> Unit) {
     var silent by remember { mutableStateOf(false) }
     val initialCount = 1L
     var offsetCount: Long by remember { mutableStateOf(initialCount) }
@@ -268,7 +268,8 @@ fun OffsetSelector(
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
-fun DrawEntrySelectable(
+fun SelectableEntry(
+    dbManager: DbManager,
     entryView: ViewEntryWithOptions,
     selected: Boolean,
     onLongClick: () -> Unit,
@@ -313,7 +314,8 @@ fun DrawEntrySelectable(
                     style = MaterialTheme.typography.bodyLarge,
                 )
             }//todo next line "10 events from 2024.01.01 to 2025.01.01"
-//                drawDescriptionAndTags(dbManager, entry.getContents(), entry.getTags())
+
+            EntryDescriptionAndTags(dbManager, entryView.getContents(dbManager), entryView.getTags(dbManager))
         }
     }
 }
@@ -333,7 +335,7 @@ fun ColorSelectButton(
     )
 
     if (colorPickerShown)
-        colorPicker(color, allowCustomColor) {
+        ColorPicker(color, allowCustomColor) {
             if (it != null) {
                 onColorSelected(it)
             }
@@ -395,9 +397,9 @@ fun TopBarTagFilterTitle(dbManager: DbManager, tagsFilter: List<Tag>, tagsFilter
         LazyRow(Modifier.weight(1f)/*.clip(RoundedCornerShape(100))*/) {
             for (tag in tagsFilter)
                 item {
-                    DrawTag(tag.name, tag.colorOrDefault(dbManager), { isFilterOpen = true }) {
+                    RemovableTagChip(tag.name, tag.colorOrDefault(dbManager), {
                         tagsFilterUpdate(tagsFilter - tag)
-                    }
+                    }) { isFilterOpen = true }
                 }
         }
 
@@ -411,29 +413,82 @@ fun TopBarTagFilterTitle(dbManager: DbManager, tagsFilter: List<Tag>, tagsFilter
 }
 
 @Composable
-fun DrawTag(name: String, color: Color, openFilter: () -> Unit, rmTag: () -> Unit) {
+fun Tag(text: String, color: Color) {
+    Text(
+        modifier = Modifier.padding(horizontal = 2.dp, vertical = 1.5.dp).background(
+            color, shape = RoundedCornerShape(10.dp)
+        ).padding(vertical = 1.dp, horizontal = 6.dp),
+        text = text,
+        maxLines = 1,
+        style = MaterialTheme.typography.bodyMedium,
+        color = bgColorToTextColor(color)
+    )
+}
+
+@Composable
+fun TagChip(name: String, color: Color) {
     InputChip(
         false,
-        openFilter,
+        {},
         {
-            Box {
-                Text(
-                    name, modifier = Modifier.align(Alignment.Center), style = MaterialTheme.typography.bodyMedium,
-                    color = bgColorToTextColor(color)
-                )
-            }
+            Text(
+                name, style = MaterialTheme.typography.bodyLarge,
+                color = bgColorToTextColor(color)
+            )
         },
-        modifier = Modifier.padding(horizontal = 4.dp, vertical = 6.dp),
+        modifier = Modifier.padding(horizontal = 4.dp),
+        colors = InputChipDefaults.inputChipColors(containerColor = color),
+    )
+}
+
+@Composable
+fun RemovableTagChip(name: String, color: Color, onRemove: () -> Unit, onClick: () -> Unit = onRemove) {
+    InputChip(
+        false,
+        onClick,
+        {
+            Text(
+                name, style = MaterialTheme.typography.bodyMedium,
+                color = bgColorToTextColor(color)
+            )
+        },
+        modifier = Modifier.padding(4.dp).height(30.dp),
         trailingIcon = {
-            IconButton(onClick = rmTag, Modifier.size(24.dp)) {
+            IconButton(onClick = onRemove, Modifier.size(24.dp)) {
                 Icon(
                     Icons.Filled.Clear, null,
-                    Modifier.size(24.dp),
                     tint = bgColorToTextColor(color)
                 )
             }
         },
         colors = InputChipDefaults.inputChipColors(containerColor = color),
+    )
+}
+
+@Composable
+fun SelectableTagChip(name: String, color: Color, selected: Boolean, onSelect: (Boolean) -> Unit) {
+    var selected by remember(name) { mutableStateOf(selected) }
+
+    InputChip(
+        selected,
+        {
+            selected = !selected
+            onSelect(selected)
+        },
+        {
+            Text(
+                name, style = MaterialTheme.typography.bodyLarge,
+                color = bgColorToTextColor(color)
+            )
+        },
+        modifier = Modifier.padding(horizontal = 4.dp),
+        trailingIcon = {
+            if (selected) Icon(
+                Icons.Filled.Done, null,
+                tint = bgColorToTextColor(color)
+            )
+        },
+        colors = InputChipDefaults.inputChipColors(containerColor = color, selectedContainerColor = color),
     )
 }
 
@@ -505,7 +560,7 @@ fun ScheduleDialog(dbManager: DbManager, entry: ViewEntryWithOptions, onClose: (
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun DrawEntryDescriptionAndTags(dbManager: DbManager, contents: String, tags: List<Tag>) {
+fun EntryDescriptionAndTags(dbManager: DbManager, contents: String, tags: List<Tag>) {
     if (contents.isNotEmpty()) {
         Text(
             text = contents,
@@ -521,27 +576,14 @@ fun DrawEntryDescriptionAndTags(dbManager: DbManager, contents: String, tags: Li
                 .padding(bottom = 6.5.dp)
         ) {
             for (tag in tags) {
-                DrawTag(tag.name, tag.colorOrDefault(dbManager))
+                Tag(tag.name, tag.colorOrDefault(dbManager))
             }
         }
     }
 }
 
 @Composable
-fun DrawTag(text: String, bgColor: Color) {
-    Text(
-        modifier = Modifier.padding(horizontal = 2.dp, vertical = 1.5.dp).background(
-            bgColor, shape = RoundedCornerShape(10.dp)
-        ).padding(vertical = 1.dp, horizontal = 6.dp),
-        text = text,
-        maxLines = 1,
-        style = MaterialTheme.typography.bodyMedium,
-        color = bgColorToTextColor(bgColor)
-    )
-}
-
-@Composable
-fun DrawBottomBar(navController: NavController) {
+fun BottomBar(navController: NavController) {
     NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.9f)) {
         val navBackStackEntry by navController.currentBackStackEntryAsState()
         val currentDestination = navBackStackEntry?.destination

@@ -23,7 +23,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import oblitusnumen.calendar.implementation.bgColorToTextColor
 import oblitusnumen.calendar.implementation.convertMillisToDate
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.Period
@@ -123,7 +122,11 @@ fun EditEntryScreen(
                     Modifier.fillMaxWidth().padding(end = 16.dp)
                 ) {
                     for (tag in state.tags)
-                        DrawTag(tag.name, tag.colorOrDefault(dbManager)) { viewModel.setTags(state.tags - tag) }
+                        RemovableTagChip(
+                            tag.name,
+                            tag.colorOrDefault(dbManager),
+                            { viewModel.setTags(state.tags - tag) }
+                        )
                 }
             }
 
@@ -143,7 +146,7 @@ fun EditEntryScreen(
             for (date in state.dateStates)
                 key(date.uiId) {
                     // FIXME:  toDbEntity() is a hack; do the fix in other places
-                    DrawDate(date, periodSelectorDate, dateTimePicker, { viewModel.rmDate(date.uiId) }) {
+                    Date(date, periodSelectorDate, dateTimePicker, { viewModel.rmDate(date.uiId) }) {
                         viewModel.updateDate(date.uiId, it)
                     }
                 }
@@ -174,12 +177,12 @@ fun EditEntryScreen(
 
             // notifications
             var notificationChoose by remember { mutableStateOf(false) }
-            if (notificationChoose) DrawNotificationAddMenu({ offset, sound ->
+            if (notificationChoose) NotificationAddMenu({ offset, sound ->
                 notificationChoose = false
                 for (notification in state.notificationStates) {
                     if (notification.offset.toString() == offset.toString()) {
                         viewModel.setNotificationSound(notification.uiId, sound)
-                        return@DrawNotificationAddMenu
+                        return@NotificationAddMenu
                     }
                 }
                 viewModel.addNotification(offset, sound)
@@ -264,14 +267,14 @@ fun TagChooseMenu(dbManager: DbManager, tags: List<Tag>, onClose: () -> Unit, on
                 ) {
                     searchTag // FIXME: yet another filthy hack
                     if (searchTag.isNotEmpty() && !chosenTags.contains(searchTag)) {
-                        DrawTag(
+                        SelectableTagChip(
                             searchTag,
                             dbManager.defaultTagColor,
                             false
                         ) { if (it) chosenTags += searchTag else chosenTags -= searchTag }
                     }
                     for (tag in chosenTags) {
-                        DrawTag(
+                        SelectableTagChip(
                             tag,
                             allTags[tag]!!.colorOrDefault(dbManager),
                             true
@@ -282,7 +285,7 @@ fun TagChooseMenu(dbManager: DbManager, tags: List<Tag>, onClose: () -> Unit, on
                                 searchTag,
                                 true
                             ) && tag.name != searchTag
-                        ) DrawTag(
+                        ) SelectableTagChip(
                             tag.name,
                             tag.colorOrDefault(dbManager),
                             false
@@ -295,7 +298,7 @@ fun TagChooseMenu(dbManager: DbManager, tags: List<Tag>, onClose: () -> Unit, on
 }
 
 @Composable
-fun DrawDate(
+fun Date(
     date: DateState,
     periodSelectorDate: MutableState<DateState?>,
     dateTimePicker: DateTimePicker,
@@ -418,7 +421,7 @@ fun DrawDate(
 }
 
 @Composable
-fun DrawWeekdayButton(active: MutableState<Boolean>, text: String) {
+fun WeekdayButton(active: MutableState<Boolean>, text: String) {
     OutlinedButton(
         onClick = { active.value = !active.value },
         modifier = Modifier.padding(4.dp).size(28.dp),
@@ -552,13 +555,13 @@ fun PeriodSelectorDialog(
 
                 if (selectedPeriodType.period is Weekday) {
                     Row {
-                        DrawWeekdayButton(monSelected, "Mon")
-                        DrawWeekdayButton(tueSelected, "Tue")
-                        DrawWeekdayButton(wedSelected, "Wed")
-                        DrawWeekdayButton(thuSelected, "Thu")
-                        DrawWeekdayButton(friSelected, "Fri")
-                        DrawWeekdayButton(satSelected, "Sat")
-                        DrawWeekdayButton(sunSelected, "Sun")
+                        WeekdayButton(monSelected, "Mon")
+                        WeekdayButton(tueSelected, "Tue")
+                        WeekdayButton(wedSelected, "Wed")
+                        WeekdayButton(thuSelected, "Thu")
+                        WeekdayButton(friSelected, "Fri")
+                        WeekdayButton(satSelected, "Sat")
+                        WeekdayButton(sunSelected, "Sun")
                     }
                 }
 
@@ -650,28 +653,6 @@ fun PeriodSelectorDialog(
                 }
             }
         }
-    )
-}
-
-@Composable
-fun DrawTag(name: String, color: Color, onRemove: () -> Unit) {
-    InputChip(
-        false,
-        onRemove,
-        {
-            Text(
-                name, style = MaterialTheme.typography.bodyLarge,
-                color = bgColorToTextColor(color)
-            )
-        },
-        modifier = Modifier.padding(horizontal = 4.dp),
-        trailingIcon = {
-            Icon(
-                Icons.Filled.Clear, null,
-                tint = bgColorToTextColor(color)
-            )
-        },
-        colors = InputChipDefaults.inputChipColors(containerColor = color),
     )
 }
 

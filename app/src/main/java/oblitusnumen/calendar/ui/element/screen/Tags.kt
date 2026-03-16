@@ -28,8 +28,8 @@ import androidx.compose.ui.unit.dp
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.tables.Tag
 import oblitusnumen.calendar.implementation.log
+import oblitusnumen.calendar.ui.element.ColorPicker
 import oblitusnumen.calendar.ui.element.SearchTopBar
-import oblitusnumen.calendar.ui.element.colorPicker
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -184,7 +184,7 @@ fun EditTag(
                             .clickable { colorPickerShown = true }
                     )
                     if (colorPickerShown)
-                        colorPicker(color, true) {
+                        ColorPicker(color, true) {
                             if (it != null)
                                 color = it
                             colorPickerShown = false

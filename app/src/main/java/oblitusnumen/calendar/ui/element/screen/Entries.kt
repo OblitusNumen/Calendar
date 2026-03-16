@@ -10,10 +10,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.views.ViewEntryWithOptions
-import oblitusnumen.calendar.ui.element.DrawEntrySelectable
 import oblitusnumen.calendar.ui.element.NewEntryFunctionButton
 import oblitusnumen.calendar.ui.element.ScheduleDialog
 import oblitusnumen.calendar.ui.element.SearchTopBar
+import oblitusnumen.calendar.ui.element.SelectableEntry
 
 @Composable
 fun EntriesScreen(
@@ -55,8 +55,8 @@ fun EntriesScreen(
             items(entries) { entry ->
                 val id = entry.id!!
 
-                DrawEntrySelectable(
-                    entry, false,// TODO:
+                SelectableEntry(
+                    dbManager, entry, false,// TODO:
                     { scheduleDialogEntry = entry },
                     { openEntryDetails(id) }
                 )

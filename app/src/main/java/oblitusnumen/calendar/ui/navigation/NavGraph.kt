@@ -20,7 +20,7 @@ import oblitusnumen.calendar.implementation.data.tables.Tag
 import oblitusnumen.calendar.implementation.log
 import oblitusnumen.calendar.implementation.toColor
 import oblitusnumen.calendar.implementation.toInt
-import oblitusnumen.calendar.ui.element.DrawBottomBar
+import oblitusnumen.calendar.ui.element.BottomBar
 import oblitusnumen.calendar.ui.element.screen.*
 import oblitusnumen.calendar.ui.state.EntryEditState
 import oblitusnumen.calendar.ui.viewmodel.EntryEditViewModel
@@ -73,7 +73,7 @@ fun NavigationGraph(navController: NavHostController, dbManager: DbManager, star
         composable(route = NavRoutes.Dashboard.route) {
             DashboardScreen(
                 dbManager,
-                { DrawBottomBar(navController) },
+                { BottomBar(navController) },
                 { NavRoutes.EntryEdit.navHere(navController, null) },
                 { NavRoutes.ThatDayDetails.navHere(navController, it) },
                 { year, monthValue ->
@@ -90,7 +90,7 @@ fun NavigationGraph(navController: NavHostController, dbManager: DbManager, star
             CalendarScreen(
                 dbManager,
                 tagsFilter,
-                { DrawBottomBar(navController) },
+                { BottomBar(navController) },
 //                    {},// FIXME:
 //                    {dbManager.fillDB()},
                 { NavRoutes.EntryEdit.navHere(navController, null) },
@@ -109,7 +109,7 @@ fun NavigationGraph(navController: NavHostController, dbManager: DbManager, star
             PlannerScreen(
                 dbManager,
                 tagsFilter,
-                { DrawBottomBar(navController) },
+                { BottomBar(navController) },
                 { NavRoutes.EntryEdit.navHere(navController, null) },
                 { NavRoutes.ThatDayDetails.navHere(navController, it) },
                 { year, monthValue ->
@@ -125,7 +125,7 @@ fun NavigationGraph(navController: NavHostController, dbManager: DbManager, star
         composable(route = NavRoutes.TaskDetails.route) {
             TaskDetailsScreen(
                 dbManager,
-                { DrawBottomBar(navController) },
+                { BottomBar(navController) },
                 { NavRoutes.EntryEdit.navHere(navController, null) },
                 { NavRoutes.ThatDayDetails.navHere(navController, it) },
                 { year, monthValue ->
@@ -145,7 +145,7 @@ fun NavigationGraph(navController: NavHostController, dbManager: DbManager, star
                 dbManager,
                 month,
                 tagsFilter,
-                { DrawBottomBar(navController) },
+                { BottomBar(navController) },
                 {},// FIXME:
                 { NavRoutes.ThatDayDetails.navHere(navController, it) },
                 { NavRoutes.EntryDetails.navHere(navController, it.date.entryId) },
@@ -198,7 +198,7 @@ fun NavigationGraph(navController: NavHostController, dbManager: DbManager, star
         composable(route = NavRoutes.Entries.route) {
             EntriesScreen(
                 dbManager,
-                { DrawBottomBar(navController) },
+                { BottomBar(navController) },
                 { NavRoutes.EntryEdit.navHere(navController, null) },
                 { NavRoutes.EntryDetails.navHere(navController, it) },
                 { NavRoutes.backPress(navController) }
@@ -208,7 +208,7 @@ fun NavigationGraph(navController: NavHostController, dbManager: DbManager, star
         composable(route = NavRoutes.Tags.route) {
             TagsScreen(
                 dbManager,
-                { DrawBottomBar(navController) },
+                { BottomBar(navController) },
                 { NavRoutes.TagEdit.navHere(navController, it) },
                 { NavRoutes.backPress(navController) }
             )

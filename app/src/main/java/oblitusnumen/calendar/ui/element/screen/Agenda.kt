@@ -392,7 +392,7 @@ fun DisplayDayAgenda(
     Column {
         Text("Day: $day", Modifier.fillMaxWidth().clickable(onClick = openDayInfo))
         for (occurrence in dates) {
-            DrawEntry(dbManager, occurrence) { openEntryInfoByDateOccurrence(occurrence) }
+            Entry(dbManager, occurrence) { openEntryInfoByDateOccurrence(occurrence) }
         }
     }
 }

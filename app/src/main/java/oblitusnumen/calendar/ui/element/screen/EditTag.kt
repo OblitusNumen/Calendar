@@ -45,6 +45,7 @@ fun TagEditScreen(
     var addEntriesDialogShown by remember { mutableStateOf(false) }
     if (addEntriesDialogShown)
         AddEntriesDialog(
+            dbManager,
             allEntries.filter { it.id !in edits.entryAssociations },
             { edits.addEntryAssociations(*it.toIntArray()) }
         ) { addEntriesDialogShown = false }
@@ -104,8 +105,8 @@ fun TagEditScreen(
                 val id = entryView.id!!
                 val selected = id in selectedEntries
 
-                DrawEntrySelectable(
-                    entryView, selected,
+                SelectableEntry(
+                    dbManager, entryView, selected,
                     if (editable) {
                         { selectedEntries += id }
                     } else {
@@ -292,6 +293,7 @@ fun TagEditActionButton(onClick: () -> Unit) {
 
 @Composable
 fun AddEntriesDialog(
+    dbManager: DbManager,
     allEntries: List<ViewEntryWithOptions>,
     addEntries: (Set<Int>) -> Unit,
     onClose: () -> Unit
@@ -340,7 +342,8 @@ fun AddEntriesDialog(
                         val id = entryView.id!!
                         val selected = id in selectedEntries
 
-                        DrawEntrySelectable(
+                        SelectableEntry(
+                            dbManager,
                             entryView,
                             selected,
                             { selectedEntries += id },

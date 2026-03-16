@@ -41,6 +41,7 @@ import oblitusnumen.calendar.implementation.zonedDateTime
 import oblitusnumen.calendar.ui.PositionStatus
 import oblitusnumen.calendar.ui.element.ActionButtonWithScroll
 import oblitusnumen.calendar.ui.element.DateTimePicker
+import oblitusnumen.calendar.ui.element.SelectableTagChip
 import oblitusnumen.calendar.ui.element.TopBarTagFilterTitle
 import oblitusnumen.calendar.ui.horizontal
 import oblitusnumen.calendar.ui.measureTextLine
@@ -365,7 +366,7 @@ fun DisplayDay(
         )
 
         repeat(if (evtOverflow) maxElements - 1 else eventDates.count()) {
-            DrawEvtInDay(
+            EvtInDay(
                 eventDates[it].color,
                 eventDates[it].displayName,
                 isThatMonth
@@ -392,7 +393,7 @@ fun DisplayDay(
 }
 
 @Composable
-private fun DrawEvtInDay(bgColor: Color, text: String, isThatMonth: Boolean) {
+private fun EvtInDay(bgColor: Color, text: String, isThatMonth: Boolean) {
     val bgColor = if (isThatMonth) bgColor else bgColor.copy(alpha = .5f)
     Text(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 2.dp, vertical = 1.dp)
@@ -521,7 +522,7 @@ fun TagFilterMenu(dbManager: DbManager, chosenTags: List<Tag>, onClose: () -> Un
                     searchTag // FIXME: yet another filthy hack
 
                     for (tag in chosenTags) {
-                        DrawTag(
+                        SelectableTagChip(
                             tag,
                             allTags[tag]!!.colorOrDefault(dbManager),
                             true
@@ -533,7 +534,7 @@ fun TagFilterMenu(dbManager: DbManager, chosenTags: List<Tag>, onClose: () -> Un
                                 searchTag,
                                 true
                             ) && tag.name != searchTag
-                        ) DrawTag(
+                        ) SelectableTagChip(
                             tag.name,
                             tag.colorOrDefault(dbManager),
                             false
@@ -542,33 +543,6 @@ fun TagFilterMenu(dbManager: DbManager, chosenTags: List<Tag>, onClose: () -> Un
                 }
             }
         }
-    )
-}
-
-@Composable
-fun DrawTag(name: String, color: Color, chosen: Boolean, onChooseToggle: (Boolean) -> Unit) {
-    var selected by remember(name) { mutableStateOf(chosen) }
-
-    InputChip(
-        selected,
-        {
-            selected = !selected
-            onChooseToggle(selected)
-        },
-        {
-            Text(
-                name, style = MaterialTheme.typography.bodyLarge,
-                color = bgColorToTextColor(color)
-            )
-        },
-        modifier = Modifier.padding(horizontal = 4.dp),
-        trailingIcon = {
-            if (selected) Icon(
-                Icons.Filled.Done, null,
-                tint = bgColorToTextColor(color)
-            )
-        },
-        colors = InputChipDefaults.inputChipColors(containerColor = color, selectedContainerColor = color),
     )
 }
 
