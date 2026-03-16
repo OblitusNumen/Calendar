@@ -100,6 +100,7 @@ fun DetailsEntryScreen(dbManager: DbManager, entryId: Int, editEntry: () -> Unit
                 for (date in dates)
                     Date(date)
             }
+
             // notifications
             if (notifications.isNotEmpty()) {
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
@@ -115,10 +116,13 @@ fun DetailsEntryScreen(dbManager: DbManager, entryId: Int, editEntry: () -> Unit
 @Composable
 fun Notification(notification: Notification) {
     Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp)) {
+        // sound
         Icon(
             if (notification.sound) Icons.Filled.Notifications else Icons.Outlined.Notifications, null,
             Modifier.align(Alignment.CenterVertically).padding(8.dp)
         )
+
+        // offset
         Text(
             modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp)
                 .weight(1f),
@@ -151,6 +155,8 @@ fun Date(date: Date) {
                 Icons.Outlined.Call, "",
                 Modifier.align(Alignment.CenterVertically).padding(8.dp)
             )
+
+            // time
             Text(
                 modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp, vertical = 8.dp)
                     .weight(1f),

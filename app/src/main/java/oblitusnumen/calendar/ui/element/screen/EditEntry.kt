@@ -80,7 +80,7 @@ fun EditEntryScreen(
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).fillMaxHeight()) {
             Spacer(Modifier.height(paddingValues.calculateTopPadding()))
 
-            // name
+            // name and color
             OutlinedTextField(
                 modifier = Modifier.fillMaxWidth().padding(12.dp),
                 value = state.name, onValueChange = {
@@ -115,10 +115,13 @@ fun EditEntryScreen(
 
             // tags
             var tagChoose by remember { mutableStateOf(false) }
-            if (tagChoose) TagChooseMenu(dbManager, state.tags, { tagChoose = false }, { viewModel.setTags(it) })
+            if (tagChoose)
+                TagChooseMenu(dbManager, state.tags, { tagChoose = false }, { viewModel.setTags(it) })
 
+            // draw tags
             Row {
                 Icon(Icons.Filled.Star, "Tags", Modifier.padding(8.dp))
+
                 FlowRow(
                     Modifier.fillMaxWidth().padding(end = 16.dp)
                 ) {
@@ -131,6 +134,7 @@ fun EditEntryScreen(
                 }
             }
 
+            // choose tags
             Box(Modifier.fillMaxWidth().padding(top = 8.dp).clickable {
                 tagChoose = true
             }) {
@@ -156,6 +160,8 @@ fun EditEntryScreen(
                         viewModel.updateDate(date.uiId, it)
                     }
                 }
+
+            // add date
             Box(
                 Modifier.defaultMinSize(minHeight = 52.dp).fillMaxWidth()/*.padding(top = 8.dp)*/.clickable {
                     dateTimePicker.dateTimePick(
@@ -183,32 +189,38 @@ fun EditEntryScreen(
 
             // notifications
             var notificationChoose by remember { mutableStateOf(false) }
-            if (notificationChoose) NotificationAddMenu({ offset, sound ->
-                notificationChoose = false
-                for (notification in state.notificationStates) {
-                    if (notification.offset.toString() == offset.toString()) {
-                        viewModel.setNotificationSound(notification.uiId, sound)
-                        return@NotificationAddMenu
+            if (notificationChoose)
+                NotificationAddMenu({ offset, sound ->
+                    notificationChoose = false
+                    for (notification in state.notificationStates) {
+                        if (notification.offset.toString() == offset.toString()) {
+                            viewModel.setNotificationSound(notification.uiId, sound)
+                            return@NotificationAddMenu
+                        }
                     }
-                }
-                viewModel.addNotification(offset, sound)
-            }, { notificationChoose = false })
-            var updated by remember { mutableStateOf(false) }
-            updated// fixme this is hack...
+                    viewModel.addNotification(offset, sound)
+                }, { notificationChoose = false })
+
+            // draw notifications
             for (notification in state.notificationStates) key(notification.uiId) {
                 Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp).clickable {
                     viewModel.setNotificationSound(notification.uiId, !notification.sound)
                 }) {
+                    // sound
                     Icon(
                         if (notification.sound) Icons.Filled.Notifications else Icons.Outlined.Notifications, null,
                         Modifier.align(Alignment.CenterVertically).padding(8.dp)
                     )
+
+                    // offset
                     Text(
                         modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp)
                             .weight(1f),
                         text = "${notification.offset.count} ${notification.offset.name} before",// FIXME: text
                         style = MaterialTheme.typography.bodyLarge
                     )
+
+                    // remove button
                     IconButton(
                         modifier = Modifier.align(Alignment.CenterVertically),
                         onClick = {
@@ -217,6 +229,8 @@ fun EditEntryScreen(
                         content = { Icon(Icons.Filled.Clear, contentDescription = null) })
                 }
             }
+
+            // add notifications
             Box(Modifier.defaultMinSize(minHeight = 52.dp).fillMaxWidth()/*.padding(top = 8.dp)*/.clickable {
                 notificationChoose = true
             }) {
@@ -347,7 +361,6 @@ fun Date(
 
             // pick date
             val localDateTime = date.getFirstZoneDateTime().toLocalDateTime()
-
             Text(
                 modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp, vertical = 8.dp)
                     .weight(.5f).clickable {
@@ -385,6 +398,7 @@ fun Date(
                 style = MaterialTheme.typography.bodyLarge
             )
 
+            // remove date
             IconButton(
                 modifier = Modifier.align(Alignment.CenterVertically),
                 onClick = { onRmDate() },
@@ -438,6 +452,7 @@ fun Date(
                 }
             }
 
+            // add exceptions
             Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp).clickable {
                 dateTimePicker.datePick({}, {
                     onUpdateDate(date.addExceptions(it))

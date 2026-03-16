@@ -129,7 +129,7 @@ sealed class Period : Comparable<Period> {
     }
 
     // TODO: localization
-    val name: String = when(this) {
+    val name: String = when (this) {
         is Once -> "time"
         is Minute -> "minute"
         is Hour -> "hour"

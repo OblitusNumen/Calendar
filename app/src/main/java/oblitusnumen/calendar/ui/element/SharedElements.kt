@@ -142,7 +142,6 @@ fun NotificationAddMenu(onConfirm: (Period, Boolean) -> Unit, onDismiss: () -> U
     )
 }
 
-
 @Composable
 fun PeriodSelector(
     initialPeriodType: PeriodType,
