@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import oblitusnumen.calendar.implementation.convertMillisToDate
 import oblitusnumen.calendar.implementation.data.DbManager
+import oblitusnumen.calendar.implementation.data.Period.Once
 import oblitusnumen.calendar.implementation.data.tables.Date
 import oblitusnumen.calendar.implementation.data.tables.Entry
 import oblitusnumen.calendar.implementation.data.tables.Notification
@@ -131,12 +132,19 @@ fun Notification(notification: Notification) {
 fun Date(date: Date) {
     val textStart = (if (date.isPeriodic) "from " else "") +
             date.getFirstZoneDateTime().format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm"))
+
+    val textDuration: String = if (date.duration is Once)
+        "no duration"
+    else
+        "for ${date.duration.count} ${date.duration.name}"
+
     val textPeriod: String = if (date.isPeriodic)
         "every " + date.period.count.toString() + " " + PeriodType(date.period).toString() +
                 if (date.isEndless) "" else
                     " until " + date.getLastZoneDateTime().format(DateTimeFormatter.ofPattern("dd MMM yyyy"))
     else
         PeriodType(date.period).toString()
+
     Column(Modifier.padding(bottom = 6.dp)) {
         Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp)) {
             Icon(
@@ -150,6 +158,18 @@ fun Date(date: Date) {
                 style = MaterialTheme.typography.bodyLarge
             )
         }
+
+        // duration
+        Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp).padding(horizontal = 40.dp)) {
+            Text(
+                modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp, vertical = 8.dp)
+                    .weight(1f),
+                text = textDuration,
+                style = MaterialTheme.typography.bodyLarge
+            )
+        }
+
+        // periodic
         Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp).padding(horizontal = 40.dp)) {
             Text(
                 modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp, vertical = 8.dp)
@@ -158,6 +178,8 @@ fun Date(date: Date) {
                 style = MaterialTheme.typography.bodyLarge
             )
         }
+
+        // exceptions
         if (date.isPeriodic) {
             for (epochDay in date.exceptionRules.listAll()) {
                 val textException = "except " + convertMillisToDate(epochDay * 86400000)

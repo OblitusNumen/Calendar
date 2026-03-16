@@ -48,6 +48,7 @@ fun EditEntryScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     val periodSelectorDate = remember { mutableStateOf<DateState?>(null) }
+    val durationSelectorDate = remember { mutableStateOf<DateState?>(null) }
     val dateTimePicker = remember { DateTimePicker() }
 
     remember {
@@ -146,7 +147,12 @@ fun EditEntryScreen(
             for (date in state.dateStates)
                 key(date.uiId) {
                     // FIXME:  toDbEntity() is a hack; do the fix in other places
-                    Date(date, periodSelectorDate, dateTimePicker, { viewModel.rmDate(date.uiId) }) {
+                    Date(
+                        date,
+                        periodSelectorDate,
+                        durationSelectorDate,
+                        dateTimePicker,
+                        { viewModel.rmDate(date.uiId) }) {
                         viewModel.updateDate(date.uiId, it)
                     }
                 }
@@ -301,6 +307,7 @@ fun TagChooseMenu(dbManager: DbManager, tags: List<Tag>, onClose: () -> Unit, on
 fun Date(
     date: DateState,
     periodSelectorDate: MutableState<DateState?>,
+    durationSelectorDate: MutableState<DateState?>,
     dateTimePicker: DateTimePicker,
     onRmDate: () -> Unit,
     onUpdateDate: (DateState) -> Unit,
@@ -308,6 +315,14 @@ fun Date(
     var periodSelectorDate by remember { periodSelectorDate }
     if (periodSelectorDate == date)
         PeriodSelectorDialog(date, { periodSelectorDate = null }, { periodSelectorDate = null }, onUpdateDate)
+
+    var durationSelectorDate by remember { durationSelectorDate }
+    if (durationSelectorDate == date)
+        DurationSelectorDialog(date, {
+            durationSelectorDate = null
+            onUpdateDate(date.setDuration(it))
+        }, { durationSelectorDate = null })
+
     val dateStartText = (if (date.isPeriodic) "from " else "") +
             date.getFirstZoneDateTime().format(DateTimeFormatter.ofPattern("dd MMM yyyy "))
     val timeText = date.getFirstZoneDateTime().format(DateTimeFormatter.ofPattern("HH:mm"))
@@ -317,6 +332,11 @@ fun Date(
                     " until " + date.getLastZoneDateTime().format(DateTimeFormatter.ofPattern("dd MMM yyyy"))
     else
         PeriodType(date.period).toString()
+
+    val textDuration: String = if (date.duration is Once)
+        "no duration"
+    else
+        "for ${date.duration.count} ${date.duration.name}"
 
     Column(Modifier.padding(bottom = 6.dp)) {
         Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp)) {
@@ -371,6 +391,18 @@ fun Date(
                 content = { Icon(Icons.Filled.Clear, contentDescription = null) })
         }
 
+        // choose duration
+        Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp).clickable {
+            durationSelectorDate = date
+        }.padding(horizontal = 40.dp)) {
+            Text(
+                modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp, vertical = 8.dp)
+                    .weight(1f),
+                text = textDuration,
+                style = MaterialTheme.typography.bodyLarge
+            )
+        }
+
         // choose period
         Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp).clickable {
             periodSelectorDate = date
@@ -382,6 +414,8 @@ fun Date(
                 style = MaterialTheme.typography.bodyLarge
             )
         }
+
+        // exceptions
         if (date.isPeriodic) {
             for (epochDay in date.exceptionRules.listAll()) {
                 val textException = "except " + convertMillisToDate(epochDay * 86400000)
@@ -651,6 +685,56 @@ fun PeriodSelectorDialog(
                         label = { Text("Occurrences") }
                     )
                 }
+            }
+        }
+    )
+}
+
+@Composable
+fun DurationSelectorDialog(
+    date: DateState,
+    onConfirm: (Period) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val initialOffsetCount = if (date.duration is Once) 1 else date.duration.count
+    val initialOffsetType = OffsetType(date.duration)
+
+    var offsetCount: Long by remember { mutableStateOf(initialOffsetCount) }
+    var selectedOffsetType by remember { mutableStateOf(initialOffsetType) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                val count = if (offsetCount < 0)
+                    if (selectedOffsetType.period is Once)
+                        0
+                    else {// TODO:
+//                    showErrorToast("Could not parse count: '$periodCountText'")
+                        return@TextButton
+                    }
+                else
+                    offsetCount
+
+                onConfirm(
+                    if (count == 0L || selectedOffsetType.period is Once)
+                        Once()
+                    else {
+                        selectedOffsetType.period.updateCount(count)
+                    },
+                )
+            }) {
+                Text("OK")
+            }
+        },
+        text = {
+            Column {
+                OffsetSelector(initialOffsetType, initialOffsetCount, { selectedOffsetType = it }, { offsetCount = it })
             }
         }
     )

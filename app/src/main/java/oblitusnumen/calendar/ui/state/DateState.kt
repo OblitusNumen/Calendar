@@ -60,6 +60,9 @@ data class DateState(
     fun setRange(startOfDayStart: ZonedDateTime? = null, startOfDayEnd: ZonedDateTime? = null): DateState =
         toDbEntity().apply { setRange(startOfDayStart, startOfDayEnd) }.toUiState(uiId)
 
+    fun setDuration(duration: Period): DateState =
+        copy(duration = duration)
+
     fun setPeriod(period: Period): DateState =
         toDbEntity().apply { setPeriod(period) }.toUiState(uiId)
 
