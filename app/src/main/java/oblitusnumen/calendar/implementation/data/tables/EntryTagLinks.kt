@@ -27,8 +27,9 @@ class EntryTagLinks : BaseColumns {
         }
 
         fun delete(dbManager: DbManager, entryId: Int, tagId: Int) {
-            dbManager.writableDatabase.execSQL(
-                "DELETE FROM $TABLE_NAME WHERE $COLUMN_NAME_ENTRY_ID = ? AND $COLUMN_NAME_TAG_ID = ?",
+            dbManager.writableDatabase.delete(
+                TABLE_NAME,
+                "$COLUMN_NAME_ENTRY_ID = ? AND $COLUMN_NAME_TAG_ID = ?",
                 arrayOf(entryId.toString(), tagId.toString())
             )
         }

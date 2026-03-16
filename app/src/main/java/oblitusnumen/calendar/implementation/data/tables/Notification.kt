@@ -38,8 +38,9 @@ class Notification : BaseColumns {
     }
 
     fun delete(dbManager: DbManager) {
-        dbManager.writableDatabase.execSQL(
-            "DELETE FROM $TABLE_NAME WHERE $COLUMN_NAME_EVENT_OPTIONS_ID = ? AND $COLUMN_NAME_TIME_OFFSET = ?",
+        dbManager.writableDatabase.delete(
+            TABLE_NAME,
+            "$COLUMN_NAME_EVENT_OPTIONS_ID = ? AND $COLUMN_NAME_TIME_OFFSET = ?",
             arrayOf(eventOptionsId.toString(), offset.toString())
         )
     }

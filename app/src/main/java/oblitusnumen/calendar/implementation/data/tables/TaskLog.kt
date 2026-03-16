@@ -74,8 +74,9 @@ class TaskLog : BaseColumns {
     }
 
     fun delete() {
-        dbManager!!.writableDatabase.execSQL(
-            "DELETE FROM $TABLE_NAME WHERE $COLUMN_NAME_ID = ?",
+        dbManager!!.writableDatabase.delete(
+            TABLE_NAME,
+            "$COLUMN_NAME_ID = ?",
             arrayOf(id.toString())
         )
         id = null
@@ -130,8 +131,9 @@ class TaskLog : BaseColumns {
         }
 
         fun deleteAll(dbManager: DbManager, taskId: Int) {
-            dbManager.writableDatabase.execSQL(
-                "DELETE FROM $TABLE_NAME WHERE $COLUMN_NAME_TASK_ID = ?",
+            dbManager.writableDatabase.delete(
+                TABLE_NAME,
+                "$COLUMN_NAME_TASK_ID = ?",
                 arrayOf(taskId.toString())
             )
         }

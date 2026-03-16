@@ -28,16 +28,18 @@ class TaskDependencies : BaseColumns {
         }
 
         fun delete(dbManager: DbManager, parentTaskId: Int, childTaskId: Int) {
-            dbManager.writableDatabase.execSQL(
-                "DELETE FROM $TABLE_NAME WHERE $COLUMN_NAME_PARENT_TASK_ID = ? AND $COLUMN_NAME_CHILD_TASK_ID = ?",
+            dbManager.writableDatabase.delete(
+                TABLE_NAME,
+                "$COLUMN_NAME_PARENT_TASK_ID = ? AND $COLUMN_NAME_CHILD_TASK_ID = ?",
                 arrayOf(parentTaskId.toString(), childTaskId.toString())
             )
         }
 
         fun deleteAll(dbManager: DbManager, taskId: Int) {
             dbManager.writableDatabase.transaction {
-                dbManager.writableDatabase.execSQL(
-                    "DELETE FROM $TABLE_NAME WHERE $COLUMN_NAME_PARENT_TASK_ID = ? OR $COLUMN_NAME_CHILD_TASK_ID = ?",
+                dbManager.writableDatabase.delete(
+                    TABLE_NAME,
+                    "$COLUMN_NAME_PARENT_TASK_ID = ? OR $COLUMN_NAME_CHILD_TASK_ID = ?",
                     arrayOf(taskId.toString(), taskId.toString())
                 )
             }
