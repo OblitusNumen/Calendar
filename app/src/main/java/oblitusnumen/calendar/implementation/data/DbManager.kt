@@ -230,6 +230,94 @@ class DbManager(val context: Context) :
         }
     }
 
+    fun fillDbFromStrings() {
+        val links = ""
+
+        val tags = ""
+
+        val notifications = ""
+
+        val dates = ""
+
+        val options = ""
+
+        val entries = ""
+
+        entries.lines().forEach {
+            if (it.isEmpty())
+                return@forEach
+            val line = it.split("\t")
+            log(line)
+            val contentValues = ContentValues()
+            contentValues.put("id", line[0].toInt())
+            contentValues.put("defaultOptionsId", line[1].toInt())
+            contentValues.put("isTask", line[2].toInt())
+            writableDatabase.insert("Entries", null, contentValues)
+        }
+
+        options.lines().forEach {
+            if (it.isEmpty())
+                return@forEach
+            val line = it.split("\t")
+            val contentValues = ContentValues()
+            contentValues.put("id", line[0].toInt())
+            contentValues.put("state", line[1].toInt())
+            contentValues.put("name", line[2])
+            contentValues.put("color", line[3].toInt())
+            writableDatabase.insert("EventOptions", null, contentValues)
+        }
+
+        dates.lines().forEach {
+            if (it.isEmpty())
+                return@forEach
+            val line = it.split("\t")
+            val contentValues = ContentValues()
+            contentValues.put("id", line[0].toInt())
+            contentValues.put("entryId", line[1].toInt())
+            contentValues.put("eventOptionsId", line[2].toInt())
+            contentValues.put("epochSecondChainStart", line[3].toLong())
+            contentValues.put("duration", line[4])
+            contentValues.put("epochSecondChainEnd", line[5].toLong())
+            contentValues.put("timesRepeat", line[6].toInt())
+            contentValues.put("period", line[7])
+            contentValues.put("timeZoneId", line[8])
+            contentValues.put("occurrenceExceptions", line[9])
+            writableDatabase.insert("Dates", null, contentValues)
+        }
+
+        notifications.lines().forEach {
+            if (it.isEmpty())
+                return@forEach
+            val line = it.split("\t")
+            val contentValues = ContentValues()
+            contentValues.put("eventOptionsId", line[0].toInt())
+            contentValues.put("timeOffset", line[1])
+            contentValues.put("hasSound", line[2].toInt())
+            writableDatabase.insert("Notifications", null, contentValues)
+        }
+
+        tags.lines().forEach {
+            if (it.isEmpty())
+                return@forEach
+            val line = it.split("\t")
+            val contentValues = ContentValues()
+            contentValues.put("id", line[0].toInt())
+            contentValues.put("name", line[1])
+            contentValues.put("color", line[2].toInt())
+            writableDatabase.insert("Tags", null, contentValues)
+        }
+
+        links.lines().forEach {
+            if (it.isEmpty())
+                return@forEach
+            val line = it.split("\t")
+            val contentValues = ContentValues()
+            contentValues.put("entryId", line[0].toInt())
+            contentValues.put("tagId", line[1].toInt())
+            writableDatabase.insert("EntryTagLinks", null, contentValues)
+        }
+    }
+
     companion object {
         const val DATABASE_VERSION: Int = 1
         const val DB_NAME: String = "entries.db"
