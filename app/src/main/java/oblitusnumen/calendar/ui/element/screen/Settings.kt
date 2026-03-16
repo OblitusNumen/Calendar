@@ -95,7 +95,7 @@ fun SettingsScreen(dbManager: DbManager, backPress: () -> Unit) {
                             Text(
                                 modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp)
                                     .weight(1f),
-                                text = "${notification.first.count} ${notification.first.javaClass.simpleName} before",// FIXME: text
+                                text = "${notification.first.count} ${notification.first.name} before",// FIXME: text
                                 style = MaterialTheme.typography.bodyLarge
                             )
                             IconButton(

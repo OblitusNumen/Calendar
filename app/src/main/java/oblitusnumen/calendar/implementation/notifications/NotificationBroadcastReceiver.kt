@@ -52,7 +52,7 @@ class NotificationBroadcastReceiver : BroadcastReceiver() {
                         )
                     )
                     .setContentText(// FIXME: format, missed events
-                        "Upcoming event in ${pendingNotification.notification.offset.count} ${pendingNotification.notification.offset.javaClass.simpleName}\n(at ${
+                        "Upcoming event in ${pendingNotification.notification.offset.count} ${pendingNotification.notification.offset.name}\n(at ${
                             getZonedFromEpochSeconds(
                                 pendingNotification.eventDateTime
                             ).format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm"))

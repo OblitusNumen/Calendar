@@ -121,7 +121,7 @@ fun Notification(notification: Notification) {
         Text(
             modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp)
                 .weight(1f),
-            text = "${notification.offset.count} ${notification.offset.javaClass.simpleName} before",// FIXME: text
+            text = "${notification.offset.count} ${notification.offset.name} before",// FIXME: text
             style = MaterialTheme.typography.bodyLarge
         )
     }
