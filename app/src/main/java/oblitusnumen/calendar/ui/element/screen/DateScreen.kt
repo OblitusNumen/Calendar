@@ -31,6 +31,7 @@ import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import kotlin.math.max
 import kotlin.math.min
 
 @Composable
@@ -118,7 +119,13 @@ fun Day(
         for (date in dates) {
             var assigned = false
             for (column in columns) {
-                if (column.last().endEpochSecond() < date.startEpochSecond()) {
+                //end of last + spacer + duration normalization < start of pending
+                if (column.last().endEpochSecond() +
+                    MIN_SPACE_BETWEEN_OCCURRENCES_SECONDS +
+                    (MIN_OCCURRENCE_SIZE_MINUTES * 60 - column.last().date.duration.secondsApproximation()).let {
+                        if (it > 0) it else 0
+                    } < date.startEpochSecond()
+                ) {
                     column.add(date)
                     assigned = true
                     break
@@ -173,6 +180,7 @@ fun Day(
                         log("pre_size:${e - s}")
                         log("size:$size")
                         log("real_end:$endMinutesOffset")
+                        log("id:${occurrence.date.id}")
                     }
                     endOfLastMinutesOffset = endMinutesOffset
                     endOfLast = end
@@ -208,11 +216,32 @@ fun EntryBox(
     var excludeDateShown by remember { mutableStateOf(false) }
 
     Box(
-        Modifier.height(minutesToDp(minutesSize)).fillMaxWidth()
-            .combinedClickable(onLongClick = { excludeDateShown = true }, onClick = openEntryInfo)
-            .border(1.dp, MaterialTheme.colorScheme.primary).background(occurrence.date.color)
+        Modifier.height(minutesToDp(max(minutesSize, MIN_OCCURRENCE_SIZE_MINUTES))).fillMaxWidth()
+            .combinedClickable(onLongClick = { excludeDateShown = true }, onClick = openEntryInfo).let {
+                if (minutesSize != 0)
+//                    it.padding(horizontal = 1.dp).border(1.dp, occurrence.date.color)
+                    it
+                        .padding(horizontal = 1.dp)
+//                        .border(1.dp, MaterialTheme.colorScheme.primary)
+                        .background(occurrence.date.color)
+                else
+                    it
+            }
     ) {
-        Text("$id")
+        if (minutesSize == 0)
+            Box(
+                modifier = Modifier.height(2.dp).fillMaxWidth().padding(top = minutesToDp(minutesSize))
+                    .background(occurrence.date.color)
+            )
+
+        Text("$id", Modifier.align(Alignment.BottomEnd)) // FIXME: for debug
+        Text(
+            modifier = Modifier.padding(2.dp).align(Alignment.TopStart),
+            color = if (minutesSize == 0) MaterialTheme.colorScheme.onBackground else bgColorToTextColor(occurrence.date.color),
+            text = occurrence.date.displayName,
+            style = MaterialTheme.typography.bodyMedium,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 
     if (excludeDateShown)
@@ -326,3 +355,7 @@ fun ExcludeOccurrenceDialog(occurrence: LocalDateTime, name: String, doExclude: 
 
 @Composable
 fun minutesToDp(minutes: Int) = dpByDpForPixelPerfect(minutes.toFloat())
+
+const val MIN_OCCURRENCE_SIZE_MINUTES = 30
+
+const val MIN_SPACE_BETWEEN_OCCURRENCES_SECONDS = 200
