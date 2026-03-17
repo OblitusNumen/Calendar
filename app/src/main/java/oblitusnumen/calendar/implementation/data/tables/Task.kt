@@ -7,7 +7,7 @@ import androidx.core.database.sqlite.transaction
 import oblitusnumen.calendar.implementation.data.DbManager
 import java.time.ZoneId
 
-class Task(
+open class Task(
     entryId: Int? = null,
     var startConstraintTimestamp: Long? = null,
     var deadlineTimestamp: Long,

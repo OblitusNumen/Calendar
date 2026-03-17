@@ -23,7 +23,9 @@ import oblitusnumen.calendar.implementation.toInt
 import oblitusnumen.calendar.ui.element.BottomBar
 import oblitusnumen.calendar.ui.element.screen.*
 import oblitusnumen.calendar.ui.state.EntryEditState
+import oblitusnumen.calendar.ui.state.TaskEditState
 import oblitusnumen.calendar.ui.viewmodel.EntryEditViewModel
+import oblitusnumen.calendar.ui.viewmodel.TaskEditViewModel
 import java.time.LocalDate
 
 @Composable
@@ -110,7 +112,7 @@ fun NavigationGraph(navController: NavHostController, dbManager: DbManager, star
                 dbManager,
                 tagsFilter,
                 { BottomBar(navController) },
-                { NavRoutes.EntryEdit.navHere(navController, null) },
+                { NavRoutes.TaskEdit.navHere(navController, null) },
                 { NavRoutes.ThatDayDetails.navHere(navController, it) },
                 { year, monthValue ->
                     NavRoutes.Agenda.navHere(navController, year, monthValue, null)
@@ -177,7 +179,15 @@ fun NavigationGraph(navController: NavHostController, dbManager: DbManager, star
 
             viewModel { EntryEditViewModel(EntryEditState.initial(dbManager, entryId, false)) }
 
-            EditEntryScreen(dbManager, viewModel(), fromDay, { NavRoutes.backPress(navController) })
+            EditEntryScreen(dbManager, viewModel(), fromDay) { NavRoutes.backPress(navController) }
+        }
+
+        composable(route = NavRoutes.TaskEdit.route) { navBackStackEntry ->
+            val taskId = NavRoutes.TaskEdit.getArgTaskId(navBackStackEntry)
+
+            viewModel { TaskEditViewModel(TaskEditState.initial(dbManager, taskId)) }
+
+            EditTaskScreen(dbManager, viewModel()) { NavRoutes.backPress(navController) }
         }
 
         composable(route = NavRoutes.EntryDetails.route) { navBackStackEntry ->

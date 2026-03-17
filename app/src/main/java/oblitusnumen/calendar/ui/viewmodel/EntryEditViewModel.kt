@@ -61,7 +61,7 @@ class EntryEditViewModel(initialState: EntryEditState) : ViewModel() {
 
     fun commitToDb(dbManager: DbManager) {
         viewModelScope.launch {
-            val snapshot = _state.value  // ← trivial to grab
+            val snapshot = _state.value
             snapshot.commit(dbManager)
         }
     }

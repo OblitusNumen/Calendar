@@ -21,6 +21,21 @@ sealed class NavRoutes(private val path: String, val route: String = path) {
         }
     }
 
+    data object TaskEdit : NavRoutes("taskEdit", route = "taskEdit/{task}") {
+        private const val task = "task"
+
+        fun navHere(navController: NavController, taskId: Int?) {
+            val tid = taskId?.toString() ?: "-1"
+            navController.navigate(withArgs(tid))
+        }
+
+        fun getArgTaskId(navBackStackEntry: NavBackStackEntry): Int? {
+            val taskText = navBackStackEntry.arguments?.getString(task)
+            val taskId = taskText?.toInt()
+            return if (taskId == null || taskId < 0) null else taskId
+        }
+    }
+
     data object Tags : NavRoutes("tags") {
         fun navHere(navController: NavController) {
             navController.navigate(route)
