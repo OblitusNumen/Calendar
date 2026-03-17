@@ -11,7 +11,7 @@ import oblitusnumen.calendar.implementation.multFrac
 import oblitusnumen.calendar.implementation.toEpochDays
 import oblitusnumen.calendar.implementation.toWeekNumber
 import oblitusnumen.calendar.ui.state.DateState
-import oblitusnumen.calendar.ui.state.EntryEditState
+import oblitusnumen.calendar.ui.state.UiIdGenerator
 import org.jetbrains.annotations.TestOnly
 import java.time.Instant
 import java.time.LocalDate
@@ -553,7 +553,7 @@ open class Date : BaseColumns {
         }
     }
 
-    fun toUiState(uiIdGenerator: EntryEditState.UiIdGenerator) = toUiState(uiIdGenerator.next())
+    fun toUiState(uiIdGenerator: UiIdGenerator) = toUiState(uiIdGenerator.next())
 
     fun toUiState(uiId: String) = DateState(
         uiId,

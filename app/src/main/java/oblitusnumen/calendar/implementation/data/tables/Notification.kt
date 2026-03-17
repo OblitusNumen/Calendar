@@ -6,8 +6,8 @@ import android.provider.BaseColumns
 import androidx.compose.runtime.Immutable
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.Period
-import oblitusnumen.calendar.ui.state.EntryEditState
 import oblitusnumen.calendar.ui.state.NotificationState
+import oblitusnumen.calendar.ui.state.UiIdGenerator
 
 
 @Immutable
@@ -49,7 +49,7 @@ class Notification : BaseColumns {
         eventOptionsId = optionsId
     }
 
-    fun toUiState(uiIdGenerator: EntryEditState.UiIdGenerator) =
+    fun toUiState(uiIdGenerator: UiIdGenerator) =
         NotificationState(uiIdGenerator.next(), eventOptionsId, offset, sound)
 
     companion object {
