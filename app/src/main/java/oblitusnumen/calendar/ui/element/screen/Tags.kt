@@ -45,16 +45,20 @@ fun TagsScreen(
     Scaffold(
         topBar = { SearchTopBar(searchQuery, backPress) },
         bottomBar = navBar,
-        floatingActionButton = { TagsActionButton({ newTagEditShown = true }) }
+        floatingActionButton = { TagsActionButton { newTagEditShown = true } }
     ) { paddingValues ->
-        val tagsWithEntryCount: MutableMap<Tag, Int> = remember { Tag.allWithEntryCount(dbManager).toMutableMap() }
-        val tags: MutableState<List<Tag>> = remember {
+        // FIXME: hack
+        var updater by remember { mutableStateOf(false) }
+
+        val tagsWithEntryCount: MutableMap<Tag, Int> =
+            remember(updater) { Tag.allWithEntryCount(dbManager).toMutableMap() }
+        val tags: MutableState<List<Tag>> = remember(tagsWithEntryCount) {
             mutableStateOf(tagsWithEntryCount.keys.toList().sortedBy { it.name }
                 .sortedByDescending { tagsWithEntryCount[it] })
         }
         val filteredTags =
             remember(tags, searchQuery.value) { tags.value.filter { it.name.contains(searchQuery.value, true) } }
-        val tagNames: MutableSet<String> = remember { filteredTags.map { it.name }.toMutableSet() }
+        val tagNames: MutableSet<String> = remember(filteredTags) { filteredTags.map { it.name }.toMutableSet() }
 
         LazyColumn(contentPadding = paddingValues) {
             items(filteredTags) { tag ->
@@ -95,7 +99,12 @@ fun TagsScreen(
                 }
             }
         }
-        if (newTagEditShown) EditTag(dbManager, tagsWithEntryCount, tags, tagNames) { newTagEditShown = false }
+
+        if (newTagEditShown)
+            EditTag(dbManager, tagsWithEntryCount, tags, tagNames) {
+                newTagEditShown = false
+                updater = !updater
+            }
     }
 }
 
