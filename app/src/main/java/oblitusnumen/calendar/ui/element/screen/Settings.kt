@@ -28,10 +28,7 @@ import java.io.File
 @Composable
 fun SettingsScreen(dbManager: DbManager, backPress: () -> Unit) {
     Scaffold(topBar = { SettingsTopBar(backPress) }) { paddingValues ->
-        LazyColumn {
-            item {
-                Spacer(modifier = Modifier.height(paddingValues.calculateTopPadding()))
-            }
+        LazyColumn(contentPadding = paddingValues) {
             item {
                 Row(Modifier.padding(top = 8.dp, bottom = 4.dp)) {
                     Text(
@@ -183,9 +180,6 @@ fun SettingsScreen(dbManager: DbManager, backPress: () -> Unit) {
                         Text(text = "Restore Events")
                     }
                 }
-            }
-            item {
-                Spacer(modifier = Modifier.height(paddingValues.calculateBottomPadding()))
             }
         }
     }

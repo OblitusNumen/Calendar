@@ -46,7 +46,7 @@ fun TagsScreen(
         topBar = { SearchTopBar(searchQuery, backPress) },
         bottomBar = navBar,
         floatingActionButton = { TagsActionButton({ newTagEditShown = true }) }
-    ) { innerPadding ->
+    ) { paddingValues ->
         val tagsWithEntryCount: MutableMap<Tag, Int> = remember { Tag.allWithEntryCount(dbManager).toMutableMap() }
         val tags: MutableState<List<Tag>> = remember {
             mutableStateOf(tagsWithEntryCount.keys.toList().sortedBy { it.name }
@@ -56,10 +56,7 @@ fun TagsScreen(
             remember(tags, searchQuery.value) { tags.value.filter { it.name.contains(searchQuery.value, true) } }
         val tagNames: MutableSet<String> = remember { filteredTags.map { it.name }.toMutableSet() }
 
-        LazyColumn {
-            item {
-                Spacer(Modifier.height(innerPadding.calculateTopPadding()))
-            }
+        LazyColumn(contentPadding = paddingValues) {
             items(filteredTags) { tag ->
                 Row(
                     Modifier.fillMaxWidth().defaultMinSize(minHeight = 56.dp)
@@ -96,9 +93,6 @@ fun TagsScreen(
                         Icon(Icons.Filled.Edit, null)
                     }
                 }
-            }
-            item {
-                Spacer(Modifier.height(innerPadding.calculateBottomPadding()))
             }
         }
         if (newTagEditShown) EditTag(dbManager, tagsWithEntryCount, tags, tagNames) { newTagEditShown = false }

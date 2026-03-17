@@ -1,7 +1,10 @@
 package oblitusnumen.calendar.ui.element.screen
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -98,8 +101,7 @@ fun TagEditScreen(
                 scheduleDialogEntry = null
             }
 
-        LazyColumn {
-            item { Spacer(Modifier.height(paddingValues.calculateTopPadding())) }
+        LazyColumn(contentPadding = paddingValues) {
             items(tagEntries.size) { index ->
                 val entryView = tagEntries[index]
                 val id = entryView.id!!
@@ -124,7 +126,6 @@ fun TagEditScreen(
                     }
                 )
             }
-            item { Spacer(Modifier.height(paddingValues.calculateBottomPadding())) }
         }
     }
 }

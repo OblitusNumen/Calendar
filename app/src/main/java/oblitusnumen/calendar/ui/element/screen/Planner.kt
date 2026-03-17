@@ -1,12 +1,9 @@
 package oblitusnumen.calendar.ui.element.screen
 
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
-import androidx.compose.ui.Modifier
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.tables.Tag
 import java.time.LocalDate
@@ -28,14 +25,7 @@ fun PlannerScreen(
         bottomBar = navBar,
         floatingActionButton = {}
     ) { paddingValues ->
-        LazyColumn {
-            item {
-                Spacer(Modifier.height(paddingValues.calculateTopPadding()))
-            }
-
-            item {
-                Spacer(Modifier.height(paddingValues.calculateBottomPadding()))
-            }
+        LazyColumn(contentPadding = paddingValues) {
         }
     }
 }
