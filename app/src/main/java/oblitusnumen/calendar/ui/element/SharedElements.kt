@@ -571,8 +571,7 @@ fun ScheduleDialog(dbManager: DbManager, entry: ViewEntryWithOptions, onClose: (
             }
         }, text = {
             Column {
-                // FIXME:
-//                    Text("Schedule ${entry.name.ifEmpty { "[No title]" }} event?")
+                Text("Schedule ${entry.displayName} event?")
             }
         })
 }

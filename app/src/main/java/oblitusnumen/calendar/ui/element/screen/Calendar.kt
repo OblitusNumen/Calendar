@@ -96,7 +96,7 @@ fun CalendarScreen(
                         Icon(Icons.Filled.Close, contentDescription = "close drawer")
                     }
                 }
-                HorizontalDivider()
+
                 NavigationDrawerItem(
                     label = { Text(text = "Entries") },
                     selected = false,
@@ -108,7 +108,7 @@ fun CalendarScreen(
                         )
                     }
                 )
-                HorizontalDivider()
+
                 NavigationDrawerItem(
                     label = { Text(text = "Tags") },
                     selected = false,
@@ -120,7 +120,7 @@ fun CalendarScreen(
                         )
                     }
                 )
-                HorizontalDivider()
+
                 NavigationDrawerItem(
                     label = { Text(text = "Settings") },
                     selected = false,

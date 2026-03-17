@@ -42,7 +42,7 @@ fun PlannerScreen(
                         Icon(Icons.Filled.Close, contentDescription = "close drawer")
                     }
                 }
-                HorizontalDivider()
+
                 NavigationDrawerItem(
                     label = { Text(text = "Settings") },
                     selected = false,

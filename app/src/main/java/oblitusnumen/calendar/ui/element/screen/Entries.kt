@@ -31,7 +31,7 @@ fun EntriesScreen(
         val allEntries = remember(scheduleCounter) { ViewEntryWithOptions.all(dbManager).sortedBy { it.nextDate } }
         val entries = remember(allEntries, searchQuery.value) {
             allEntries.filter {
-                it.getOptions(dbManager).name.contains(
+                it.name.contains(
                     searchQuery.value,
                     true
                 )

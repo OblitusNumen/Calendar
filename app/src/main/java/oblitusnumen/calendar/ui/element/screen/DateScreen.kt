@@ -56,6 +56,7 @@ fun DateScreen(
         floatingActionButton = { NewEntryFunctionButton { openEditNewEntry(pagerDay) } }
     ) { paddingValues ->
         val pagerState = rememberPagerState(initialPage = LIST_LEN / 2, pageCount = { LIST_LEN })
+        val scrollState = rememberScrollState()
 
         HorizontalPager(
             state = pagerState,
@@ -64,7 +65,7 @@ fun DateScreen(
         ) { index ->
             val day = day.plusDays((index - LIST_LEN / 2).toLong())
 
-            Column(Modifier.verticalScroll(rememberScrollState())) {
+            Column(Modifier.verticalScroll(scrollState)) {
                 Spacer(Modifier.height(paddingValues.calculateTopPadding()))
 
                 Box {
@@ -116,10 +117,12 @@ fun Day(
         val dates = ViewDateWithOptions.occurrencesIntersectingDay(dbManager, day).sortedBy { it.occurrence }
         ids.putAll(dates.associateWith { dates.indexOf(it) })
         val columns = mutableListOf<MutableList<DateOccurrence>>()
+
         for (date in dates) {
             var assigned = false
+
             for (column in columns) {
-                //end of last + spacer + duration normalization < start of pending
+                // end of last + spacer + duration normalization < start of pending
                 if (column.last().endEpochSecond() +
                     MIN_SPACE_BETWEEN_OCCURRENCES_SECONDS +
                     (MIN_OCCURRENCE_SIZE_MINUTES * 60 - column.last().date.duration.secondsApproximation()).let {
@@ -131,6 +134,7 @@ fun Day(
                     break
                 }
             }
+
             if (!assigned)
                 columns.add(mutableListOf(date))
         }
@@ -146,6 +150,7 @@ fun Day(
             Column(Modifier.weight(1f / columns.size)) {
                 var endOfLast = startOfDay
                 var endOfLastMinutesOffset = 0
+
                 for (occurrence in column) {
                     val start = occurrence.occurrence.withSecond(0)
                     val end = getZonedFromEpochSeconds(occurrence.endEpochSecond()).toLocalDateTime().withSecond(0)
@@ -199,7 +204,6 @@ fun Day(
                         a()
                         openEntryInfoByDateOccurrence(occurrence)
                     }
-//                        DrawEntry(dbManager, occurrence) { openEntryInfoByDateOccurrence(occurrence) }
                 }
             }
         }
@@ -296,17 +300,10 @@ fun Entry(dbManager: DbManager, occurrence: DateOccurrence, openEntryInfo: () ->
 
         if (excludeDateShown)
             ExcludeOccurrenceDialog(occurrence.occurrence, dateMeta.displayName, {
-
-//                    date.addExceptions(day)
-//                    date.update()
-//                    dbManager.tryScheduleNotification()
-//                    onClose()
-//                    loadDates()
-                // TODO:
-                val date = dateMeta
-                date.addExceptions(occurrence.occurrenceZoned.toLocalDate())
-                date.update(dbManager)
+                dateMeta.addExceptions(occurrence.occurrenceZoned.toLocalDate())
+                dateMeta.update(dbManager)
                 dbManager.tryScheduleNotification()
+
                 hack = true
                 excludeDateShown = false
             }) { excludeDateShown = false }
