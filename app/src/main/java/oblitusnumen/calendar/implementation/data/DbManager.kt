@@ -49,6 +49,10 @@ class DbManager(val context: Context) :
             field = color
         }
 
+    // FIXME:
+    val defaultTaskColor: Color
+        get() = defaultEntryColor
+
     init {
         log(this)
         if (!filesDir.exists() && !filesDir.mkdirs())
@@ -80,7 +84,8 @@ class DbManager(val context: Context) :
     private fun getNextNotificationTime(timeStamp: Long): Long? {
         var notificationTime: Long? = null
         val dateCache: MutableMap<Int, List<Date>> = mutableMapOf()
-        for (notification in getAllNotifications()) {
+        // FIXME:
+        for (notification in listOf<Notification>()) {
             val fromO = notification.offset.addTo(getZonedFromEpochSeconds(timeStamp), 1).toEpochSecond()
             val dates = dateCache.computeIfAbsent(notification.eventOptionsId!!) {
                 Date.forEntry(
@@ -103,7 +108,8 @@ class DbManager(val context: Context) :
     fun getPendingNotificationsInRange(from: Long, to: Long): List<PendingNotification> {
         val notifications: MutableList<PendingNotification> = ArrayList()
         val dateCache: MutableMap<Int, List<Date>> = mutableMapOf()
-        for (notification in getAllNotifications()) {
+        // FIXME:
+        for (notification in listOf<Notification>()) {
             val fromO = notification.offset.addTo(getZonedFromEpochSeconds(from), 1).toEpochSecond()
             val toO = notification.offset.addTo(getZonedFromEpochSeconds(to), 1).toEpochSecond()
             val dates = dateCache.computeIfAbsent(notification.eventOptionsId!!) {
@@ -160,24 +166,6 @@ class DbManager(val context: Context) :
 
     override fun onDowngrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
         throw IllegalStateException()
-    }
-
-    fun getDates(start: Long, end: Long): List<Date> {
-        require(end >= start) { "end must be more than start, got start=$start, end=$end" }
-        readableDatabase.rawQuery(
-            "SELECT * FROM ${Date.TABLE_NAME} WHERE " +
-                    "${Date.COLUMN_NAME_EPOCH_SECOND_CHAIN_START} < ? AND ${Date.COLUMN_NAME_EPOCH_SECOND_CHAIN_END} >= ?",
-            arrayOf(end.toString(), start.toString())
-        ).use { cursor ->
-            return Date.cursorToList(cursor)
-        }
-    }
-
-    private fun getAllNotifications(): List<Notification> {
-//        readableDatabase.rawQuery("SELECT * FROM ${Notification.TABLE_NAME}", arrayOf()).use { cursor ->
-//            return Notification.cursorToList(this, cursor)
-//        }
-        return listOf()
     }
 
     fun fillDB() {
