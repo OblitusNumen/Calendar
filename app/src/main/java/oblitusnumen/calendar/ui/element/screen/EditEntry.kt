@@ -69,7 +69,8 @@ fun EditEntryScreen(
     dateTimePicker.tryCompose()
 
     Scaffold(topBar = {
-        EditEntryTopBar(
+        EditTopBar(
+            "Edit event",
             {
                 backPress()
                 viewModel.commitToDb(dbManager)
@@ -772,23 +773,6 @@ fun CheckboxOption(checked: MutableState<Boolean>, label: String) {
 
         Text(label, modifier = Modifier.align(Alignment.CenterVertically))
     }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun EditEntryTopBar(
-    onDone: () -> Unit,
-    backPress: () -> Unit
-) {// TODO: confirm
-    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
-
-    CenterAlignedTopAppBar(
-        colors = topBarColors(),
-        scrollBehavior = scrollBehavior,
-        navigationIcon = { BackPressButton(backPress) },
-        title = { Text("Edit event", maxLines = 1) },
-        actions = { EditDoneButton(onDone) },
-    )
 }
 
 enum class DateSequenceEndVariant {

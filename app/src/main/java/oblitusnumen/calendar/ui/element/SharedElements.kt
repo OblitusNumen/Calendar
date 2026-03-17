@@ -91,6 +91,24 @@ fun SearchTopBar(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EditTopBar(
+    titleText: String,
+    onDone: () -> Unit,
+    backPress: () -> Unit
+) {// TODO: confirm
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
+
+    CenterAlignedTopAppBar(
+        colors = topBarColors(),
+        scrollBehavior = scrollBehavior,
+        navigationIcon = { BackPressButton(backPress) },
+        title = { Text(titleText, maxLines = 1) },
+        actions = { EditDoneButton(onDone) },
+    )
+}
+
 @Composable
 fun NotificationAddMenu(onConfirm: (Period, Boolean) -> Unit, onDismiss: () -> Unit) {
     var silent by remember { mutableStateOf(false) }
