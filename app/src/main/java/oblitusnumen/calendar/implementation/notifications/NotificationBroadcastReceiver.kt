@@ -39,11 +39,11 @@ class NotificationBroadcastReceiver : BroadcastReceiver() {
                     if (pendingNotification.notification.sound) NORMAL_CHANNEL_ID else SILENT_CHANNEL_ID
                 )
                     .setSmallIcon(R.drawable.ic_calendar) // FIXME: this icon must be transparent
-                    .setContentTitle("${pendingNotification.date.id}")
+                    .setContentTitle("${pendingNotification.notification.name}")
                     .setContentIntent(
                         PendingIntent.getActivity(
                             c,
-                            pendingNotification.notification.eventOptionsId!!,
+                            pendingNotification.notification.eventOptionsId!!,// FIXME: mb by entryId
                             Intent(c, MainActivity::class.java).putExtra(
                                 INTENT_EXTRA_ENTRY_ID,
                                 pendingNotification.notification.eventOptionsId!!

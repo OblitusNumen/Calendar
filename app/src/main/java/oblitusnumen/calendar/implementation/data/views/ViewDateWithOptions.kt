@@ -119,6 +119,7 @@ class ViewDateWithOptions(
                 )
             ).use { cursor ->
                 val views: MutableList<ViewDateWithOptions> = ArrayList()
+
                 val idxId = cursor.getColumnIndex(COLUMN_NAME_ID)
                 val idxEntryId = cursor.getColumnIndex(COLUMN_NAME_ENTRY_ID)
                 val idxOptionsId = cursor.getColumnIndex(COLUMN_NAME_EVENT_OPTIONS_ID)
@@ -131,6 +132,7 @@ class ViewDateWithOptions(
                 val idxExceptions = cursor.getColumnIndex(COLUMN_NAME_OCCURRENCE_EXCEPTIONS)
                 val idxName = cursor.getColumnIndex("name")
                 val idxColor = cursor.getColumnIndex("color")
+
                 while (cursor.moveToNext())
                     views.add(
                         ViewDateWithOptions(
@@ -159,9 +161,12 @@ class ViewDateWithOptions(
             tagsFilter: List<Int> = listOf()
         ): List<DateOccurrence> {
             val begin = zonedDateTime(day)
+
             val start = begin.toEpochSecond()
             val end = begin.plusDays(1).toEpochSecond()
+
             val result: SortedSet<DateOccurrence> = sortedSetOf(compareBy<DateOccurrence> { it.occurrence })
+
             all(
                 dbManager,
                 start,
@@ -187,9 +192,12 @@ class ViewDateWithOptions(
             tagsFilter: List<Int> = listOf()
         ): List<DateOccurrence> {
             val begin = zonedDateTime(day)
+
             val start = begin.toEpochSecond()
             val end = begin.plusDays(1).toEpochSecond()
+
             val result: SortedSet<DateOccurrence> = sortedSetOf(compareBy<DateOccurrence> { it.occurrence })
+
             all(
                 dbManager,
                 start,

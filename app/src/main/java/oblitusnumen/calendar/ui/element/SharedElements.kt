@@ -563,6 +563,7 @@ fun ScheduleDialog(dbManager: DbManager, entry: ViewEntryWithOptions, onClose: (
                         Once(),
                         entry,
                     ).create(dbManager)
+                    dbManager.tryScheduleNotification()
                     onSchedule()
                 })
             }) {

@@ -31,7 +31,6 @@ import oblitusnumen.calendar.implementation.data.tables.Date
 import oblitusnumen.calendar.implementation.data.tables.Tag
 import oblitusnumen.calendar.ui.element.*
 import oblitusnumen.calendar.ui.state.DateState
-import oblitusnumen.calendar.ui.theme.topBarColors
 import oblitusnumen.calendar.ui.viewmodel.EntryEditViewModel
 import java.time.LocalDate
 import java.time.ZoneId

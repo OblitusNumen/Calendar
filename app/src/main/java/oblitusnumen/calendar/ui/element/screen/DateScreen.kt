@@ -192,6 +192,7 @@ fun Day(
                             val date = occurrence.date
                             date.addExceptions(occurrence.occurrenceZoned.toLocalDate())
                             date.update(dbManager)
+                            dbManager.tryScheduleNotification()
                         }
                     ) {
                         // FIXME:
@@ -305,6 +306,7 @@ fun Entry(dbManager: DbManager, occurrence: DateOccurrence, openEntryInfo: () ->
                 val date = dateMeta
                 date.addExceptions(occurrence.occurrenceZoned.toLocalDate())
                 date.update(dbManager)
+                dbManager.tryScheduleNotification()
                 hack = true
                 excludeDateShown = false
             }) { excludeDateShown = false }

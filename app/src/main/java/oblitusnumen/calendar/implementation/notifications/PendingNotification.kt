@@ -1,17 +1,18 @@
 package oblitusnumen.calendar.implementation.notifications
 
-import oblitusnumen.calendar.implementation.data.tables.Date
-import oblitusnumen.calendar.implementation.data.tables.Notification
+import oblitusnumen.calendar.implementation.data.views.ViewNotificationDateWithOptions
 import java.util.*
 
 class PendingNotification(
-    val date: Date,
-    val notification: Notification,
+    val notification: ViewNotificationDateWithOptions,
     private val notificationDateTime: Long,
     val eventDateTime: Long
 ) : Comparable<PendingNotification> {
+    val id
+        get() = notification.id!!
+
     fun dateHash(): Int {
-        return Objects.hash(date.id, eventDateTime)
+        return Objects.hash(id, eventDateTime)
     }
 
     override fun compareTo(other: PendingNotification): Int {

@@ -11,13 +11,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.core.content.edit
 import oblitusnumen.calendar.implementation.*
 import oblitusnumen.calendar.implementation.data.tables.*
-import oblitusnumen.calendar.implementation.data.tables.Date
+import oblitusnumen.calendar.implementation.data.views.ViewNotificationDateWithOptions
 import oblitusnumen.calendar.implementation.notifications.NotificationBroadcastReceiver.Companion.LAST_NOTIFICATION_TIME_PREFERENCE_NAME
 import oblitusnumen.calendar.implementation.notifications.NotificationBroadcastReceiver.Companion.scheduleNotification
 import oblitusnumen.calendar.implementation.notifications.PendingNotification
 import java.io.File
 import java.time.ZoneId
-import java.util.*
 import kotlin.random.Random
 
 class DbManager(val context: Context) :
@@ -83,69 +82,49 @@ class DbManager(val context: Context) :
 
     private fun getNextNotificationTime(timeStamp: Long): Long? {
         var notificationTime: Long? = null
-        val dateCache: MutableMap<Int, List<Date>> = mutableMapOf()
-        // FIXME:
-        for (notification in listOf<Notification>()) {
+
+        for (notification in ViewNotificationDateWithOptions.all(this)) {
             val fromO = notification.offset.addTo(getZonedFromEpochSeconds(timeStamp), 1).toEpochSecond()
-            val dates = dateCache.computeIfAbsent(notification.eventOptionsId!!) {
-                Date.forEntry(
-                    this,
-                    notification.eventOptionsId!!
-                )
-            }
-            for (date in dates) {
-                val nextTime = date.getNext(fromO)
-                if (nextTime != null) {
-                    val nnt =
-                        notification.offset.addTo(nextTime.withZoneSameInstant(defaultZoneId()), -1).toEpochSecond()
-                    if (notificationTime == null || notificationTime > nnt) notificationTime = nnt
-                }
-            }
+            val nnt = notification.nextNotificationTime(fromO)
+            if (notificationTime == null || nnt != null && notificationTime > nnt)
+                notificationTime = nnt
         }
+
         return notificationTime
     }
 
     fun getPendingNotificationsInRange(from: Long, to: Long): List<PendingNotification> {
         val notifications: MutableList<PendingNotification> = ArrayList()
-        val dateCache: MutableMap<Int, List<Date>> = mutableMapOf()
-        // FIXME:
-        for (notification in listOf<Notification>()) {
+
+        for (notification in ViewNotificationDateWithOptions.all(this)) {
             val fromO = notification.offset.addTo(getZonedFromEpochSeconds(from), 1).toEpochSecond()
             val toO = notification.offset.addTo(getZonedFromEpochSeconds(to), 1).toEpochSecond()
-            val dates = dateCache.computeIfAbsent(notification.eventOptionsId!!) {
-                Date.forEntry(
-                    this,
-                    notification.eventOptionsId!!
+
+            for (dateTime in notification.getAllInRange(fromO, toO)) {
+                notifications.add(
+                    PendingNotification(
+                        notification,
+                        notification.offset.addTo(dateTime.withZoneSameInstant(defaultZoneId()), -1)
+                            .toEpochSecond(),
+                        dateTime.toEpochSecond()
+                    )
                 )
             }
-            for (date in dates) {
-                for (dateTime in date.getAllInRange(fromO, toO)) {
-                    notifications.add(
-                        PendingNotification(
-                            date,
-                            notification,
-                            notification.offset.addTo(dateTime.withZoneSameInstant(defaultZoneId()), -1)
-                                .toEpochSecond(),
-                            dateTime.toEpochSecond()
-                        )
-                    )
-                }
-            }
         }
-        dedupeAndSort(notifications)
-        return notifications
+
+        return dedupeAndSort(notifications)
     }
 
-    private fun dedupeAndSort(notifications: MutableList<PendingNotification>) {
-        Objects.hash()
+    private fun dedupeAndSort(notifications: List<PendingNotification>): List<PendingNotification> {
         val dedupeMap: MutableMap<Int, PendingNotification> = HashMap<Int, PendingNotification>()
+
         for (notification in notifications) {
             val get = dedupeMap[notification.dateHash()]
-            if (get == null || get < notification) dedupeMap[notification.dateHash()] = notification
+            if (get == null || get < notification)
+                dedupeMap[notification.dateHash()] = notification
         }
-        notifications.clear()
-        notifications.addAll(dedupeMap.values)
-        notifications.sort()
+
+        return dedupeMap.values.sorted()
     }
 
     override fun onCreate(sqLiteDatabase: SQLiteDatabase) {
