@@ -21,7 +21,6 @@ import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.tables.Tag
 import oblitusnumen.calendar.implementation.data.views.ViewDateWithOptions
 import oblitusnumen.calendar.implementation.getZonedFromEpochSeconds
-import oblitusnumen.calendar.implementation.log
 import oblitusnumen.calendar.ui.dpByDpForPixelPerfect
 import oblitusnumen.calendar.ui.element.BackPressButton
 import oblitusnumen.calendar.ui.element.EntryDescriptionAndTags
@@ -111,11 +110,8 @@ fun Day(
     day: LocalDate,
     openEntryInfoByDateOccurrence: (DateOccurrence) -> Unit
 ) {
-    // FIXME: debug
-    val ids = remember { mutableMapOf<DateOccurrence, Int>() }
     val columns: List<List<DateOccurrence>> = remember {
         val dates = ViewDateWithOptions.occurrencesIntersectingDay(dbManager, day).sortedBy { it.occurrence }
-        ids.putAll(dates.associateWith { dates.indexOf(it) })
         val columns = mutableListOf<MutableList<DateOccurrence>>()
 
         for (date in dates) {
@@ -156,16 +152,6 @@ fun Day(
                     val end = getZonedFromEpochSeconds(occurrence.endEpochSecond()).toLocalDateTime().withSecond(0)
                     val endMinutesOffset = Duration.between(startOfDay, end).toMinutes().toInt()
 
-                    // FIXME:
-//                    if (column.last() == occurrence) {
-//                        log(Duration.between(start, endOfDay).toMinutes().toInt())
-//                        log(occurrence.date.duration)
-//                        log(occurrence.date.duration.secondsApproximation() / 60)
-//                        log(endOfLast)
-//                    }
-
-                    // FIXME:
-                    val s = endOfLastMinutesOffset
                     if (start > endOfLast) {
                         val startMinutesOffset = Duration.between(startOfDay, start).toMinutes().toInt()
 
@@ -175,24 +161,12 @@ fun Day(
                     }
 
                     val size = min(endMinutesOffset, endOfDayMinutesOffset) - endOfLastMinutesOffset
-                    // FIXME:
-                    val e = endOfLastMinutesOffset
-                    val a = {
-                        log("DrawEntryBox:${ids[occurrence]}")
-                        log("pre:$s")
-                        log("start:$e")
-                        log("end:${e + size}")
-                        log("pre_size:${e - s}")
-                        log("size:$size")
-                        log("real_end:$endMinutesOffset")
-                        log("id:${occurrence.date.id}")
-                    }
                     endOfLastMinutesOffset = endMinutesOffset
                     endOfLast = end
 
                     EntryBox(
                         occurrence,
-                        size, ids[occurrence],
+                        size,
                         {
                             val date = occurrence.date
                             date.addExceptions(occurrence.occurrenceZoned.toLocalDate())
@@ -200,8 +174,6 @@ fun Day(
                             dbManager.tryScheduleNotification()
                         }
                     ) {
-                        // FIXME:
-                        a()
                         openEntryInfoByDateOccurrence(occurrence)
                     }
                 }
@@ -214,7 +186,6 @@ fun Day(
 fun EntryBox(
     occurrence: DateOccurrence,
     minutesSize: Int,
-    id: Int?,
     doExclude: () -> Unit,
     openEntryInfo: () -> Unit
 ) {
@@ -239,7 +210,6 @@ fun EntryBox(
                     .background(occurrence.date.color)
             )
 
-        Text("$id", Modifier.align(Alignment.BottomEnd)) // FIXME: for debug
         Text(
             modifier = Modifier.padding(2.dp).align(Alignment.TopStart),
             color = if (minutesSize == 0) MaterialTheme.colorScheme.onBackground else bgColorToTextColor(occurrence.date.color),
