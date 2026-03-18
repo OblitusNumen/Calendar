@@ -13,13 +13,18 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import oblitusnumen.calendar.implementation.LIST_LEN
 import oblitusnumen.calendar.implementation.bgColorToTextColor
 import oblitusnumen.calendar.implementation.data.DateOccurrence
 import oblitusnumen.calendar.implementation.data.DbManager
+import oblitusnumen.calendar.implementation.data.ExceptionRules
+import oblitusnumen.calendar.implementation.data.Period
 import oblitusnumen.calendar.implementation.data.views.ViewDateWithOptions
+import oblitusnumen.calendar.implementation.defaultZoneId
 import oblitusnumen.calendar.implementation.getZonedFromEpochSeconds
 import oblitusnumen.calendar.ui.dpByDpForPixelPerfect
 import oblitusnumen.calendar.ui.element.BackPressButton
@@ -29,7 +34,6 @@ import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
 import kotlin.math.max
-import kotlin.math.min
 
 @Composable
 fun DateScreen(
@@ -53,7 +57,7 @@ fun DateScreen(
         floatingActionButton = { NewEntryFunctionButton { openEditNewEntry(pagerDay) } }
     ) { paddingValues ->
         val pagerState = rememberPagerState(initialPage = LIST_LEN / 2, pageCount = { LIST_LEN })
-        val scrollState = rememberScrollState()
+        val vScrollState = rememberScrollState()
 
         HorizontalPager(
             state = pagerState,
@@ -62,13 +66,19 @@ fun DateScreen(
         ) { index ->
             val day = day.plusDays((index - LIST_LEN / 2).toLong())
 
-            Column(Modifier.verticalScroll(scrollState)) {
+            Column(Modifier.verticalScroll(vScrollState)) {
                 Spacer(Modifier.height(paddingValues.calculateTopPadding()))
 
-                Box {
+                Box(Modifier.padding(top = 0.dp)) {
                     repeat(24) {
-                        HorizontalDivider(Modifier.padding(top = minutesToDp(it * 60)).height(1.dp))
+                        HorizontalDivider(
+                            Modifier.padding(
+                                top = minutesToDp(it * 60),
+                                bottom = androidx.compose.ui.unit.max(30.dp, minutesToDp(MIN_OCCURRENCE_SIZE_MINUTES))
+                            ).height(1.dp)
+                        )
                     }
+
                     Row {
                         Box(Modifier.height(minutesToDp(1440)).padding(end = 2.dp)) {
                             repeat(24) {
@@ -78,8 +88,16 @@ fun DateScreen(
                                 )
                             }
                         }
-                        Box {
-                            Day(dbManager, day, openEntryInfoByDateOccurrence)
+
+                        Day(
+                            day,
+                            ViewDateWithOptions.occurrencesIntersectingDay(dbManager, day),
+                            openEntryInfoByDateOccurrence
+                        ) { occurrence ->
+                            val date = occurrence.date
+                            date.addExceptions(occurrence.occurrenceZoned.toLocalDate())
+                            date.update(dbManager)
+                            dbManager.tryScheduleNotification()
                         }
                     }
                 }
@@ -104,15 +122,15 @@ fun DateScreen(
 
 @Composable
 fun Day(
-    dbManager: DbManager,
     day: LocalDate,
-    openEntryInfoByDateOccurrence: (DateOccurrence) -> Unit
+    occurrences: List<DateOccurrence>,
+    openEntryInfoByDateOccurrence: (DateOccurrence) -> Unit,
+    excludeOccurrence: (DateOccurrence) -> Unit
 ) {
-    val columns: List<List<DateOccurrence>> = remember {
-        val dates = ViewDateWithOptions.occurrencesIntersectingDay(dbManager, day).sortedBy { it.occurrence }
+    val columns: List<List<DateOccurrence>> = remember(occurrences) {
         val columns = mutableListOf<MutableList<DateOccurrence>>()
 
-        for (date in dates) {
+        for (date in occurrences.sortedBy { it.occurrence }) {
             var assigned = false
 
             for (column in columns) {
@@ -136,40 +154,16 @@ fun Day(
     }
 
     val startOfDay = day.atStartOfDay()
-    val endOfDay = startOfDay.plusDays(1)
-    val endOfDayMinutesOffset = Duration.between(startOfDay, endOfDay).toMinutes().toInt()
 
-    Row {
+    Row(Modifier.padding(horizontal = 2.dp)) {
         for (column in columns) {
-            Column(Modifier.weight(1f / columns.size)) {
-                var endOfLast = startOfDay
-                var endOfLastMinutesOffset = 0
-
+            Box(Modifier.weight(1f / columns.size).defaultMinSize(minWidth = 30.dp)) {
                 for (occurrence in column) {
-                    val start = occurrence.occurrence.withSecond(0)
-                    val end = getZonedFromEpochSeconds(occurrence.endEpochSecond()).toLocalDateTime().withSecond(0)
-                    val endMinutesOffset = Duration.between(startOfDay, end).toMinutes().toInt()
-
-                    if (start > endOfLast) {
-                        val startMinutesOffset = Duration.between(startOfDay, start).toMinutes().toInt()
-
-                        Spacer(Modifier.height(minutesToDp(startMinutesOffset - endOfLastMinutesOffset)))
-
-                        endOfLastMinutesOffset = startMinutesOffset
-                    }
-
-                    val size = min(endMinutesOffset, endOfDayMinutesOffset) - endOfLastMinutesOffset
-                    endOfLastMinutesOffset = endMinutesOffset
-                    endOfLast = end
-
                     EntryBox(
+                        startOfDay,
                         occurrence,
-                        size,
                         {
-                            val date = occurrence.date
-                            date.addExceptions(occurrence.occurrenceZoned.toLocalDate())
-                            date.update(dbManager)
-                            dbManager.tryScheduleNotification()
+                            excludeOccurrence(occurrence)
                         }
                     ) {
                         openEntryInfoByDateOccurrence(occurrence)
@@ -182,17 +176,37 @@ fun Day(
 
 @Composable
 fun EntryBox(
+    startOfDay: LocalDateTime,
     occurrence: DateOccurrence,
-    minutesSize: Int,
     doExclude: () -> Unit,
     openEntryInfo: () -> Unit
 ) {
-    var excludeDateShown by remember { mutableStateOf(false) }
+    val start = occurrence.occurrence.withSecond(0)
+    val end = getZonedFromEpochSeconds(occurrence.endEpochSecond()).toLocalDateTime().withSecond(0)
+    val startMinutesOffset = Duration.between(startOfDay, start).toMinutes().toInt()
+    val endMinutesOffset = Duration.between(startOfDay, end).toMinutes().toInt()
+    val size = endMinutesOffset - startMinutesOffset
+    val hasDuration = occurrence.date.hasDuration
+
+    var excludeDateDialogShown by remember { mutableStateOf(false) }
+
+    if (excludeDateDialogShown)
+        ExcludeOccurrenceDialog(occurrence.occurrence, occurrence.date.displayName, {
+            doExclude()
+            excludeDateDialogShown = false
+        }) { excludeDateDialogShown = false }
 
     Box(
-        Modifier.height(minutesToDp(max(minutesSize, MIN_OCCURRENCE_SIZE_MINUTES))).fillMaxWidth()
-            .combinedClickable(onLongClick = { excludeDateShown = true }, onClick = openEntryInfo).let {
-                if (minutesSize != 0)
+        Modifier.padding(top = minutesToDp(startMinutesOffset))
+            // FIXME: either events with small duration will appear bigger than they are
+            // or text won't be visible on events with small duration
+            .height(
+                minutesToDp(/*if (hasDuration) size else MIN_OCCURRENCE_SIZE_MINUTES*/
+                    max(size, MIN_OCCURRENCE_SIZE_MINUTES)
+                )
+            ).fillMaxWidth().combinedClickable(onLongClick = { excludeDateDialogShown = true }, onClick = openEntryInfo)
+            .let {
+                if (hasDuration)
 //                    it.padding(horizontal = 1.dp).border(1.dp, occurrence.date.color)
                     it
                         .padding(horizontal = 1.dp)
@@ -202,26 +216,20 @@ fun EntryBox(
                     it
             }
     ) {
-        if (minutesSize == 0)
+        if (!hasDuration)
             Box(
-                modifier = Modifier.height(2.dp).fillMaxWidth().padding(top = minutesToDp(minutesSize))
+                modifier = Modifier.height(2.dp).fillMaxWidth()
                     .background(occurrence.date.color)
             )
 
         Text(
             modifier = Modifier.padding(2.dp).align(Alignment.TopStart),
-            color = if (minutesSize == 0) MaterialTheme.colorScheme.onBackground else bgColorToTextColor(occurrence.date.color),
+            color = if (!hasDuration) MaterialTheme.colorScheme.onBackground else bgColorToTextColor(occurrence.date.color),
             text = occurrence.date.displayName,
             style = MaterialTheme.typography.bodyMedium,
             overflow = TextOverflow.Ellipsis,
         )
     }
-
-    if (excludeDateShown)
-        ExcludeOccurrenceDialog(occurrence.occurrence, occurrence.date.displayName, {
-            doExclude()
-            excludeDateShown = false
-        }) { excludeDateShown = false }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -272,3 +280,65 @@ fun minutesToDp(minutes: Int) = dpByDpForPixelPerfect(minutes.toFloat())
 const val MIN_OCCURRENCE_SIZE_MINUTES = 30
 
 const val MIN_SPACE_BETWEEN_OCCURRENCES_SECONDS = 200
+
+@Preview
+@Composable
+fun PreviewEntryBox() {
+    val day = LocalDate.of(2026, 3, 18)
+    val startOfDay = day.atStartOfDay()
+
+    val occurrences: MutableList<DateOccurrence> = mutableListOf()
+
+    repeat(40) {
+        val dateTime = startOfDay.plusMinutes(it.toLong() * 20).atZone(defaultZoneId())
+        occurrences.add(
+            DateOccurrence(
+                dateTime.toLocalDateTime(),
+                dateTime,
+                ViewDateWithOptions(
+                    0,
+                    0,
+                    0,
+                    0,
+                    if (it == 0) Period.Once() else Period.Minute(2 * it.toLong()),
+                    0,
+                    1,
+                    Period.Once(),
+                    dateTime.zone,
+                    ExceptionRules(""),
+                    "event name",
+                    Color.Red
+                )
+            )
+        )
+    }
+
+    Box(Modifier.padding(top = 0.dp)) {
+        repeat(24) {
+            HorizontalDivider(
+                Modifier.padding(
+                    top = minutesToDp(it * 60),
+                    bottom = androidx.compose.ui.unit.max(30.dp, minutesToDp(MIN_OCCURRENCE_SIZE_MINUTES))
+                ).height(1.dp)
+            )
+        }
+
+        Row {
+            Box(Modifier.height(minutesToDp(1440)).padding(end = 2.dp)) {
+                repeat(24) {
+                    Text(
+                        "$it:00",
+                        Modifier.padding(top = minutesToDp(it * 60) + 1.dp).align(Alignment.TopEnd)
+                    )
+                }
+            }
+
+            Day(
+                day,
+                occurrences,
+                {},
+                {}
+            )
+        }
+    }
+}
