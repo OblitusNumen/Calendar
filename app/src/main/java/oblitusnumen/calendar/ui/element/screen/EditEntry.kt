@@ -328,7 +328,10 @@ fun Date(
 ) {
     var periodSelectorDate by remember { periodSelectorDate }
     if (periodSelectorDate == date)
-        PeriodSelectorDialog(date, { periodSelectorDate = null }, { periodSelectorDate = null }, onUpdateDate)
+        PeriodSelectorDialog(date, {
+            onUpdateDate(it)
+            periodSelectorDate = null
+        }, { periodSelectorDate = null })
 
     var durationSelectorDate by remember { durationSelectorDate }
     if (durationSelectorDate == date)
@@ -489,9 +492,8 @@ fun WeekdayButton(active: MutableState<Boolean>, text: String) {
 @Composable
 fun PeriodSelectorDialog(
     date: DateState,
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit,
-    onUpdateDate: (DateState) -> Unit,
+    onConfirm: (DateState) -> Unit,
+    onDismiss: () -> Unit
 ) {
     val initialPeriodCount = if (date.period is Once) 1 else date.period.count
     val initialPeriodType = PeriodType(date.period)
@@ -548,8 +550,7 @@ fun PeriodSelectorDialog(
                 else
                     selectedPeriodCount
 
-                onUpdateDate(
-                    date.setPeriod(
+                var updatedDateState = date.setPeriod(
                         if (selectedPeriodType.period is Weekday) {
                             val weekdayDays = (if (monSelected.value) Weekday.WD_MON else 0) +
                                     (if (tueSelected.value) Weekday.WD_TUE else 0) +
@@ -568,27 +569,25 @@ fun PeriodSelectorDialog(
                         } else
                             selectedPeriodType.period.updateCount(count)
                     )
-                )
 
-                if (date.isPeriodic) {
-                    onUpdateDate(
+                if (updatedDateState.isPeriodic) {
+                    updatedDateState =
                         when (endVariantSelectedOption) {
-                            DateSequenceEndVariant.ENDLESS -> date.makeEndless()
-                            DateSequenceEndVariant.BY_DATE -> date.setRange(
+                            DateSequenceEndVariant.ENDLESS -> updatedDateState.makeEndless()
+                            DateSequenceEndVariant.BY_DATE -> updatedDateState.setRange(
                                 startOfDayEnd = ZonedDateTime.of(
                                     LocalDate.ofEpochDay(selectedMillis / 86400000).atStartOfDay(),
-                                    date.getFirstZoneDateTime().zone
+                                    updatedDateState.getFirstZoneDateTime().zone
                                 )
                             )
 
                             DateSequenceEndVariant.OCCURRENCES -> {
-                                date.setTimesRepeatUI(if (occurrencesCount.isEmpty()) 1 else occurrencesCount.toLong())
+                                updatedDateState.setTimesRepeatUI(if (occurrencesCount.isEmpty()) 1 else occurrencesCount.toLong())
                             }
                         }
-                    )
                 }
 
-                onConfirm()
+                onConfirm(updatedDateState)
             }) {
                 Text("OK")
             }
