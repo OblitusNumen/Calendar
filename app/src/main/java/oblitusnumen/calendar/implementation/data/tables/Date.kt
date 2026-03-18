@@ -141,6 +141,9 @@ open class Date : BaseColumns {
         id = null
     }
 
+    val hasDuration
+        get() = duration !is Period.Once
+
     val isPeriodic: Boolean
         get() = period !is Period.Once
 
@@ -205,7 +208,7 @@ open class Date : BaseColumns {
     fun allIntersectingRange(start: Long, end: Long): Collection<ZonedDateTime> {
         val result = mutableListOf<ZonedDateTime>()
 
-        if (duration is Period.Once) {
+        if (!hasDuration) {
             anyInRange(start, end)?.let { result.add(it) }
             return result
         }

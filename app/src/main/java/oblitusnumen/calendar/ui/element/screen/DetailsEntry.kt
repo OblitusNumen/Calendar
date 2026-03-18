@@ -137,7 +137,7 @@ fun Date(date: Date) {
     val textStart = (if (date.isPeriodic) "from " else "") +
             date.getFirstZoneDateTime().format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm"))
 
-    val textDuration: String = if (date.duration is Once)
+    val textDuration: String = if (!date.hasDuration)
         "no duration"
     else
         "for ${date.duration.count} ${date.duration.name}"
