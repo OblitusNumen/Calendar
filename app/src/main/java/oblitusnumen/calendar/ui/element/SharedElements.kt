@@ -29,6 +29,7 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import kotlinx.coroutines.launch
 import oblitusnumen.calendar.implementation.bgColorToTextColor
+import oblitusnumen.calendar.implementation.data.DateOccurrence
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.Period
 import oblitusnumen.calendar.implementation.data.Period.Once
@@ -38,6 +39,7 @@ import oblitusnumen.calendar.implementation.data.views.ViewEntryWithOptions
 import oblitusnumen.calendar.implementation.defaultZoneId
 import oblitusnumen.calendar.implementation.getZonedFromEpochSeconds
 import oblitusnumen.calendar.ui.PositionStatus
+import oblitusnumen.calendar.ui.element.screen.ExcludeOccurrenceDialog
 import oblitusnumen.calendar.ui.element.screen.OffsetType
 import oblitusnumen.calendar.ui.element.screen.PeriodType
 import oblitusnumen.calendar.ui.element.screen.TagFilterMenu
@@ -335,6 +337,60 @@ fun SelectableEntry(
 
             EntryDescriptionAndTags(dbManager, entryView.getContents(dbManager), entryView.getTags(dbManager))
         }
+    }
+}
+
+@Composable
+fun Entry(dbManager: DbManager, occurrence: DateOccurrence, openEntryInfo: () -> Unit) { //todo maybe show desc too?
+    var hack by remember { mutableStateOf(false) }
+    var excludeDateShown by remember(hack) { mutableStateOf(false) }
+    val dateMeta = occurrence.date
+
+    Column(
+        Modifier.padding(2.dp).fillMaxWidth().defaultMinSize(minHeight = 64.dp)
+            .background(
+                MaterialTheme.colorScheme.primaryContainer,
+                shape = RoundedCornerShape(10.dp)
+            ).combinedClickable(onLongClick = { excludeDateShown = true }, onClick = openEntryInfo)
+    ) {
+        Row(Modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 8.dp)) {
+            Box(
+                Modifier.padding(end = 8.dp).size(24.dp).background(dateMeta.color, CircleShape)
+                    .border(0.dp, dateMeta.color, CircleShape)
+                    .align(Alignment.CenterVertically)
+            )
+
+            Text(
+                modifier = Modifier.weight(1.0f).padding(horizontal = 8.dp).align(Alignment.CenterVertically),
+                text = dateMeta.displayName,
+                style = MaterialTheme.typography.headlineSmall,
+                overflow = TextOverflow.Ellipsis,
+                maxLines = 1,
+            )
+
+            Text(
+                modifier = Modifier.align(Alignment.CenterVertically),
+                text = occurrence.occurrence
+                    .format(DateTimeFormatter.ofPattern("HH:mm")), //fixme should show end time
+                style = MaterialTheme.typography.bodyLarge,
+            )
+        }
+
+        EntryDescriptionAndTags(
+            dbManager,
+            dateMeta.getContents(dbManager),
+            Tag.forEntry(dbManager, dateMeta.entryId!!)
+        )
+
+        if (excludeDateShown)
+            ExcludeOccurrenceDialog(occurrence.occurrence, dateMeta.displayName, {
+                dateMeta.addExceptions(occurrence.occurrenceZoned.toLocalDate())
+                dateMeta.update(dbManager)
+                dbManager.tryScheduleNotification()
+
+                hack = true
+                excludeDateShown = false
+            }) { excludeDateShown = false }
     }
 }
 

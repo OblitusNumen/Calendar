@@ -35,7 +35,6 @@ import oblitusnumen.calendar.implementation.LIST_CENTER
 import oblitusnumen.calendar.implementation.LIST_LEN
 import oblitusnumen.calendar.implementation.bgColorToTextColor
 import oblitusnumen.calendar.implementation.data.DbManager
-import oblitusnumen.calendar.implementation.data.Period
 import oblitusnumen.calendar.implementation.data.tables.Tag
 import oblitusnumen.calendar.implementation.data.views.ViewDateWithOptions
 import oblitusnumen.calendar.implementation.zonedDateTime

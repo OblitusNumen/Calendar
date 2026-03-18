@@ -1,11 +1,12 @@
 package oblitusnumen.calendar.ui.element.screen
 
-import androidx.compose.foundation.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.*
@@ -18,18 +19,15 @@ import oblitusnumen.calendar.implementation.LIST_LEN
 import oblitusnumen.calendar.implementation.bgColorToTextColor
 import oblitusnumen.calendar.implementation.data.DateOccurrence
 import oblitusnumen.calendar.implementation.data.DbManager
-import oblitusnumen.calendar.implementation.data.tables.Tag
 import oblitusnumen.calendar.implementation.data.views.ViewDateWithOptions
 import oblitusnumen.calendar.implementation.getZonedFromEpochSeconds
 import oblitusnumen.calendar.ui.dpByDpForPixelPerfect
 import oblitusnumen.calendar.ui.element.BackPressButton
-import oblitusnumen.calendar.ui.element.EntryDescriptionAndTags
 import oblitusnumen.calendar.ui.element.NewEntryFunctionButton
 import oblitusnumen.calendar.ui.theme.topBarColors
 import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import kotlin.math.max
 import kotlin.math.min
 
@@ -224,60 +222,6 @@ fun EntryBox(
             doExclude()
             excludeDateShown = false
         }) { excludeDateShown = false }
-}
-
-@Composable
-fun Entry(dbManager: DbManager, occurrence: DateOccurrence, openEntryInfo: () -> Unit) { //todo maybe show desc too?
-    var hack by remember { mutableStateOf(false) }
-    var excludeDateShown by remember(hack) { mutableStateOf(false) }
-    val dateMeta = occurrence.date
-
-    Column(
-        Modifier.padding(2.dp).fillMaxWidth().defaultMinSize(minHeight = 64.dp)
-            .background(
-                MaterialTheme.colorScheme.primaryContainer,
-                shape = RoundedCornerShape(10.dp)
-            ).combinedClickable(onLongClick = { excludeDateShown = true }, onClick = openEntryInfo)
-    ) {
-        Row(Modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 8.dp)) {
-            Box(
-                Modifier.padding(end = 8.dp).size(24.dp).background(dateMeta.color, CircleShape)
-                    .border(0.dp, dateMeta.color, CircleShape)
-                    .align(Alignment.CenterVertically)
-            )
-
-            Text(
-                modifier = Modifier.weight(1.0f).padding(horizontal = 8.dp).align(Alignment.CenterVertically),
-                text = dateMeta.displayName,
-                style = MaterialTheme.typography.headlineSmall,
-                overflow = TextOverflow.Ellipsis,
-                maxLines = 1,
-            )
-
-            Text(
-                modifier = Modifier.align(Alignment.CenterVertically),
-                text = occurrence.occurrence
-                    .format(DateTimeFormatter.ofPattern("HH:mm")), //fixme should show end time
-                style = MaterialTheme.typography.bodyLarge,
-            )
-        }
-
-        EntryDescriptionAndTags(
-            dbManager,
-            dateMeta.getContents(dbManager),
-            Tag.forEntry(dbManager, dateMeta.entryId!!)
-        )
-
-        if (excludeDateShown)
-            ExcludeOccurrenceDialog(occurrence.occurrence, dateMeta.displayName, {
-                dateMeta.addExceptions(occurrence.occurrenceZoned.toLocalDate())
-                dateMeta.update(dbManager)
-                dbManager.tryScheduleNotification()
-
-                hack = true
-                excludeDateShown = false
-            }) { excludeDateShown = false }
-    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
