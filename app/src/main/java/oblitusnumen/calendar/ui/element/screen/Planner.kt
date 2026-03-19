@@ -32,34 +32,15 @@ fun PlannerScreen(
 ) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val coroutineScope = rememberCoroutineScope()
+    val closeDrawer: () -> Unit = remember { { coroutineScope.launch { drawerState.close() } } }
+    val openDrawer: () -> Unit = remember { { coroutineScope.launch { drawerState.open() } } }
 
     ModalNavigationDrawer(
-        drawerContent = {
-            ModalDrawerSheet {
-                Row(Modifier.padding(16.dp)) {
-                    Text("Planner", Modifier.align(Alignment.CenterVertically).weight(1f))
-                    IconButton(onClick = { coroutineScope.launch { drawerState.close() } }) {
-                        Icon(Icons.Filled.Close, contentDescription = "close drawer")
-                    }
-                }
-
-                NavigationDrawerItem(
-                    label = { Text(text = "Settings") },
-                    selected = false,
-                    onClick = openSettings,
-                    icon = {
-                        Icon(
-                            imageVector = Icons.Filled.Settings,
-                            contentDescription = null
-                        )
-                    }
-                )
-            }
-        },
+        drawerContent = { PlannerDrawer(closeDrawer, openSettings) },
         drawerState = drawerState,
     ) {
         Scaffold(
-            topBar = { PlannerTopBar { coroutineScope.launch { drawerState.open() } } },
+            topBar = { PlannerTopBar(openDrawer) },
             bottomBar = navBar,
             floatingActionButton = {
                 FloatingActionButton(onClick = openEditNewTask) {
@@ -73,6 +54,36 @@ fun PlannerScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+fun PlannerDrawer(
+    closeDrawer: () -> Unit,
+    openSettings: () -> Unit
+) {
+    ModalDrawerSheet {
+        Row(Modifier.padding(16.dp)) {
+            Text("Planner", Modifier.align(Alignment.CenterVertically).weight(1f))
+            IconButton(onClick = closeDrawer) {
+                Icon(Icons.Filled.Close, contentDescription = "close drawer")
+            }
+        }
+
+        NavigationDrawerItem(
+            label = { Text(text = "Settings") },
+            selected = false,
+            onClick = {
+                openSettings()
+                closeDrawer()
+            },
+            icon = {
+                Icon(
+                    imageVector = Icons.Filled.Settings,
+                    contentDescription = null
+                )
+            }
+        )
     }
 }
 

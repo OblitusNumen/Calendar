@@ -86,53 +86,17 @@ fun CalendarScreen(
 
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val coroutineScope = rememberCoroutineScope()
+    val closeDrawer: () -> Unit = { coroutineScope.launch { drawerState.close() } }
+    val openDrawer: () -> Unit = { coroutineScope.launch { drawerState.open() } }
 
     ModalNavigationDrawer(
         drawerContent = {
-            ModalDrawerSheet {
-                Row(Modifier.padding(16.dp)) {
-                    Text("Calendar", Modifier.align(Alignment.CenterVertically).weight(1f))
-                    IconButton(onClick = { coroutineScope.launch { drawerState.close() } }) {
-                        Icon(Icons.Filled.Close, contentDescription = "close drawer")
-                    }
-                }
-
-                NavigationDrawerItem(
-                    label = { Text(text = "Entries") },
-                    selected = false,
-                    onClick = openEntriesScreen,
-                    icon = {
-                        Icon(
-                            imageVector = Icons.Filled.ThumbUp,
-                            contentDescription = null
-                        )
-                    }
-                )
-
-                NavigationDrawerItem(
-                    label = { Text(text = "Tags") },
-                    selected = false,
-                    onClick = openTagsScreen,
-                    icon = {
-                        Icon(
-                            imageVector = Icons.Filled.Star,
-                            contentDescription = null
-                        )
-                    }
-                )
-
-                NavigationDrawerItem(
-                    label = { Text(text = "Settings") },
-                    selected = false,
-                    onClick = openSettings,
-                    icon = {
-                        Icon(
-                            imageVector = Icons.Filled.Settings,
-                            contentDescription = null
-                        )
-                    }
-                )
-            }
+            CalendarDrawer(
+                closeDrawer,
+                openEntriesScreen,
+                openTagsScreen,
+                openSettings
+            )
         },
         drawerState = drawerState,
     ) {
@@ -142,7 +106,7 @@ fun CalendarScreen(
                     dbManager,
                     tagsFilter,
                     { tagsFilter = it },
-                    { coroutineScope.launch { drawerState.open() } },
+                    openDrawer,
                     scrollTo
                 )
             },
@@ -276,6 +240,68 @@ fun CalendarScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+fun CalendarDrawer(
+    closeDrawer: () -> Unit,
+    openEntriesScreen: () -> Unit,
+    openTagsScreen: () -> Unit,
+    openSettings: () -> Unit
+) {
+    ModalDrawerSheet {
+        Row(Modifier.padding(16.dp)) {
+            Text("Calendar", Modifier.align(Alignment.CenterVertically).weight(1f))
+            IconButton(onClick = closeDrawer) {
+                Icon(Icons.Filled.Close, contentDescription = "close drawer")
+            }
+        }
+
+        NavigationDrawerItem(
+            label = { Text(text = "Entries") },
+            selected = false,
+            onClick = {
+                openEntriesScreen()
+                closeDrawer()
+            },
+            icon = {
+                Icon(
+                    imageVector = Icons.Filled.ThumbUp,
+                    contentDescription = null
+                )
+            }
+        )
+
+        NavigationDrawerItem(
+            label = { Text(text = "Tags") },
+            selected = false,
+            onClick = {
+                openTagsScreen()
+                closeDrawer()
+            },
+            icon = {
+                Icon(
+                    imageVector = Icons.Filled.Star,
+                    contentDescription = null
+                )
+            }
+        )
+
+        NavigationDrawerItem(
+            label = { Text(text = "Settings") },
+            selected = false,
+            onClick = {
+                openSettings()
+                closeDrawer()
+            },
+            icon = {
+                Icon(
+                    imageVector = Icons.Filled.Settings,
+                    contentDescription = null
+                )
+            }
+        )
     }
 }
 
