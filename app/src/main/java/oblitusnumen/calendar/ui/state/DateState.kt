@@ -16,7 +16,7 @@ data class DateState(
     private var _eventOptionsId: Int?,
     val epochSecondChainStart: Long,
     val duration: Period,
-    var epochSecondChainEnd: Long = 0,
+    val epochSecondChainEnd: Long = 0,
     private var _timesRepeat: Long = 1,
     val period: Period,
     val timeZoneId: ZoneId,

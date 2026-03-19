@@ -200,6 +200,7 @@ class ViewDateWithOptions(
             val result: SortedSet<DateOccurrence> =
                 sortedSetOf(compareBy<DateOccurrence> { it.occurrence }.thenBy { it.date.name }.thenBy { it.date.id })
 
+            // FIXME: reengineer it to account for duration
             all(
                 dbManager,
                 start,

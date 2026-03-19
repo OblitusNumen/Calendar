@@ -205,27 +205,31 @@ open class Date : BaseColumns {
         return dates
     }
 
+    // FIXME: reengineer this method for efficiency
     fun allIntersectingRange(start: Long, end: Long): Collection<ZonedDateTime> {
         val result = mutableListOf<ZonedDateTime>()
 
-        if (!hasDuration) {
-            anyInRange(start, end)?.let { result.add(it) }
-            return result
-        }
+        if (!hasDuration)
+            return getAllInRange(start, end)
 
         val start = duration.addTo(Instant.ofEpochSecond(start).atZone(timeZoneId), -1).toEpochSecond()
         val anyZonedDateTime = getZonedDateTimeInRange(start, end) ?: return emptyList()
+        if (checkZonedDateTime(anyZonedDateTime))
+            result.add(anyZonedDateTime)
         if (!isPeriodic)
-            return result.apply { add(anyZonedDateTime) }
+            return result
 
-        var zonedDateTime = anyZonedDateTime
-        while (start < zonedDateTime.toEpochSecond()) {
+        var zonedDateTime = period.addTo(anyZonedDateTime, -1)
+        // TODO: why strictly < ?
+        while (start < zonedDateTime.toEpochSecond() && epochSecondChainStart <= zonedDateTime.toEpochSecond()) {
             if (checkZonedDateTime(zonedDateTime))
                 result.add(zonedDateTime)
             zonedDateTime = period.addTo(zonedDateTime, -1)
         }
+
         zonedDateTime = period.addTo(anyZonedDateTime, 1)
-        while (zonedDateTime.toEpochSecond() < end) {
+        // TODO: why strictly < ?
+        while (zonedDateTime.toEpochSecond() < end && zonedDateTime.toEpochSecond() <= epochSecondChainEnd) {
             if (checkZonedDateTime(zonedDateTime))
                 result.add(zonedDateTime)
             zonedDateTime = period.addTo(zonedDateTime, 1)
@@ -233,13 +237,16 @@ open class Date : BaseColumns {
         return result
     }
 
+    // FIXME: works wacky for cases when more than one event in range
     private fun checkZonedDateTime(zonedDateTime: ZonedDateTime): Boolean =
         !(exceptionRules.containsDate(zonedDateTime.toEpochDays()) ||
                 (period is Period.Weekday && !(period as Period.Weekday).verifyWeekday(// FIXME: works wacky for cases when more than one event in range
                     getFirstZoneDateTime().toLocalDate(),
                     zonedDateTime.toLocalDate()
-                )))// FIXME: works wacky for cases when more than one event in range
+                ))) &&
+                zonedDateTime.toEpochSecond() in epochSecondChainStart..epochSecondChainEnd
 
+    // unsafe: may return impossible values
     private fun getZonedDateTimeInRange(start: Long, finish: Long): ZonedDateTime? { //any(?) in range
         if (finish <= this.epochSecondChainStart || timesRepeat == 0L) return null
         if (this.epochSecondChainEnd == this.epochSecondChainStart) return if (this.epochSecondChainStart >= start) getZoneDateTime(
@@ -261,13 +268,13 @@ open class Date : BaseColumns {
         if (time >= finish && idx > 1) {
             val zdtIdxM1 = getZoneDateTime(idx - 1)
             val timeM1 = zdtIdxM1.toEpochSecond()
-            return if (timeM1 >= finish || timeM1 < start) null
+            return if (timeM1 !in start..<finish) null
             else zdtIdxM1
         }
         if (time < start && idx < timesRepeat - 1) {
             val zdtIdxP1 = getZoneDateTime(idx + 1)
             val timeP1 = zdtIdxP1.toEpochSecond()
-            return if (timeP1 < start || timeP1 >= finish) null
+            return if (timeP1 !in start..<finish) null
             else zdtIdxP1
         }
         return null
@@ -288,7 +295,8 @@ open class Date : BaseColumns {
             (period is Period.Weekday && !period.verifyWeekday(// FIXME: works wacky for cases when more than one event in range
                 getFirstZoneDateTime().toLocalDate(),
                 zonedDateTime.toLocalDate()
-            ))
+            )) ||
+            zonedDateTime.toEpochSecond() !in epochSecondChainStart..epochSecondChainEnd // FIXME: is this necessary? 
         ) return null
         return zonedDateTime
     }
