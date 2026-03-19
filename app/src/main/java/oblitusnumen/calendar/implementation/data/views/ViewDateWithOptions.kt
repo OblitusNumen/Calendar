@@ -165,7 +165,8 @@ class ViewDateWithOptions(
             val start = begin.toEpochSecond()
             val end = begin.plusDays(1).toEpochSecond()
 
-            val result: SortedSet<DateOccurrence> = sortedSetOf(compareBy<DateOccurrence> { it.occurrence })
+            val result: SortedSet<DateOccurrence> =
+                sortedSetOf(compareBy<DateOccurrence> { it.occurrence }.thenBy { it.date.name }.thenBy { it.date.id })
 
             all(
                 dbManager,
@@ -196,7 +197,8 @@ class ViewDateWithOptions(
             val start = begin.toEpochSecond()
             val end = begin.plusDays(1).toEpochSecond()
 
-            val result: SortedSet<DateOccurrence> = sortedSetOf(compareBy<DateOccurrence> { it.occurrence })
+            val result: SortedSet<DateOccurrence> =
+                sortedSetOf(compareBy<DateOccurrence> { it.occurrence }.thenBy { it.date.name }.thenBy { it.date.id })
 
             all(
                 dbManager,
