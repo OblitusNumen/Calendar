@@ -34,6 +34,7 @@ import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
 import kotlin.math.max
+import kotlin.math.min
 
 @Composable
 fun DateScreen(
@@ -70,11 +71,14 @@ fun DateScreen(
                 Spacer(Modifier.height(paddingValues.calculateTopPadding()))
 
                 Box(Modifier.padding(top = 0.dp)) {
-                    repeat(24) {
+                    repeat(24) {// FIXME: fix for non-24 hour day
                         HorizontalDivider(
                             Modifier.padding(
                                 top = minutesToDp(it * 60),
-                                bottom = androidx.compose.ui.unit.max(30.dp, minutesToDp(MIN_OCCURRENCE_SIZE_MINUTES))
+                                bottom = 60.dp + androidx.compose.ui.unit.max(
+                                    30.dp,
+                                    minutesToDp(MIN_OCCURRENCE_SIZE_MINUTES)
+                                )
                             ).height(1.dp)
                         )
                     }
@@ -182,11 +186,22 @@ fun EntryBox(
     openEntryInfo: () -> Unit
 ) {
     val start = occurrence.occurrence.withSecond(0)
-    val end = getZonedFromEpochSeconds(occurrence.endEpochSecond()).toLocalDateTime().withSecond(0)
-    val startMinutesOffset = Duration.between(startOfDay, start).toMinutes().toInt()
-    val endMinutesOffset = Duration.between(startOfDay, end).toMinutes().toInt()
-    val size = endMinutesOffset - startMinutesOffset
+    val endOfDay = startOfDay.plusDays(1)
+    val endOfDayMinutesOffset = Duration.between(startOfDay, endOfDay).toMinutes().toInt()
+
     val hasDuration = occurrence.date.hasDuration
+    val end = getZonedFromEpochSeconds(occurrence.endEpochSecond()).toLocalDateTime().withSecond(0)
+    val startMinutesOffset = max(Duration.between(startOfDay, start).toMinutes().toInt(), 0)
+    val endMinutesOffset = min(Duration.between(startOfDay, end).toMinutes().toInt(), endOfDayMinutesOffset)
+    // FIXME: either events with small duration will appear bigger than they are
+    // or text won't be visible on events with small duration
+    val size =
+        max(
+//        if (hasDuration)
+            endMinutesOffset - startMinutesOffset,
+//        else
+            MIN_OCCURRENCE_SIZE_MINUTES
+        )
 
     var excludeDateDialogShown by remember { mutableStateOf(false) }
 
@@ -198,13 +213,8 @@ fun EntryBox(
 
     Box(
         Modifier.padding(top = minutesToDp(startMinutesOffset))
-            // FIXME: either events with small duration will appear bigger than they are
-            // or text won't be visible on events with small duration
-            .height(
-                minutesToDp(/*if (hasDuration) size else MIN_OCCURRENCE_SIZE_MINUTES*/
-                    max(size, MIN_OCCURRENCE_SIZE_MINUTES)
-                )
-            ).fillMaxWidth().combinedClickable(onLongClick = { excludeDateDialogShown = true }, onClick = openEntryInfo)
+            .height(minutesToDp(size)).fillMaxWidth()
+            .combinedClickable(onLongClick = { excludeDateDialogShown = true }, onClick = openEntryInfo)
             .padding(horizontal = 1.dp).let {
                 if (hasDuration)
                     it
