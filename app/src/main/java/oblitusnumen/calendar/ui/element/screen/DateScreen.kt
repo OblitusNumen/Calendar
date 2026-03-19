@@ -205,11 +205,10 @@ fun EntryBox(
                     max(size, MIN_OCCURRENCE_SIZE_MINUTES)
                 )
             ).fillMaxWidth().combinedClickable(onLongClick = { excludeDateDialogShown = true }, onClick = openEntryInfo)
-            .let {
+            .padding(horizontal = 1.dp).let {
                 if (hasDuration)
-//                    it.padding(horizontal = 1.dp).border(1.dp, occurrence.date.color)
                     it
-                        .padding(horizontal = 1.dp)
+//                        .border(1.dp, occurrence.date.color)
 //                        .border(1.dp, MaterialTheme.colorScheme.primary)
                         .background(occurrence.date.color)
                 else
