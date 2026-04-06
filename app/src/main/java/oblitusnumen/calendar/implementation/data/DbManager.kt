@@ -135,7 +135,7 @@ class DbManager(val context: Context) :
         sqLiteDatabase.execSQL(Date.SQL_CREATE)
         sqLiteDatabase.execSQL(Notification.SQL_CREATE)
         sqLiteDatabase.execSQL(Task.SQL_CREATE)
-        sqLiteDatabase.execSQL(TaskDependencies.SQL_CREATE)
+        sqLiteDatabase.execSQL(TaskLink.SQL_CREATE)
         sqLiteDatabase.execSQL(TaskLog.SQL_CREATE)
     }
 

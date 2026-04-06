@@ -3,6 +3,7 @@ package oblitusnumen.calendar.implementation.data.tables
 import android.content.ContentValues
 import android.database.Cursor
 import android.provider.BaseColumns
+import androidx.core.database.getLongOrNull
 import androidx.core.database.sqlite.transaction
 import oblitusnumen.calendar.implementation.data.DbManager
 import java.time.ZoneId
@@ -83,7 +84,7 @@ open class Task(
         const val SQL_CREATE: String = "CREATE TABLE IF NOT EXISTS \"${TABLE_NAME}\"\n" +
                 "(\n" +
                 "    \"$COLUMN_NAME_ENTRY_ID\"                      INTEGER PRIMARY KEY NOT NULL UNIQUE,\n" +
-                "    \"$COLUMN_NAME_START_CONSTRAINT_TIMESTAMP\"    BIGINT  NOT NULL,\n" +
+                "    \"$COLUMN_NAME_START_CONSTRAINT_TIMESTAMP\"    BIGINT,\n" +
                 "    \"$COLUMN_NAME_DEADLINE_TIMESTAMP\"            BIGINT  NOT NULL,\n" +
                 "    \"$COLUMN_NAME_TIME_ZONE_ID\"                  TEXT    NOT NULL,\n" +
                 "    \"$COLUMN_NAME_TIME_CONSUMED\"                 INTEGER NOT NULL,\n" +
@@ -105,7 +106,7 @@ open class Task(
                 tasks.add(
                     Task(
                         cursor.getInt(idxId),
-                        cursor.getLong(idxStart),
+                        cursor.getLongOrNull(idxStart),
                         cursor.getLong(idxEnd),
                         ZoneId.of(cursor.getString(idxZoneId)),
                         cursor.getInt(idxTimeConsumed),
@@ -118,7 +119,7 @@ open class Task(
         fun deleteCascade(dbManager: DbManager, entryId: Int) {
             dbManager.writableDatabase.transaction {
                 TaskLog.deleteAll(dbManager, entryId)
-                TaskDependencies.deleteAll(dbManager, entryId)
+                TaskLink.deleteAll(dbManager, entryId)
                 delete(TABLE_NAME, "$COLUMN_NAME_ENTRY_ID = ?", arrayOf(entryId.toString()))
             }
         }

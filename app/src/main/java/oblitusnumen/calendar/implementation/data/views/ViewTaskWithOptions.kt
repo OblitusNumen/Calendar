@@ -2,6 +2,7 @@ package oblitusnumen.calendar.implementation.data.views
 
 import android.database.Cursor
 import androidx.compose.ui.graphics.Color
+import androidx.core.database.getLongOrNull
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.tables.Entry
 import oblitusnumen.calendar.implementation.data.tables.EventOptions
@@ -46,7 +47,8 @@ class ViewTaskWithOptions private constructor(
                         cursor.getInt(optionsIdx),
                         cursor.getString(idxName),
                         cursor.getInt(idxColor).toColor() ?: dbManager.defaultTaskColor,
-                        cursor.getLong(idxStart),
+                        // FIXME: if null?
+                        cursor.getLongOrNull(idxStart) ?: ZonedDateTime.now().toEpochSecond(),
                         cursor.getLong(idxEnd),
                         ZoneId.of(cursor.getString(idxZoneId)),
                         cursor.getInt(idxTimeConsumed),

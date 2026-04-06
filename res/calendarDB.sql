@@ -75,11 +75,11 @@ CREATE TABLE IF NOT EXISTS "Tasks"
 
 CREATE TABLE IF NOT EXISTS "TaskLinks"
 (
-    "parentTaskId"  INTEGER NOT NULL,
-    "childTaskId"   INTEGER NOT NULL,
-    PRIMARY KEY ("parentTaskId", "childTaskId"),
-    FOREIGN KEY ("parentTaskId") REFERENCES "Tasks" ("entryId"),
-    FOREIGN KEY ("childTaskId") REFERENCES "Tasks" ("entryId")
+    "predecessorId"  INTEGER NOT NULL,
+    "successorId"   INTEGER NOT NULL,
+    PRIMARY KEY ("predecessorId", "successorId"),
+    FOREIGN KEY ("predecessorId") REFERENCES "Tasks" ("entryId"),
+    FOREIGN KEY ("successorId") REFERENCES "Tasks" ("entryId")
 );
 
 
