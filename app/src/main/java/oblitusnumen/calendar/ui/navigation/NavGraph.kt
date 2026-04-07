@@ -17,6 +17,7 @@ import androidx.navigation.compose.composable
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.tables.Entry
 import oblitusnumen.calendar.implementation.data.tables.Tag
+import oblitusnumen.calendar.implementation.data.tables.Task
 import oblitusnumen.calendar.implementation.log
 import oblitusnumen.calendar.implementation.toColor
 import oblitusnumen.calendar.implementation.toInt
@@ -113,30 +114,22 @@ fun NavigationGraph(navController: NavHostController, dbManager: DbManager, star
                 tagsFilter,
                 { BottomBar(navController) },
                 { NavRoutes.TaskEdit.navHere(navController, null) },
-                { NavRoutes.ThatDayDetails.navHere(navController, it) },
-                { year, monthValue ->
-                    NavRoutes.Agenda.navHere(navController, year, monthValue, null)
-                    log("year: $year, monthValue: $monthValue")
-                },
-                { NavRoutes.Entries.navHere(navController) },
-                { NavRoutes.Tags.navHere(navController) },
-                { NavRoutes.Settings.navHere(navController) },
+                { NavRoutes.TaskDetails.navHere(navController, it) },
+                { NavRoutes.Settings.navHere(navController) }
             )
         }
 
-        composable(route = NavRoutes.TaskDetails.route) {
-            TaskDetailsScreen(
-                dbManager,
-                { BottomBar(navController) },
-                { NavRoutes.EntryEdit.navHere(navController, null) },
-                { NavRoutes.ThatDayDetails.navHere(navController, it) },
-                { year, monthValue ->
-                    NavRoutes.Agenda.navHere(navController, year, monthValue, null)
-                    log("year: $year, monthValue: $monthValue")
-                },
-                { NavRoutes.Entries.navHere(navController) },
-                { NavRoutes.Tags.navHere(navController) },
-                { NavRoutes.Settings.navHere(navController) },
+        composable(route = NavRoutes.TaskDetails.route) { navBackStackEntry ->
+            val taskId = NavRoutes.TaskDetails.getArgs(navBackStackEntry)
+            if (taskId == null || !Task.exists(dbManager, taskId)) {
+                NavRoutes.backPress(navController)
+                return@composable
+            }
+
+            TaskDetailsScreen(dbManager,
+                taskId,
+                { NavRoutes.TaskEdit.navHere(navController, null) },
+                { NavRoutes.backPress(navController) }
             )
         }
 

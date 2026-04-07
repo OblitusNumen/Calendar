@@ -53,6 +53,7 @@ android {
 
 dependencies {
 
+    implementation("io.github.koalaplot:koalaplot-core:0.10.4")
     implementation("com.github.skydoves:colorpicker-compose:1.1.3")
     implementation("androidx.core:core-ktx:1.17.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.10.0")
@@ -62,12 +63,12 @@ dependencies {
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
+    implementation("androidx.compose.material:material-icons-extended-android:1.7.8")
     implementation("androidx.navigation:navigation-compose:2.9.7")
-    implementation("androidx.compose.foundation:foundation:1.10.1")
+    implementation("androidx.compose.foundation:foundation-layout:1.10.5")
     implementation("androidx.compose.foundation:foundation:1.10.2")
     implementation("androidx.navigation:navigation-runtime-ktx:2.9.7")
     testImplementation("junit:junit:4.13.2")
-    testImplementation("junit:junit:4.12")
     testImplementation("org.junit.jupiter:junit-jupiter:5.14.0")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
