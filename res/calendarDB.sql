@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS "Notifications"
 CREATE TABLE IF NOT EXISTS "Tasks"
 (
     "entryId"                   INTEGER PRIMARY KEY NOT NULL UNIQUE,
-    "startConstraintTimestamp"  BIGINT  NOT NULL,
+    "startConstraintTimestamp"  BIGINT,
     "deadlineTimestamp"         BIGINT  NOT NULL,
     "timeZoneId"                TEXT    NOT NULL,
     "timeConsumed"              INTEGER NOT NULL,
