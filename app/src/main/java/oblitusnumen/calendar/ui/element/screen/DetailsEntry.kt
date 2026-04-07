@@ -210,10 +210,9 @@ fun DetailsEntryTopBar(
     editEntry: () -> Unit,
     backPress: () -> Unit
 ) {// TODO: confirm
-    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
     CenterAlignedTopAppBar(
         colors = topBarColors(),
-        scrollBehavior = scrollBehavior,
+        scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState()),
         navigationIcon = { BackPressButton(backPress) },
         title = { Text(entryName, maxLines = 1) },
         actions = {

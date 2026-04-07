@@ -551,24 +551,24 @@ fun PeriodSelectorDialog(
                     selectedPeriodCount
 
                 var updatedDateState = date.setPeriod(
-                        if (selectedPeriodType.period is Weekday) {
-                            val weekdayDays = (if (monSelected.value) Weekday.WD_MON else 0) +
-                                    (if (tueSelected.value) Weekday.WD_TUE else 0) +
-                                    (if (wedSelected.value) Weekday.WD_WED else 0) +
-                                    (if (thuSelected.value) Weekday.WD_THU else 0) +
-                                    (if (friSelected.value) Weekday.WD_FRI else 0) +
-                                    (if (satSelected.value) Weekday.WD_SAT else 0) +
-                                    (if (sunSelected.value) Weekday.WD_SUN else 0)
-                            Weekday(
-                                count,
-                                if (weekdayDays == 0L)
-                                    Weekday.dayOfWeekIndexToEnum(date.getFirstZoneDateTime().dayOfWeek.value)
-                                else
-                                    weekdayDays
-                            )
-                        } else
-                            selectedPeriodType.period.updateCount(count)
-                    )
+                    if (selectedPeriodType.period is Weekday) {
+                        val weekdayDays = (if (monSelected.value) Weekday.WD_MON else 0) +
+                                (if (tueSelected.value) Weekday.WD_TUE else 0) +
+                                (if (wedSelected.value) Weekday.WD_WED else 0) +
+                                (if (thuSelected.value) Weekday.WD_THU else 0) +
+                                (if (friSelected.value) Weekday.WD_FRI else 0) +
+                                (if (satSelected.value) Weekday.WD_SAT else 0) +
+                                (if (sunSelected.value) Weekday.WD_SUN else 0)
+                        Weekday(
+                            count,
+                            if (weekdayDays == 0L)
+                                Weekday.dayOfWeekIndexToEnum(date.getFirstZoneDateTime().dayOfWeek.value)
+                            else
+                                weekdayDays
+                        )
+                    } else
+                        selectedPeriodType.period.updateCount(count)
+                )
 
                 if (updatedDateState.isPeriodic) {
                     updatedDateState =
