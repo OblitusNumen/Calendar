@@ -7,10 +7,12 @@ import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.tables.Entry
 import oblitusnumen.calendar.implementation.data.tables.EventOptions
 import oblitusnumen.calendar.implementation.data.tables.Task
+import oblitusnumen.calendar.implementation.data.tables.TaskLink
+import oblitusnumen.calendar.implementation.defaultZoneId
 import oblitusnumen.calendar.implementation.toColor
 import java.time.ZoneId
 
-class ViewTaskWithOptions private constructor(
+class ViewTaskWithOptions(
     id: Int,
     val optionsId: Int,
     val name: String,
@@ -21,10 +23,53 @@ class ViewTaskWithOptions private constructor(
     timeConsumed: Int,
     timeRemaining: Int
 ) : Task(id, startConstraintTimestamp, deadlineTimestamp, timeZoneId, timeConsumed, timeRemaining) {
+
+    // FIXME:
+//    val startLimit
+//        get() = (/*max(*/startConstraintTimestamp!!/* - ZonedDateTime.now().toEpochSecond(), 0)*/ + 86399) / 86400
+//    val endLimit
+//        get() = max((deadlineTimestamp + 86399) / 86400, startLimit)
     val displayName: String = name.ifEmpty { "[No title]" } // FIXME:
+
+    var realStartConstraints: Long? = startConstraintTimestamp
+        private set
+    var realDeadline: Long = deadlineTimestamp
+        private set
 
     fun getContents(dbManager: DbManager): String =
         EventOptions.contentsById(dbManager, optionsId)
+
+    fun setRealConstraints(
+        allTasks: Map<Int, ViewTaskWithOptions>,
+        successors: MutableSet<Int>,
+        predecessors: MutableSet<Int>
+    ) {
+        successors.forEach {
+            if (allTasks[it]!!.deadlineTimestamp < realDeadline)
+                realDeadline = allTasks[it]!!.deadlineTimestamp
+        }
+        predecessors.forEach {
+            if (realStartConstraints == null)
+                realStartConstraints = allTasks[it]!!.startConstraintTimestamp
+            else if (allTasks[it]!!.startConstraintTimestamp != null &&
+                allTasks[it]!!.startConstraintTimestamp!! > realStartConstraints!!
+            )
+                realStartConstraints = allTasks[it]!!.realStartConstraints
+        }
+        // FIXME:
+//        if (realStartConstraints != null && realStartConstraints!! > realDeadline)
+//            throw IllegalArgumentException("Illegal links detected")
+    }
+
+    fun countPredecessorsTimeEstimate(allTasks: Map<Int, ViewTaskWithOptions>, predecessorLinks: Map<Int, List<Int>>): Int {
+        var sum = 0
+        predecessorLinks[taskId!!]!!.forEach { tId ->
+            val task = allTasks[tId]!!
+            sum += task.countPredecessorsTimeEstimate(allTasks, predecessorLinks)
+            sum += task.timeRemaining
+        }
+        return sum
+    }
 
     companion object {
         fun cursorToList(dbManager: DbManager, cursor: Cursor): List<ViewTaskWithOptions> {

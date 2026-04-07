@@ -6,6 +6,7 @@ import android.provider.BaseColumns
 import androidx.core.database.getLongOrNull
 import androidx.core.database.sqlite.transaction
 import oblitusnumen.calendar.implementation.data.DbManager
+import oblitusnumen.calendar.implementation.data.tables.Entry.Companion.COLUMN_NAME_ID
 import java.time.ZoneId
 
 open class Task(
@@ -20,12 +21,24 @@ open class Task(
         private set
     val taskId: Int?
         get() = entryId
+    val progress: Float?
+        get() = if (timeRemaining + timeConsumed == 0)
+            null
+        else
+            timeConsumed.toFloat() / (timeRemaining + timeConsumed)
+    val isDone: Boolean
+        get() = progress?.let { it == 1f } ?: true
 //    private var entryCache: Entry? = null
 //    val entry: Entry
 //        get() {
 //            if (entryCache == null) entryCache = dbManager.getEntryById(entryId!!)!!
 //            return entryCache!!
 //        }
+
+    fun isOverdue(epochSecondNow: Long): Boolean =
+        deadlineTimestamp <= epochSecondNow && !isDone
+
+    fun predecessors(dbManager: DbManager) = TaskLink.predecessors(dbManager, taskId!!)
 
     private fun getContentValues(): ContentValues {
         val contentValues = ContentValues()
@@ -131,6 +144,17 @@ open class Task(
             ).use { cursor ->
                 val tasks = cursorToList(cursor)
                 return if (tasks.isEmpty()) null else tasks[0]
+            }
+        }
+
+        fun exists(dbManager: DbManager, id: Int): Boolean {
+            dbManager.readableDatabase.rawQuery(
+                "SELECT count(*) as eCount " +
+                        "FROM $TABLE_NAME " +
+                        "WHERE $COLUMN_NAME_ID = ?", arrayOf(id.toString())
+            ).use { cursor ->
+                cursor.moveToFirst()
+                return cursor.getInt(cursor.getColumnIndex("eCount")) > 0
             }
         }
     }
