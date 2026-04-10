@@ -71,4 +71,7 @@ data class DateState(
 
     fun setTimesRepeatUI(timesRepeat: Long): DateState =
         toDbEntity().apply { setTimesRepeatUI(timesRepeat) }.toUiState(uiId)
+
+    fun withTimeZone(timeZoneId: ZoneId): DateState =
+        toDbEntity().apply { setTimeZone(timeZoneId) }.toUiState(uiId)
 }

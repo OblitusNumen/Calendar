@@ -164,6 +164,16 @@ fun Date(date: Date) {
             )
         }
 
+        // time zone
+        Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp).padding(horizontal = 40.dp)) {
+            Text(
+                modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp, vertical = 8.dp)
+                    .weight(1f),
+                text = date.timeZoneId.toString(),
+                style = MaterialTheme.typography.bodyLarge
+            )
+        }
+
         // duration
         Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp).padding(horizontal = 40.dp)) {
             Text(

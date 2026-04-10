@@ -64,6 +64,7 @@ fun EditEntryScreen(
                         )
                     )
                 })
+        null
     }
     dateTimePicker.tryCompose()
 
@@ -406,6 +407,14 @@ fun Date(
                 modifier = Modifier.align(Alignment.CenterVertically),
                 onClick = { onRmDate() },
                 content = { Icon(Icons.Filled.Clear, contentDescription = null) })
+        }
+
+        // choose time zine
+        Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp).padding(horizontal = 40.dp)) {
+            TimeZoneSelector(date.timeZoneId.id, onTimeZoneSelected = {
+                val dbEntity = date.toDbEntity()
+                onUpdateDate(date.withTimeZone(ZoneId.of(it)))
+            })
         }
 
         // choose duration

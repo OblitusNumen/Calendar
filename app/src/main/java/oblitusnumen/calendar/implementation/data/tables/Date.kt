@@ -405,6 +405,15 @@ open class Date : BaseColumns {
         exceptionRules.removeDates(dateStart.toEpochDay(), dateEnd.toEpochDay())
     }
 
+    fun setTimeZone(timeZoneId: ZoneId) {
+        val prevTz = this.timeZoneId
+        epochSecondChainStart =
+            Instant.ofEpochSecond(epochSecondChainStart).atZone(prevTz).toLocalDateTime().atZone(timeZoneId)
+                .toEpochSecond()
+        this.timeZoneId = timeZoneId
+        setTimesRepeat(timesRepeat)
+    }
+
     fun setRange(startOfDayStart: ZonedDateTime? = null, startOfDayEnd: ZonedDateTime? = null) {
         if (startOfDayStart != null) {
             timeZoneId = startOfDayStart.zone

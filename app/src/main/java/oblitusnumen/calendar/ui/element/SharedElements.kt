@@ -2,7 +2,9 @@ package oblitusnumen.calendar.ui.element
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -24,6 +26,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -47,6 +50,7 @@ import oblitusnumen.calendar.ui.navigation.NavRoutes
 import oblitusnumen.calendar.ui.theme.topBarColors
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.util.TimeZone
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -281,6 +285,208 @@ fun OffsetSelector(
                 // Place cursor at the end of current text
                 offsetCount = offsetCount.copy(selection = TextRange(offsetCount.text.length))
                 focusRequester.requestFocus()
+            }
+        }
+    }
+}
+
+/**
+ * A reusable Jetpack Compose element for selecting a time zone.
+ *
+ * FINAL FIX: The TextField was consuming all click events internally
+ * (this is normal behavior of OutlinedTextField even when readOnly = true).
+ * Previous Box + clickable approaches only worked on the edges because
+ * pointer events are consumed by the child before they reach the parent.
+ *
+ * Official Material 3 solution (used by DatePicker, TimePicker, etc.):
+ * → Use ExposedDropdownMenuBox + .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+ * This gives the TextField perfect native click handling, ripple on the
+ * entire surface, correct semantics, and no gesture conflicts.
+ *
+ * The dialog is still shown separately — the ExposedDropdownMenuBox is
+ * ONLY used as the trigger (no actual dropdown menu is rendered).
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TimeZoneSelector(
+    selectedTimeZoneId: String,
+    onTimeZoneSelected: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    label: @Composable () -> Unit = { Text("Time zone") }
+) {
+    val selectedTimeZone = remember(selectedTimeZoneId) {
+        TimeZone.getTimeZone(selectedTimeZoneId.ifBlank { TimeZone.getDefault().id })
+    }
+
+    val displayText = remember(selectedTimeZone) {
+        val offset = selectedTimeZone.rawOffset
+        val hours = offset / (1000 * 60 * 60)
+        val minutes = (offset % (1000 * 60 * 60)) / (1000 * 60)
+        val offsetStr = if (minutes == 0) {
+            "GMT%+d".format(hours)
+        } else {
+            "GMT%+d:%02d".format(hours, minutes)
+        }
+        "${selectedTimeZone.id} ($offsetStr)"
+    }
+
+    var showDialog by remember { mutableStateOf(false) }
+
+    // ─────────────────────────────────────────────────────────────
+    // This is the key component that makes the whole field clickable
+    // ─────────────────────────────────────────────────────────────
+    ExposedDropdownMenuBox(
+        expanded = showDialog,
+        onExpandedChange = { showDialog = it },   // handles click perfectly
+        modifier = modifier
+    ) {
+        OutlinedTextField(
+            value = displayText,
+            onValueChange = {}, // read-only
+            readOnly = true,
+            label = label,
+            trailingIcon = {
+                ExposedDropdownMenuDefaults.TrailingIcon(expanded = showDialog)
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .menuAnchor(MenuAnchorType.PrimaryNotEditable)   // ← THIS IS THE MAGIC
+        )
+    }
+
+    if (showDialog) {
+        TimeZoneSelectionDialog(
+            selectedTimeZoneId = selectedTimeZoneId,
+            onTimeZoneSelected = onTimeZoneSelected,
+            onDismiss = { showDialog = false }
+        )
+    }
+}
+
+/**
+ * Internal dialog – unchanged (search + lazy list works perfectly).
+ */
+@Composable
+private fun TimeZoneSelectionDialog(
+    selectedTimeZoneId: String,
+    onTimeZoneSelected: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var searchQuery by remember { mutableStateOf("") }
+
+    val allTimeZones = remember {
+        TimeZone.getAvailableIDs()
+            .map { TimeZone.getTimeZone(it) }
+            .sortedBy { it.id }
+    }
+
+    val filteredTimeZones = remember(searchQuery, allTimeZones) {
+        if (searchQuery.isBlank()) {
+            allTimeZones
+        } else {
+            allTimeZones.filter { it.id.contains(searchQuery, ignoreCase = true) }
+        }
+    }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = MaterialTheme.shapes.extraLarge,
+            tonalElevation = 8.dp,
+            modifier = Modifier
+                .fillMaxWidth(0.95f)
+                .wrapContentHeight()
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp)
+            ) {
+                Text(
+                    text = "Select time zone",
+                    style = MaterialTheme.typography.headlineSmall
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    label = { Text("Search (e.g. Europe, America, GMT)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 420.dp)
+                ) {
+                    items(
+                        items = filteredTimeZones,
+                        key = { it.id }
+                    ) { timeZone ->
+                        val isSelected = timeZone.id == selectedTimeZoneId
+
+                        val offsetMillis = timeZone.rawOffset
+                        val hours = offsetMillis / (1000 * 60 * 60)
+                        val minutes = (offsetMillis % (1000 * 60 * 60)) / (1000 * 60)
+                        val offsetStr = if (minutes == 0) {
+                            "GMT%+d".format(hours)
+                        } else {
+                            "GMT%+d:%02d".format(hours, minutes)
+                        }
+                        val displayText = "${timeZone.id} ($offsetStr)"
+
+                        ListItem(
+                            headlineContent = {
+                                Text(
+                                    text = displayText,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            },
+                            leadingContent = {
+                                RadioButton(
+                                    selected = isSelected,
+                                    onClick = null
+                                )
+                            },
+                            modifier = Modifier
+                                .clickable {
+                                    onTimeZoneSelected(timeZone.id)
+                                    onDismiss()
+                                }
+                        )
+                    }
+
+                    if (filteredTimeZones.isEmpty()) {
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 32.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "No time zones found",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                TextButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.align(Alignment.End)
+                ) {
+                    Text("Cancel")
+                }
             }
         }
     }
