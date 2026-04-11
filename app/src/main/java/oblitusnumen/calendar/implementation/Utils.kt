@@ -55,6 +55,8 @@ fun defaultZoneId(): ZoneId {
     return ZoneId.systemDefault()
 }
 
+fun now(): Long = Instant.now().epochSecond
+
 fun log(o: Any?) {
     log("calendar", o)
 }

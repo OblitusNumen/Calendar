@@ -5,6 +5,7 @@ import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.provider.BaseColumns
 import oblitusnumen.calendar.implementation.data.DbManager
+import oblitusnumen.calendar.implementation.now
 import java.io.IOException
 import java.time.ZonedDateTime
 
@@ -102,7 +103,7 @@ open class Entry(
      * returns null if no associated dates, -1 if ended, next occurrence epoch second otherwise
      */
     fun nextDate(dbManager: DbManager): Long? {
-        val now = System.currentTimeMillis() / 1000
+        val now = now()
         var nextDate: ZonedDateTime? = null
         var hasDates = false
         for (date in getDates(dbManager)) {

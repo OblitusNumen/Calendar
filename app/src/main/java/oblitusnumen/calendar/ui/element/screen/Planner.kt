@@ -30,6 +30,7 @@ import oblitusnumen.calendar.implementation.data.tables.Task
 import oblitusnumen.calendar.implementation.data.tables.TaskLink
 import oblitusnumen.calendar.implementation.data.views.ViewTaskWithOptions
 import oblitusnumen.calendar.implementation.getZonedFromEpochSeconds
+import oblitusnumen.calendar.implementation.now
 import oblitusnumen.calendar.implementation.planTasks
 import oblitusnumen.calendar.ui.element.EntryDescriptionAndTags
 import oblitusnumen.calendar.ui.theme.topBarColors
@@ -94,7 +95,7 @@ fun PlannerScreen(
                     }
                 }
 
-                val now = ZonedDateTime.now().toEpochSecond()
+                val now = now()
                 val links = remember { TaskLink.all(dbManager) }
                 val allTasks = (ViewTaskWithOptions.all(dbManager)).sortedBy { it.progress }
                 val predecessorLinks: Map<Int, MutableList<Int>> = remember {
