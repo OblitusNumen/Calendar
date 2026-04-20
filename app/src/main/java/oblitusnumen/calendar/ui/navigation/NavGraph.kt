@@ -30,7 +30,12 @@ import oblitusnumen.calendar.ui.viewmodel.TaskEditViewModel
 import java.time.LocalDate
 
 @Composable
-fun NavigationGraph(navController: NavHostController, dbManager: DbManager, startingEntryId: Int? = null) {
+fun NavigationGraph(
+    navController: NavHostController,
+    dbManager: DbManager,
+    startingEntryId: Int? = null,
+    openPlannerToday: Boolean = false,
+) {
     val tagFilterSaver: Saver<MutableState<List<Tag>>, Bundle> = Saver(
         save = { tagFilter ->
             Bundle().apply {
@@ -66,7 +71,9 @@ fun NavigationGraph(navController: NavHostController, dbManager: DbManager, star
         modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
         navController = navController,
         startDestination =
-            if (startingEntryId == null)
+            if (openPlannerToday)
+                NavRoutes.Planner.route
+            else if (startingEntryId == null)
                 NavRoutes.Calendar.route
             // FIXME:
 //                    NavRoutes.Dashboard.route
@@ -115,7 +122,8 @@ fun NavigationGraph(navController: NavHostController, dbManager: DbManager, star
                 { BottomBar(navController) },
                 { NavRoutes.TaskEdit.navHere(navController, null) },
                 { NavRoutes.TaskDetails.navHere(navController, it) },
-                { NavRoutes.Settings.navHere(navController) }
+                { NavRoutes.Settings.navHere(navController) },
+                initialTab = if (openPlannerToday) PlannerTab.TODAY else PlannerTab.CURRENT
             )
         }
 

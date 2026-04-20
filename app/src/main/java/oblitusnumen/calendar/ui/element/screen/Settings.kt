@@ -20,6 +20,7 @@ import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.zipDirectoryToStream
 import oblitusnumen.calendar.ui.element.BackPressButton
 import oblitusnumen.calendar.ui.element.ColorSelectButton
+import oblitusnumen.calendar.ui.element.IntTextField
 import oblitusnumen.calendar.ui.element.NotificationAddMenu
 import oblitusnumen.calendar.ui.theme.topBarColors
 import java.io.BufferedOutputStream
@@ -112,6 +113,43 @@ fun SettingsScreen(dbManager: DbManager, backPress: () -> Unit) {
                                 .padding(horizontal = 44.dp, vertical = 4.dp),
                             text = "Add notification", // FIXME: start with plus icon
                             style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
+                }
+            }
+            item {
+                var hour by remember { mutableStateOf(dbManager.morningNotificationHour) }
+                var minute by remember { mutableStateOf(dbManager.morningNotificationMinute) }
+                Column(Modifier.padding(vertical = 8.dp)) {
+                    Text(
+                        "Morning notification time",
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IntTextField(
+                            value = hour,
+                            onValueChange = { v ->
+                                if (v != null && v in 0..23) {
+                                    hour = v
+                                    dbManager.morningNotificationHour = v
+                                    dbManager.tryScheduleMorningNotification()
+                                }
+                            },
+                            label = { Text("Hour") },
+                            maxDigits = 2
+                        )
+                        Text(":", Modifier.padding(horizontal = 4.dp))
+                        IntTextField(
+                            value = minute,
+                            onValueChange = { v ->
+                                if (v != null && v in 0..59) {
+                                    minute = v
+                                    dbManager.morningNotificationMinute = v
+                                    dbManager.tryScheduleMorningNotification()
+                                }
+                            },
+                            label = { Text("Minute") },
+                            maxDigits = 2
                         )
                     }
                 }

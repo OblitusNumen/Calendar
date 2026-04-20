@@ -25,20 +25,9 @@ import oblitusnumen.calendar.implementation.data.views.ViewTaskWithOptions
 import oblitusnumen.calendar.implementation.now
 import oblitusnumen.calendar.ui.element.BackPressButton
 import oblitusnumen.calendar.ui.element.TagChip
+import oblitusnumen.calendar.ui.formatDateTime
+import oblitusnumen.calendar.ui.formatTime
 import oblitusnumen.calendar.ui.theme.topBarColors
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-
-private fun formatTime(quarterHours: Int): String {
-    val hours = quarterHours / 4
-    val minutes = (quarterHours % 4) * 15
-    return if (minutes == 0) "${hours}h" else "${hours}h ${minutes}m"
-}
-
-private fun formatDateTime(epochSecond: Long, zoneId: ZoneId): String =
-    Instant.ofEpochSecond(epochSecond).atZone(zoneId)
-        .format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm"))
 
 @Composable
 fun TaskDetailsScreen(dbManager: DbManager, taskId: Int, editTask: () -> Unit, backPress: () -> Unit) {

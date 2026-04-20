@@ -11,12 +11,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.core.content.edit
 import oblitusnumen.calendar.implementation.*
 import oblitusnumen.calendar.implementation.data.tables.*
+import oblitusnumen.calendar.implementation.data.tables.Task
 import oblitusnumen.calendar.implementation.data.views.ViewNotificationDateWithOptions
 import oblitusnumen.calendar.implementation.notifications.NotificationBroadcastReceiver.Companion.LAST_NOTIFICATION_TIME_PREFERENCE_NAME
+import oblitusnumen.calendar.implementation.notifications.NotificationBroadcastReceiver.Companion.scheduleMorningNotification
 import oblitusnumen.calendar.implementation.notifications.NotificationBroadcastReceiver.Companion.scheduleNotification
 import oblitusnumen.calendar.implementation.notifications.PendingNotification
 import java.io.File
 import java.time.ZoneId
+import java.time.ZonedDateTime
 import kotlin.random.Random
 
 class DbManager(val context: Context) :
@@ -47,6 +50,18 @@ class DbManager(val context: Context) :
             getSharedPrefs(context).edit { putInt(DEFAULT_TAG_COLOR_PREF_NAME, color.toInt()) }
             field = color
         }
+    var morningNotificationHour: Int = getSharedPrefs(context).getInt(MORNING_NOTIFICATION_HOUR_PREF, 9)
+        set(value) {
+            getSharedPrefs(context).edit { putInt(MORNING_NOTIFICATION_HOUR_PREF, value) }
+            field = value
+            tryScheduleMorningNotification()
+        }
+    var morningNotificationMinute: Int = getSharedPrefs(context).getInt(MORNING_NOTIFICATION_MINUTE_PREF, 0)
+        set(value) {
+            getSharedPrefs(context).edit { putInt(MORNING_NOTIFICATION_MINUTE_PREF, value) }
+            field = value
+            tryScheduleMorningNotification()
+        }
 
     // FIXME:
     val defaultTaskColor: Color
@@ -69,10 +84,20 @@ class DbManager(val context: Context) :
 //        }
         // FIXME: for debug
         fillTasksDB()
+        tryScheduleMorningNotification()
     }
 
     fun finishApp() {
         (context as? Activity)?.finishAffinity()
+    }
+
+    fun tryScheduleMorningNotification(now: Long = System.currentTimeMillis() / 1000) {
+        val nowZdt = ZonedDateTime.now(defaultZoneId())
+        var next = nowZdt.withHour(morningNotificationHour).withMinute(morningNotificationMinute)
+            .withSecond(0).withNano(0)
+        if (!next.isAfter(nowZdt))
+            next = next.plusDays(1)
+        scheduleMorningNotification(context, next.toInstant().toEpochMilli())
     }
 
     fun tryScheduleNotification(now: Long = System.currentTimeMillis() / 1000) {
@@ -142,7 +167,10 @@ class DbManager(val context: Context) :
     }
 
     override fun onUpgrade(sqLiteDatabase: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        throw IllegalStateException()
+        if (oldVersion < 2)
+            sqLiteDatabase.execSQL(
+                "ALTER TABLE ${TaskLog.TABLE_NAME} ADD COLUMN ${TaskLog.COLUMN_NAME_TIME_PLANNED} INTEGER NOT NULL DEFAULT 0"
+            )
     }
 
     override fun onDowngrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
@@ -332,13 +360,15 @@ class DbManager(val context: Context) :
     }
 
     companion object {
-        const val DATABASE_VERSION: Int = 1
+        const val DATABASE_VERSION: Int = 2
         const val DB_NAME: String = "entries.db"
 
         private const val SHARED_PREFERENCES_NAME: String = "calendar_preferences"
         private const val DEFAULT_ENTRY_COLOR_PREF_NAME: String = "default_entry_color"
         private const val DEFAULT_TAG_COLOR_PREF_NAME: String = "default_tag_color"
         private const val DEFAULT_NOTIFICATIONS_PREF_NAME: String = "default_notifications"
+        private const val MORNING_NOTIFICATION_HOUR_PREF: String = "morning_notification_hour"
+        private const val MORNING_NOTIFICATION_MINUTE_PREF: String = "morning_notification_minute"
 
         private const val SATURATION = .5f
         private const val VALUE = .8f

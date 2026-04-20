@@ -13,10 +13,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -28,14 +25,16 @@ import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.tables.Tag
 import oblitusnumen.calendar.implementation.data.tables.Task
 import oblitusnumen.calendar.implementation.data.tables.TaskLink
+import oblitusnumen.calendar.implementation.data.tables.TaskLog
 import oblitusnumen.calendar.implementation.data.views.ViewTaskWithOptions
+import oblitusnumen.calendar.implementation.defaultZoneId
 import oblitusnumen.calendar.implementation.getZonedFromEpochSeconds
 import oblitusnumen.calendar.implementation.now
 import oblitusnumen.calendar.implementation.planTasks
 import oblitusnumen.calendar.ui.element.EntryDescriptionAndTags
+import oblitusnumen.calendar.ui.formatTime
 import oblitusnumen.calendar.ui.theme.topBarColors
 import java.time.ZonedDateTime
-import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalKoalaPlotApi::class)
 @Composable
@@ -46,6 +45,7 @@ fun PlannerScreen(
     openEditNewTask: () -> Unit,
     openTaskDetails: (Int) -> Unit,
     openSettings: () -> Unit,
+    initialTab: PlannerTab = PlannerTab.TODAY,
 ) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val coroutineScope = rememberCoroutineScope()
@@ -66,8 +66,7 @@ fun PlannerScreen(
             }
         ) { paddingValues ->
             Column {
-                val startDestination = PlannerTab.CURRENT
-                val pagerState = rememberPagerState(startDestination.ordinal, pageCount = { PlannerTab.entries.size })
+                val pagerState = rememberPagerState(initialTab.ordinal, pageCount = { PlannerTab.entries.size })
                 val coroutineScope = rememberCoroutineScope()
 
                 PrimaryScrollableTabRow(
@@ -97,7 +96,9 @@ fun PlannerScreen(
 
                 val now = now()
                 val links = remember { TaskLink.all(dbManager) }
-                val allTasks = (ViewTaskWithOptions.all(dbManager)).sortedBy { it.progress }
+                val allTasks = remember {
+                    mutableStateListOf(*ViewTaskWithOptions.all(dbManager).sortedBy { it.progress }.toTypedArray())
+                }
                 val predecessorLinks: Map<Int, MutableList<Int>> = remember {
                     val predecessorLinks: Map<Int, MutableList<Int>> =
                         allTasks.map { it.taskId!! }.associateWith { mutableListOf() }
@@ -106,46 +107,78 @@ fun PlannerScreen(
                     }
                     return@remember predecessorLinks
                 }
-                val successorsLinks: Map<Int, MutableList<Int>> = remember {
-                    val successorsLinks: Map<Int, MutableList<Int>> =
-                        allTasks.map { it.taskId!! }.associateWith { mutableListOf() }
-                    links.forEach { link ->
-                        successorsLinks[link.predecessor]!!.add(link.successor)
-                    }
-                    return@remember successorsLinks
+
+                val todayStart = remember {
+                    ZonedDateTime.now(defaultZoneId()).toLocalDate()
+                        .atStartOfDay(defaultZoneId()).toEpochSecond()
                 }
+                val todayLogs = remember { mutableStateMapOf<Int, TaskLog>() }
 
                 val planned = remember {
                     // FIXME: wrong filter
                     val plannedTasks: Array<Task> = allTasks.filter { task ->
                         task.deadlineTimestamp >= now && !task.isDone
                     }.toTypedArray()
-                    planTasks(plannedTasks, links, now)
+                    val result = planTasks(plannedTasks, links, now)
+
+                    // persist today's planned portions in TaskLog
+                    result.forEach { (taskId, dist) ->
+                        if (dist[0] > 0) {
+                            val task = allTasks.firstOrNull { it.taskId == taskId } ?: return@forEach
+                            val log = TaskLog.upsert(
+                                dbManager, taskId, todayStart, task.timeZoneId, dist[0]
+                            )
+                            todayLogs[taskId] = log
+                        }
+                    }
+                    result
+                }
+
+                fun toggleTodayDone(task: ViewTaskWithOptions, log: TaskLog, markDone: Boolean) {
+                    val prev = log.timeConsumed
+                    val next = if (markDone) log.timePlanned else 0
+                    val delta = next - prev
+                    log.timeConsumed = next
+                    log.update()
+                    Task.updateTimeValues(
+                        dbManager, task.taskId!!,
+                        task.timeConsumed + delta,
+                        maxOf(0, task.timeRemaining - delta)
+                    )
+                    todayLogs[task.taskId!!] = log
+                    val idx = allTasks.indexOfFirst { it.taskId == task.taskId }
+                    if (idx >= 0)
+                        allTasks[idx] = ViewTaskWithOptions.byId(dbManager, task.taskId!!)!!
                 }
 
                 HorizontalPager(pagerState, verticalAlignment = Alignment.Top) { page ->
-                    val tabTasks = remember(page) {
-                        when (PlannerTab.entries[page]) {
-                            PlannerTab.TODAY -> allTasks.filter { task ->
-                                planned[task.taskId!!]?.let { taskDistribution -> taskDistribution[0] > 0 } ?: false
-                            }
-
-                            PlannerTab.CURRENT -> allTasks.filter { task ->
-                                (task.startConstraintTimestamp == null || task.startConstraintTimestamp!! <= now) &&
-                                        !task.isDone
-                            }
-
-                            PlannerTab.PAST -> allTasks.filter { it.isDone }
-
-                            PlannerTab.OVERDUE -> allTasks.filter { it.isOverdue(now) }
-
-                            PlannerTab.ALL -> allTasks
+                    val isToday = PlannerTab.entries[page] == PlannerTab.TODAY
+                    val tabTasks = when (PlannerTab.entries[page]) {
+                        PlannerTab.TODAY -> allTasks.filter { task ->
+                            planned[task.taskId!!]?.let { dist -> dist[0] > 0 } ?: false
                         }
+
+                        PlannerTab.CURRENT -> allTasks.filter { task ->
+                            (task.startConstraintTimestamp == null || task.startConstraintTimestamp!! <= now) &&
+                                    !task.isDone
+                        }
+
+                        PlannerTab.PAST -> allTasks.filter { it.isDone }
+
+                        PlannerTab.OVERDUE -> allTasks.filter { it.isOverdue(now) }
+
+                        PlannerTab.ALL -> allTasks.toList()
                     }
 
                     LazyColumn(Modifier.fillMaxSize()) {
                         items(tabTasks, key = { it.taskId!! }) { task ->
-                            Task(openTaskDetails, task, now, allTasks, predecessorLinks, dbManager)
+                            Task(
+                                openTaskDetails, task, now, allTasks, predecessorLinks, dbManager,
+                                todayLog = if (isToday) todayLogs[task.taskId!!] else null,
+                                onToggleDone = if (isToday) { log, markDone ->
+                                    toggleTodayDone(task, log, markDone)
+                                } else null
+                            )
                             // TODO:
                         }
 
@@ -164,7 +197,9 @@ fun Task(
     now: Long,
     allTasks: List<ViewTaskWithOptions>,
     predecessorLinks: Map<Int, MutableList<Int>>,
-    dbManager: DbManager
+    dbManager: DbManager,
+    todayLog: TaskLog? = null,
+    onToggleDone: ((TaskLog, Boolean) -> Unit)? = null,
 ) {
     Column(
         Modifier.padding(2.dp).fillMaxWidth().defaultMinSize(minHeight = 64.dp)
@@ -188,24 +223,6 @@ fun Task(
                 overflow = TextOverflow.Ellipsis,
                 maxLines = 1,
             )
-
-//                                Text(
-//                                    modifier = Modifier.weight(1.0f).padding(horizontal = 8.dp)
-//                                        .align(Alignment.CenterVertically),
-//                                    text = "${task.timeConsumed}",
-//                                    style = MaterialTheme.typography.headlineSmall,
-//                                    overflow = TextOverflow.Ellipsis,
-//                                    maxLines = 1,
-//                                )
-//
-//                                Text(
-//                                    modifier = Modifier.weight(1.0f).padding(horizontal = 8.dp)
-//                                        .align(Alignment.CenterVertically),
-//                                    text = "${task.timeRemaining}",
-//                                    style = MaterialTheme.typography.headlineSmall,
-//                                    overflow = TextOverflow.Ellipsis,
-//                                    maxLines = 1,
-//                                )
 
             if (task.isDone)
                 Icon(Icons.Filled.Done, tint = Color.Green, contentDescription = "done")
@@ -252,6 +269,19 @@ fun Task(
                 { task.progress ?: 0f },
                 Modifier.fillMaxWidth().padding(4.dp),
             )
+
+        if (todayLog != null && onToggleDone != null) {
+            val isDoneToday = todayLog.timeConsumed >= todayLog.timePlanned && todayLog.timePlanned > 0
+            TextButton(
+                onClick = { onToggleDone(todayLog, !isDoneToday) },
+                modifier = Modifier.align(Alignment.End).padding(horizontal = 4.dp)
+            ) {
+                Text(
+                    if (isDoneToday) "Undo today"
+                    else "Done today (${formatTime(todayLog.timePlanned)})"
+                )
+            }
+        }
     }
 }
 

@@ -174,6 +174,18 @@ open class Task(
                 return ids
             }
         }
+
+        fun updateTimeValues(dbManager: DbManager, entryId: Int, timeConsumed: Int, timeRemaining: Int) {
+            dbManager.writableDatabase.update(
+                TABLE_NAME,
+                ContentValues().apply {
+                    put(COLUMN_NAME_TIME_CONSUMED, timeConsumed)
+                    put(COLUMN_NAME_TIME_REMAINING, timeRemaining)
+                },
+                "$COLUMN_NAME_ENTRY_ID = ?",
+                arrayOf(entryId.toString())
+            )
+        }
     }
 }
 

@@ -50,6 +50,8 @@ class MainActivity : ComponentActivity() {
                 intent.getIntExtra(NotificationBroadcastReceiver.INTENT_EXTRA_ENTRY_ID, -1)
             else
                 null
+        val openPlannerToday: Boolean =
+            intent.getBooleanExtra(NotificationBroadcastReceiver.INTENT_EXTRA_PLANNER_TODAY, false)
         //if (startingEntryId != null)
         //(getSystemService(NOTIFICATION_SERVICE) as NotificationManager).cancel(/* fixme find id somehow */)
         val requestPermissionLauncher =
@@ -104,7 +106,8 @@ class MainActivity : ComponentActivity() {
                 NavigationGraph(
                     rememberNavController(),
                     DbManager(this@MainActivity),
-                    startingEntryId
+                    startingEntryId,
+                    openPlannerToday
                 )
             }
         }

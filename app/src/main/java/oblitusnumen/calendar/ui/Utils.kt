@@ -9,6 +9,19 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+
+fun formatDateTime(epochSecond: Long, zoneId: ZoneId): String =
+    Instant.ofEpochSecond(epochSecond).atZone(zoneId)
+        .format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm"))
+
+fun formatTime(quarterHours: Int): String {
+    val hours = quarterHours / 4
+    val minutes = (quarterHours % 4) * 15
+    return if (minutes == 0) "${hours}h" else "${hours}h ${minutes}m"
+}
 
 @Composable
 fun measureTextLine(style: TextStyle, text: String = "0"): Dp {

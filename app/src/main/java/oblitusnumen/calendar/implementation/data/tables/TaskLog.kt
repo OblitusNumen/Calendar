@@ -15,6 +15,7 @@ class TaskLog : BaseColumns {
     var startOfDayTimestamp: Long
     var timeZoneId: ZoneId
     var timeConsumed: Int
+    var timePlanned: Int
 //    private var taskCache: Task? = null
 //    val task: Task
 //        get() {
@@ -29,6 +30,7 @@ class TaskLog : BaseColumns {
         startOfDayTimestamp: Long,
         zoneId: String,
         timeConsumed: Int,
+        timePlanned: Int,
     ) {
         this.dbManager = dbManager
         this.id = id
@@ -36,6 +38,7 @@ class TaskLog : BaseColumns {
         this.startOfDayTimestamp = startOfDayTimestamp
         this.timeZoneId = ZoneId.of(zoneId)
         this.timeConsumed = timeConsumed
+        this.timePlanned = timePlanned
     }
 
     private fun getContentValues(): ContentValues {
@@ -44,12 +47,14 @@ class TaskLog : BaseColumns {
         contentValues.put(COLUMN_NAME_START_OF_DAY_TIMESTAMP, startOfDayTimestamp)
         contentValues.put(COLUMN_NAME_TIME_ZONE_ID, timeZoneId.toString())
         contentValues.put(COLUMN_NAME_TIME_CONSUMED, timeConsumed)
+        contentValues.put(COLUMN_NAME_TIME_PLANNED, timePlanned)
         return contentValues
     }
 
     fun create() {
-        if (isEmpty)
-            return
+        // FIXME: is this needed
+//        if (isEmpty)
+//            return
         val contentValues = getContentValues()
         contentValues.put(COLUMN_NAME_ID, null as Int?)
         id = dbManager!!.writableDatabase.insertWithOnConflict(
@@ -83,7 +88,7 @@ class TaskLog : BaseColumns {
     }
 
     val isEmpty: Boolean
-        get() = timeConsumed <= 0
+        get() = timeConsumed <= 0 && timePlanned <= 0
 
     companion object {
         const val TABLE_NAME: String = "TaskLogs"
@@ -93,6 +98,7 @@ class TaskLog : BaseColumns {
         const val COLUMN_NAME_START_OF_DAY_TIMESTAMP: String = "startOfDayTimestamp"
         const val COLUMN_NAME_TIME_ZONE_ID: String = "timeZoneId"
         const val COLUMN_NAME_TIME_CONSUMED: String = "timeConsumed"
+        const val COLUMN_NAME_TIME_PLANNED: String = "timePlanned"
 
         const val SQL_CREATE: String = "CREATE TABLE IF NOT EXISTS \"${TABLE_NAME}\"\n" +
                 "(\n" +
@@ -101,6 +107,7 @@ class TaskLog : BaseColumns {
                 "    \"$COLUMN_NAME_START_OF_DAY_TIMESTAMP\"    BIGINT  NOT NULL,\n" +
                 "    \"$COLUMN_NAME_TIME_ZONE_ID\"              TEXT    NOT NULL,\n" +
                 "    \"$COLUMN_NAME_TIME_CONSUMED\"             INTEGER NOT NULL,\n" +
+                "    \"$COLUMN_NAME_TIME_PLANNED\"              INTEGER NOT NULL DEFAULT 0,\n" +
                 "    FOREIGN KEY (\"$COLUMN_NAME_TASK_ID\") REFERENCES \"${Task.TABLE_NAME}\" (\"${Task.COLUMN_NAME_ENTRY_ID}\")\n" +
                 ");"
 
@@ -115,6 +122,7 @@ class TaskLog : BaseColumns {
             val startOfDayTimestampIdx: Int = cursor.getColumnIndex(COLUMN_NAME_START_OF_DAY_TIMESTAMP)
             val timeZoneIdIdx: Int = cursor.getColumnIndex(COLUMN_NAME_TIME_ZONE_ID)
             val timeConsumedIdx: Int = cursor.getColumnIndex(COLUMN_NAME_TIME_CONSUMED)
+            val timePlannedIdx: Int = cursor.getColumnIndex(COLUMN_NAME_TIME_PLANNED)
 
             while (cursor.moveToNext())
                 taskLogs.add(
@@ -125,6 +133,7 @@ class TaskLog : BaseColumns {
                         cursor.getLong(startOfDayTimestampIdx),
                         cursor.getString(timeZoneIdIdx),
                         cursor.getInt(timeConsumedIdx),
+                        cursor.getInt(timePlannedIdx),
                     )
                 )
             return taskLogs
@@ -136,6 +145,39 @@ class TaskLog : BaseColumns {
                 "$COLUMN_NAME_TASK_ID = ?",
                 arrayOf(taskId.toString())
             )
+        }
+
+        fun forTaskOnDay(dbManager: DbManager, taskId: Int, startOfDay: Long): TaskLog? {// FIXME: do not associate with exact start of day; take time zone into account
+            dbManager.readableDatabase.rawQuery(
+                "SELECT * FROM $TABLE_NAME WHERE $COLUMN_NAME_TASK_ID = ? AND $COLUMN_NAME_START_OF_DAY_TIMESTAMP = ?",
+                arrayOf(taskId.toString(), startOfDay.toString())
+            ).use { cursor ->
+                return cursorToList(dbManager, cursor).firstOrNull()
+            }
+        }
+
+        fun forDay(dbManager: DbManager, startOfDay: Long): List<TaskLog> {// FIXME: do not associate with exact start of day; take time zone into account
+            dbManager.readableDatabase.rawQuery(
+                "SELECT * FROM $TABLE_NAME WHERE $COLUMN_NAME_START_OF_DAY_TIMESTAMP = ?",
+                arrayOf(startOfDay.toString())
+            ).use { cursor ->
+                return cursorToList(dbManager, cursor)
+            }
+        }
+
+        fun upsert(
+            dbManager: DbManager,
+            taskId: Int,
+            startOfDay: Long,
+            zoneId: ZoneId,
+            timePlanned: Int,
+        ): TaskLog {// FIXME:
+            val existing = forTaskOnDay(dbManager, taskId, startOfDay)
+            if (existing != null)
+                return existing
+            val log = TaskLog(dbManager, 0, taskId, startOfDay, zoneId.toString(), 0, timePlanned)
+            log.create()
+            return log
         }
     }
 }

@@ -12,9 +12,12 @@ import androidx.core.app.NotificationCompat
 import oblitusnumen.calendar.MainActivity
 import oblitusnumen.calendar.R
 import oblitusnumen.calendar.implementation.data.DbManager
+import oblitusnumen.calendar.implementation.data.tables.TaskLink
+import oblitusnumen.calendar.implementation.data.views.ViewTaskWithOptions
 import oblitusnumen.calendar.implementation.getZonedFromEpochSeconds
 import oblitusnumen.calendar.implementation.log
 import oblitusnumen.calendar.implementation.now
+import oblitusnumen.calendar.implementation.planTasks
 import oblitusnumen.calendar.implementation.setLogFile
 import java.time.format.DateTimeFormatter
 
@@ -25,6 +28,38 @@ class NotificationBroadcastReceiver : BroadcastReceiver() {
         log("NotificationBroadcastReceiver RECEIVED INTENT: ${intent?.action}")
         DbManager(c).use { dbManager ->
             val now = now() + 10// fixing possible early invocation
+            val manager = c.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+            if (intent?.action == MORNING_NOTIFICATION_ACTION) {
+                val allTasks = ViewTaskWithOptions.all(dbManager)
+                val links = TaskLink.all(dbManager)
+                val planned = planTasks(
+                    allTasks.filter { !it.isDone && it.deadlineTimestamp >= now }.toTypedArray(),
+                    links,
+                    now
+                )
+                val todayCount = planned.count { (_, dist) -> dist[0] > 0 }
+
+                val notification = NotificationCompat.Builder(c, MORNING_TASK_CHANNEL_ID)
+                    .setSmallIcon(R.drawable.ic_calendar)
+                    .setContentTitle("Today's tasks: $todayCount")
+                    .setContentText("Tap to view")
+                    .setAutoCancel(true)
+                    .setContentIntent(
+                        PendingIntent.getActivity(
+                            c,
+                            MORNING_NOTIFICATION_REQUEST_CODE,
+                            Intent(c, MainActivity::class.java)
+                                .putExtra(INTENT_EXTRA_PLANNER_TODAY, true),
+                            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+                        )
+                    )
+                    .build()
+                manager.notify(MORNING_NOTIFICATION_REQUEST_CODE, notification)
+                dbManager.tryScheduleMorningNotification(now)
+                return
+            }
+
             val sharedPreferences: SharedPreferences = DbManager.getSharedPrefs(c)
             val pendingNotifications = dbManager.getPendingNotificationsInRange(
                 sharedPreferences.getLong(
@@ -32,7 +67,6 @@ class NotificationBroadcastReceiver : BroadcastReceiver() {
                     now
                 ), now
             )
-            val manager = c.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             for (pendingNotification in pendingNotifications) {
                 log("NotificationBroadcastReceiver SENDING_NOTIFICATION " + pendingNotification.notification.eventOptionsId + ":" + pendingNotification.notification.offset)
                 val notification = NotificationCompat.Builder(
@@ -69,8 +103,13 @@ class NotificationBroadcastReceiver : BroadcastReceiver() {
     companion object {
         const val NORMAL_CHANNEL_ID = "normal_channel"
         const val SILENT_CHANNEL_ID = "silent_channel"
+        const val MORNING_TASK_CHANNEL_ID = "morning_tasks_channel"
         const val LAST_NOTIFICATION_TIME_PREFERENCE_NAME = "last_notification_time"
         const val INTENT_EXTRA_ENTRY_ID = "entryId"
+        const val INTENT_EXTRA_PLANNER_TODAY = "openPlannerToday"
+        const val MORNING_NOTIFICATION_ACTION = "morningTaskNotification"
+        const val NOTIFICATION_REQUEST_CODE = 12345
+        const val MORNING_NOTIFICATION_REQUEST_CODE = 12346
 
         fun scheduleNotification(c: Context, triggerAtMillis: Long) {
             log(
@@ -82,7 +121,29 @@ class NotificationBroadcastReceiver : BroadcastReceiver() {
             intent.action = "scheduleNotification"
             val pendingIntent = PendingIntent.getBroadcast(
                 c,
-                12345,
+                NOTIFICATION_REQUEST_CODE,
+                intent,
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
+            val alarmManager = c.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            alarmManager.setExactAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP,
+                triggerAtMillis,
+                pendingIntent
+            )
+        }
+
+        fun scheduleMorningNotification(c: Context, triggerAtMillis: Long) {
+            log(
+                "NotificationBroadcastReceiver SCHEDULING_MORNING_NOTIFICATION AT ${triggerAtMillis / 1000} " +
+                        "T=${System.currentTimeMillis() / 1000} " +
+                        "D=${(triggerAtMillis - System.currentTimeMillis()) / 1000}"
+            )
+            val intent = Intent(c, NotificationBroadcastReceiver::class.java)
+            intent.action = MORNING_NOTIFICATION_ACTION
+            val pendingIntent = PendingIntent.getBroadcast(
+                c,
+                MORNING_NOTIFICATION_REQUEST_CODE,
                 intent,
                 PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
             )
@@ -109,6 +170,13 @@ class NotificationBroadcastReceiver : BroadcastReceiver() {
                     SILENT_CHANNEL_ID,
                     "Silent",
                     NotificationManager.IMPORTANCE_LOW
+                )
+            )
+            notificationManager.createNotificationChannel(
+                NotificationChannel(
+                    MORNING_TASK_CHANNEL_ID,
+                    "Morning tasks",
+                    NotificationManager.IMPORTANCE_DEFAULT
                 )
             )
         }
