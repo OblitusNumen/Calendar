@@ -6,8 +6,6 @@ import android.provider.BaseColumns
 import androidx.core.database.getLongOrNull
 import androidx.core.database.sqlite.transaction
 import oblitusnumen.calendar.implementation.data.DbManager
-import oblitusnumen.calendar.implementation.data.tables.Entry.Companion.COLUMN_NAME_ID
-import oblitusnumen.calendar.implementation.data.views.ViewTaskWithOptions
 import java.time.ZoneId
 
 open class Task(
@@ -149,13 +147,9 @@ open class Task(
         }
 
         fun exists(dbManager: DbManager, id: Int): Boolean {
-            // FIXME: mock
-            return true
-
             dbManager.readableDatabase.rawQuery(
-                "SELECT count(*) as eCount " +
-                        "FROM $TABLE_NAME " +
-                        "WHERE $COLUMN_NAME_ID = ?", arrayOf(id.toString())
+                "SELECT count(*) as eCount FROM $TABLE_NAME WHERE $COLUMN_NAME_ENTRY_ID = ?",
+                arrayOf(id.toString())
             ).use { cursor ->
                 cursor.moveToFirst()
                 return cursor.getInt(cursor.getColumnIndex("eCount")) > 0
@@ -163,9 +157,6 @@ open class Task(
         }
 
         fun allIds(dbManager: DbManager): MutableList<Int> {
-            // FIXME: mock
-            return ViewTaskWithOptions.all(dbManager).map { it.taskId!! }.toMutableList()
-
             dbManager.readableDatabase.rawQuery(
                 "SELECT $COLUMN_NAME_ENTRY_ID FROM $TABLE_NAME",
                 arrayOf()

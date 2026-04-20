@@ -64,50 +64,12 @@ data class TaskLink(val predecessor: Int, val successor: Int) : BaseColumns {
         }
 
         fun all(dbManager: DbManager): List<TaskLink> {
-            // FIXME: mock
-//            val result: MutableSet<TaskLink> = mutableSetOf()
-//            val random = Random(2L)
-//            repeat(100) {
-//                result.add(TaskLink(random.nextInt(500) + 1, random.nextInt(500) + 1))
-//            }
-//            return result.toList()
-
-//            val links: MutableSet<TaskLink> = mutableSetOf()
-//            val tasks: MutableList<oblitusnumen.calendar.implementation.Task> = mutableListOf()
-//            val random = Random(100L)
-//            val count = 700
-//            repeat(count) {
-//                val start = (random.nextInt(100)) * 1
-//                val end = start + (random.nextInt(100)) * 1
-//                tasks.add(
-//                    oblitusnumen.calendar.implementation.Task(
-//                        it,
-//                        random.nextInt(100000),
-//                        start,
-//                        end,
-//                    )
-//                )
-//            }
-//            repeat(60) {
-//                val pred = random.nextInt(count)
-//                var suc = pred
-//                while (suc == pred || tasks[suc].endLimit < tasks[pred].startLimit) suc = random.nextInt(count)
-//                links.add(TaskLink(pred, suc))
-//            }
-//            return links.toMutableList()
-
-            val (tasks, links) = readAll1()
-            return links
-
             dbManager.readableDatabase.rawQuery("SELECT * FROM $TABLE_NAME", arrayOf()).use { cursor ->
                 return cursorToList(cursor)
             }
         }
 
         fun predecessors(dbManager: DbManager, id: Int): List<Int> {
-            // FIXME: mock
-            return all(dbManager).filter { it.successor == id }.map { it.predecessor }
-
             dbManager.readableDatabase.rawQuery(
                 "SELECT DISTINCT $COLUMN_NAME_PREDECESSOR_ID FROM $TABLE_NAME WHERE $COLUMN_NAME_SUCCESSOR_ID = ?",
                 arrayOf(id.toString())
@@ -124,9 +86,6 @@ data class TaskLink(val predecessor: Int, val successor: Int) : BaseColumns {
         }
 
         fun successors(dbManager: DbManager, id: Int): List<Int> {
-            // FIXME: mock
-            return all(dbManager).filter { it.predecessor == id }.map { it.successor }
-
             dbManager.readableDatabase.rawQuery(
                 "SELECT DISTINCT $COLUMN_NAME_SUCCESSOR_ID FROM $TABLE_NAME WHERE $COLUMN_NAME_PREDECESSOR_ID = ?",
                 arrayOf(id.toString())

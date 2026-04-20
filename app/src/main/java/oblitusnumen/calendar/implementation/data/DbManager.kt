@@ -56,7 +56,8 @@ class DbManager(val context: Context) :
         log(this)
         if (!filesDir.exists() && !filesDir.mkdirs())
             throw RuntimeException("could not create directory for data: $filesDir")
-        val entries: List<Entry>
+        // FIXME: resolve inconsistencies with db and files
+//        val entries: List<Entry>
 //        readableDatabase.rawQuery(
 //            "SELECT * FROM ${Entry.TABLE_NAME} WHERE ${Entry.COLUMN_NAME_STATE} != ?",
 //            arrayOf(Entry.STATE_NORMAL.toString())
@@ -66,7 +67,8 @@ class DbManager(val context: Context) :
 //        for (entry in entries) {
 //            entry.fixup()
 //        }
-        // FIXME:
+        // FIXME: for debug
+        fillTasksDB()
     }
 
     fun finishApp() {
@@ -145,6 +147,50 @@ class DbManager(val context: Context) :
 
     override fun onDowngrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
         throw IllegalStateException()
+    }
+
+    fun fillTasksDB() {
+        val isEmpty = readableDatabase.rawQuery(
+            "SELECT COUNT(*) FROM ${Task.TABLE_NAME}", arrayOf()
+        ).use { cursor -> cursor.moveToFirst(); cursor.getInt(0) == 0 }
+        if (!isEmpty) return
+
+        val (algoTasks, algoLinks) = readAll1()
+        val nowEpoch = System.currentTimeMillis() / 1000L
+        val random = Random(100L)
+        val indexToEntryId = mutableMapOf<Int, Int>()
+
+        algoTasks.forEach { algoTask ->
+            val options = EventOptions(
+                name = "task ${algoTask.index}",
+                color = defaultTaskColor,
+            )
+            options.createWithTransaction(this) { optionsId ->
+                val entryValues = ContentValues().apply {
+                    put(Entry.COLUMN_NAME_DEFAULT_OPTIONS_ID, optionsId)
+                    put(Entry.COLUMN_NAME_IS_TASK, 1)
+                }
+                val entryId = insert(Entry.TABLE_NAME, null, entryValues).toInt()
+
+                val taskValues = ContentValues().apply {
+                    put(Task.COLUMN_NAME_ENTRY_ID, entryId)
+                    put(Task.COLUMN_NAME_START_CONSTRAINT_TIMESTAMP, nowEpoch + algoTask.startLimit * 86400L)
+                    put(Task.COLUMN_NAME_DEADLINE_TIMESTAMP, nowEpoch + algoTask.endLimit * 86400L)
+                    put(Task.COLUMN_NAME_TIME_ZONE_ID, ZoneId.systemDefault().toString())
+                    put(Task.COLUMN_NAME_TIME_CONSUMED, random.nextInt(100))
+                    put(Task.COLUMN_NAME_TIME_REMAINING, maxOf(0, random.nextInt(100) - 50))
+                }
+                insert(Task.TABLE_NAME, null, taskValues)
+
+                indexToEntryId[algoTask.index] = entryId
+            }
+        }
+
+        algoLinks.forEach { link ->
+            val predId = indexToEntryId[link.predecessor] ?: return@forEach
+            val sucId = indexToEntryId[link.successor] ?: return@forEach
+            TaskLink.create(this, predId, sucId)
+        }
     }
 
     fun fillDB() {
