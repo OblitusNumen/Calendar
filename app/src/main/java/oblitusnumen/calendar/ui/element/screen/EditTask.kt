@@ -3,6 +3,7 @@ package oblitusnumen.calendar.ui.element.screen
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
@@ -15,10 +16,16 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import oblitusnumen.calendar.implementation.data.DbManager
-import oblitusnumen.calendar.ui.element.ColorSelectButton
-import oblitusnumen.calendar.ui.element.EditTopBar
-import oblitusnumen.calendar.ui.element.RemovableTagChip
+import oblitusnumen.calendar.implementation.data.tables.Task
+import oblitusnumen.calendar.implementation.data.tables.TaskLink
+import oblitusnumen.calendar.implementation.data.views.ViewTaskWithOptions
+import oblitusnumen.calendar.implementation.now
+import oblitusnumen.calendar.ui.element.*
 import oblitusnumen.calendar.ui.viewmodel.TaskEditViewModel
+import java.time.Instant
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 
 @Composable
 fun EditTaskScreen(
@@ -111,7 +118,263 @@ fun EditTaskScreen(
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
             }
 
-            // TODO:
+            //release day
+            item {
+                Column {
+                    Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp)) {
+                        RadioButton(!state.hasStartConstraint, { viewModel.setStartConstraint(null) })
+
+                        Text("Available now", Modifier.align(Alignment.CenterVertically).clickable {
+                            viewModel.setStartConstraint(null)
+                        })
+                    }
+
+                    Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp)) {
+                        var localDate by remember {
+                            mutableStateOf(
+                                Instant.ofEpochSecond(state.startConstraintTimestamp ?: now()).atZone(state.timeZoneId)
+                                    .toLocalDate()
+                            )
+                        }
+                        var localTime by remember {
+                            mutableStateOf(
+                                Instant.ofEpochSecond(state.startConstraintTimestamp ?: now()).atZone(state.timeZoneId)
+                                    .toLocalTime()
+                            )
+                        }
+
+                        val dateTimePicker = remember { DateTimePicker() }
+                        dateTimePicker.tryCompose()
+
+                        RadioButton(
+                            state.hasStartConstraint,
+                            {
+                                viewModel.setStartConstraint(
+                                    localDate.atTime(localTime).atZone(state.timeZoneId).toEpochSecond()
+                                )
+                            },
+                            modifier = Modifier.align(Alignment.CenterVertically)
+                        )
+
+                        Text(
+                            modifier = Modifier.align(Alignment.CenterVertically).padding(vertical = 8.dp)
+                                .weight(1f).clickable {
+                                    viewModel.setStartConstraint(
+                                        localDate.atTime(localTime).atZone(state.timeZoneId).toEpochSecond()
+                                    )
+                                },
+                            text = "Available after ",
+                            style = MaterialTheme.typography.bodyLarge,
+                            maxLines = 1
+                        )
+
+                        // pick date
+                        Text(
+                            modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp, vertical = 8.dp)
+                                .weight(1f).clickable {
+                                    dateTimePicker.datePick({}, {
+                                        localDate = it
+                                        viewModel.setStartConstraint(
+                                            ZonedDateTime.of(
+                                                localDate.atTime(localTime),
+                                                state.timeZoneId
+                                            ).toEpochSecond()
+                                        )
+                                    }, localDate)
+                                },
+                            text = localDate.format(DateTimeFormatter.ofPattern("dd MMM yyyy ")),
+                            style = MaterialTheme.typography.bodyLarge,
+                            maxLines = 1
+                        )
+
+                        // pick time
+                        Text(
+                            modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp, vertical = 8.dp)
+                                .clickable {
+                                    dateTimePicker.timePick({}, {
+                                        localTime = it
+                                        viewModel.setStartConstraint(
+                                            ZonedDateTime.of(
+                                                localDate.atTime(localTime),
+                                                state.timeZoneId
+                                            ).toEpochSecond()
+                                        )
+                                    }, localTime)
+                                },
+                            text = localTime.format(DateTimeFormatter.ofPattern("HH:mm")),
+                            style = MaterialTheme.typography.bodyLarge,
+                            maxLines = 1
+                        )
+                    }
+                }
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
+            }
+
+            //deadline
+            item {
+                Row {
+                    val dateTimePicker = remember { DateTimePicker() }
+                    dateTimePicker.tryCompose()
+
+                    var localDate by remember {
+                        mutableStateOf(
+                            Instant.ofEpochSecond(state.deadlineTimestamp).atZone(state.timeZoneId)
+                                .toLocalDate()
+                        )
+                    }
+                    var localTime by remember {
+                        mutableStateOf(
+                            Instant.ofEpochSecond(state.deadlineTimestamp).atZone(state.timeZoneId)
+                                .toLocalTime()
+                        )
+                    }
+
+                    Text(
+                        modifier = Modifier.align(Alignment.CenterVertically).padding(vertical = 8.dp)
+                            .padding(start = 40.dp),
+                        text = "Deadline at ",
+                        style = MaterialTheme.typography.bodyLarge,
+                        maxLines = 1
+                    )
+
+                    // pick date
+                    Text(
+                        modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp, vertical = 8.dp)
+                            .padding(start = 24.dp)
+                            .weight(1f).clickable {
+                                dateTimePicker.datePick({}, {
+                                    localDate = it
+                                    viewModel.setDeadline(
+                                        ZonedDateTime.of(
+                                            localDate.atTime(localTime),
+                                            state.timeZoneId
+                                        ).toEpochSecond()
+                                    )
+                                }, localDate)
+                            },
+                        text = localDate.format(DateTimeFormatter.ofPattern("dd MMM yyyy ")),
+                        style = MaterialTheme.typography.bodyLarge,
+                        maxLines = 1
+                    )
+
+                    // pick time
+                    Text(
+                        modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp, vertical = 8.dp)
+                            .clickable {
+                                dateTimePicker.timePick({}, {
+                                    localTime = it
+                                    viewModel.setDeadline(
+                                        ZonedDateTime.of(
+                                            localDate.atTime(localTime),
+                                            state.timeZoneId
+                                        ).toEpochSecond()
+                                    )
+                                }, localTime)
+                            },
+                        text = localTime.format(DateTimeFormatter.ofPattern("HH:mm")),
+                        style = MaterialTheme.typography.bodyLarge,
+                        maxLines = 1
+                    )
+                }
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
+            }
+
+            //time zone
+            item {
+                TimeZoneSelector(state.timeZoneId.toString(), { viewModel.setTimeZone(ZoneId.of(it)) })
+            }
+
+            // time consumed
+            item {
+                Row {
+                    Text("Time elapsed", Modifier.align(Alignment.CenterVertically).padding(horizontal = 8.dp))
+
+                    IntTextField(
+                        state.timeConsumed / 4,
+                        { it?.let { viewModel.setTimeConsumed(it * 4) } ?: 0 },
+                        modifier = Modifier.width(200.dp).align(Alignment.CenterVertically).padding(4.dp),
+                        trailingIcon = { Text("h", Modifier.align(Alignment.CenterVertically).padding(horizontal = 8.dp)) },
+                        maxDigits = 7)
+                }
+            }
+
+            // time remaining
+            item {
+                Row {
+                    Text("Time remaining", Modifier.align(Alignment.CenterVertically).padding(horizontal = 8.dp))
+
+                    IntTextField(
+                        state.timeRemaining / 4,
+                        { it?.let { viewModel.setTimeRemaining(it * 4) } ?: 0 },
+                        modifier = Modifier.width(200.dp).align(Alignment.CenterVertically).padding(4.dp),
+                        trailingIcon = { Text("h", Modifier.align(Alignment.CenterVertically).padding(horizontal = 8.dp)) },
+                        maxDigits = 7)
+                }
+            }
+
+            item {
+                Text("Predecessors")
+            }
+
+            // predecessors
+            items(state.predecessors, key = { "pre$it" }) { predecessor ->
+                val task = remember { ViewTaskWithOptions.byId(dbManager, predecessor) }!!
+
+                Link(task, TaskLink.checkPredecessor(dbManager, predecessor, state.successors)) {
+                    viewModel.setPredecessors(state.predecessors - predecessor)
+                }
+            }
+
+            item {
+                var chooseDialogVisible by remember { mutableStateOf(false) }
+
+                Text("Add predecessors", Modifier.clickable { chooseDialogVisible = true })
+
+                if (chooseDialogVisible) {
+                    ChooseTasksDialog(
+                        dbManager,
+                        "Add predecessors",
+                        Task.allIds(dbManager) - state.predecessors,
+                        { chooseDialogVisible = false },
+                        {
+                            viewModel.setPredecessors(state.predecessors + it)
+                            chooseDialogVisible = false
+                        })
+                }
+
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
+            }
+
+            item {
+                Text("Successors")
+            }
+
+            // successors
+            items(state.successors, key = { "suc$it" }) { successor ->
+                val task = remember { ViewTaskWithOptions.byId(dbManager, successor) }!!
+
+                Link(task, TaskLink.checkSuccessor(dbManager, successor, state.predecessors)) {
+                    viewModel.setSuccessors(state.successors - successor)
+                }
+            }
+
+            item {
+                var chooseDialogVisible by remember { mutableStateOf(false) }
+
+                Text("Add successors", Modifier.clickable { chooseDialogVisible = true })
+
+                if (chooseDialogVisible) {
+                    ChooseTasksDialog(
+                        dbManager,
+                        "Add successors",
+                        Task.allIds(dbManager) - state.successors,
+                        { chooseDialogVisible = false },
+                        {
+                            viewModel.setSuccessors(state.successors + it)
+                            chooseDialogVisible = false
+                        })
+                }
+            }
         }
     }
 }

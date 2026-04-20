@@ -39,6 +39,7 @@ import oblitusnumen.calendar.implementation.data.Period.Once
 import oblitusnumen.calendar.implementation.data.tables.Date
 import oblitusnumen.calendar.implementation.data.tables.Tag
 import oblitusnumen.calendar.implementation.data.views.ViewEntryWithOptions
+import oblitusnumen.calendar.implementation.data.views.ViewTaskWithOptions
 import oblitusnumen.calendar.implementation.defaultZoneId
 import oblitusnumen.calendar.implementation.getZonedFromEpochSeconds
 import oblitusnumen.calendar.ui.PositionStatus
@@ -288,6 +289,47 @@ fun OffsetSelector(
             }
         }
     }
+}
+
+@Composable
+fun IntTextField(
+    value: Int?,
+    onValueChange: (Int?) -> Unit,
+    enabled: Boolean = true,
+    modifier: Modifier = Modifier.width(100.dp).padding(horizontal = 8.dp),
+    label: @Composable (() -> Unit)? = null,
+    trailingIcon: @Composable (() -> Unit)? = null,
+    maxDigits: Int = 3
+) {
+    var textState by remember { mutableStateOf(TextFieldValue(value?.let { "$value" } ?: "")) }
+
+    OutlinedTextField(
+        enabled = enabled,
+        modifier = modifier,
+        value = textState,
+        onValueChange = {
+            val text = it.text
+            try {
+                if (text.toInt() >= 0 && text.length <= maxDigits) {
+                    textState = it
+                    onValueChange(text.toInt())
+                }
+            } catch (_: NumberFormatException) {
+                if (text.isEmpty()) {
+                    textState = it
+                    onValueChange(null)
+                }
+            }
+        },
+        textStyle = MaterialTheme.typography.bodyLarge,
+        keyboardOptions = KeyboardOptions(
+            keyboardType = KeyboardType.Number,
+            imeAction = ImeAction.Done
+        ),
+        label = label,
+        trailingIcon = trailingIcon,
+        maxLines = 1
+    )
 }
 
 /**
@@ -770,6 +812,129 @@ fun SelectableTagChip(name: String, color: Color, selected: Boolean, onSelect: (
         },
         colors = InputChipDefaults.inputChipColors(containerColor = color, selectedContainerColor = color),
     )
+}
+
+@Composable
+fun Link(task: ViewTaskWithOptions, isValid: Boolean, onRemove: () -> Unit) {
+    Row(Modifier.padding(horizontal = 4.dp, vertical = 2.dp)) {
+        val color = remember { task.color }
+        Box(
+            Modifier.padding(8.dp).background(color, CircleShape).border(0.dp, color, CircleShape)
+                .size(24.dp).align(Alignment.CenterVertically)
+        )
+
+        Text(
+            task.displayName,
+            Modifier.align(Alignment.CenterVertically).padding(4.dp).weight(1f),
+            style = MaterialTheme.typography.titleLarge,
+            color = if (isValid) MaterialTheme.colorScheme.onBackground else Color.Red,
+        )
+
+        if (task.isDone) {
+            Icon(
+                Icons.Filled.Done,
+                contentDescription = "done",
+                Modifier.align(Alignment.CenterVertically),
+                tint = Color.Green
+            )
+        } else {
+            Text(
+                text = "${
+                    task.timeRemaining
+                    // FIXME: 
+//                    task.countPredecessorsTimeEstimate(
+//                        allTasks.associateBy { it.taskId!! },
+//                        predecessorLinks
+//                    )
+                }",
+                modifier = Modifier.padding(horizontal = 8.dp)
+                    .align(Alignment.CenterVertically),
+                style = MaterialTheme.typography.bodyLarge,
+                overflow = TextOverflow.Ellipsis,
+                maxLines = 1,
+            )
+        }
+
+        IconButton(onClick = onRemove) {
+            Icon(Icons.Filled.Remove, contentDescription = "remove")
+        }
+    }
+}
+
+@Composable
+fun ChooseTasksDialog(
+    dbManager: DbManager,
+    title: String,
+    tasksToChoose: List<Int>,
+    onClose: () -> Unit,
+    onChoose: (Set<Int>) -> Unit
+) {
+    var chosenTasks by remember { mutableStateOf(setOf<Int>()) }
+
+    AlertDialog(
+        title = { Text(title) },
+        onDismissRequest = onClose,
+        dismissButton = { TextButton(onClick = onClose) { Text("Cancel") } },
+        confirmButton = { TextButton(onClick = { onChoose(chosenTasks) }) { Text("OK") } },
+        text = {
+            LazyColumn {
+                items(tasksToChoose, key = { "choose$it" }) { task ->
+                    SelectableTask(ViewTaskWithOptions.byId(dbManager, task)!!, chosenTasks.contains(task)) {
+                        if (chosenTasks.contains(task)) {
+                            chosenTasks -= task
+                        } else {
+                            chosenTasks += task
+                        }
+                    }
+                }
+            }
+        })
+}
+
+@Composable
+fun SelectableTask(task: ViewTaskWithOptions, checked: Boolean, onClick: () -> Unit) {
+    Row(Modifier.padding(horizontal = 4.dp, vertical = 2.dp).clickable(onClick = onClick)) {
+        if (checked) {
+            Checkbox(checked = true, onCheckedChange = {}, modifier = Modifier.align(Alignment.CenterVertically))
+        }
+
+        val color = remember { task.color }
+        Box(
+            Modifier.padding(8.dp).background(color, CircleShape).border(0.dp, color, CircleShape)
+                .size(24.dp).align(Alignment.CenterVertically)
+        )
+
+        Text(
+            task.displayName,
+            Modifier.align(Alignment.CenterVertically).padding(4.dp).weight(1f),
+            style = MaterialTheme.typography.titleLarge,
+        )
+
+        if (task.isDone) {
+            Icon(
+                Icons.Filled.Done,
+                contentDescription = "done",
+                Modifier.align(Alignment.CenterVertically),
+                tint = Color.Green
+            )
+        } else {
+            Text(
+                text = "${
+                    task.timeRemaining
+                    // FIXME: 
+//                    task.countPredecessorsTimeEstimate(
+//                        allTasks.associateBy { it.taskId!! },
+//                        predecessorLinks
+//                    )
+                }",
+                modifier = Modifier.padding(horizontal = 8.dp)
+                    .align(Alignment.CenterVertically),
+                style = MaterialTheme.typography.bodyLarge,
+                overflow = TextOverflow.Ellipsis,
+                maxLines = 1,
+            )
+        }
+    }
 }
 
 @Composable

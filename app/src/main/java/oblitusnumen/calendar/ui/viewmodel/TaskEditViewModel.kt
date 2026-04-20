@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.tables.Tag
 import oblitusnumen.calendar.ui.state.TaskEditState
+import java.time.ZoneId
 
 class TaskEditViewModel(initialState: TaskEditState) : ViewModel() {
     private val _state = MutableStateFlow(initialState)
@@ -25,7 +26,23 @@ class TaskEditViewModel(initialState: TaskEditState) : ViewModel() {
 
     fun setTags(tags: List<Tag>): Unit = _state.update { it.copy(tags = tags.sortedBy { it.name }) }
 
+    fun setTimeZone(timeZoneId: ZoneId): Unit = _state.update { it.withTimeZone(timeZoneId = timeZoneId) }
+
+    fun setStartConstraint(startConstraintTimestamp: Long?): Unit =
+        _state.update { it.copy(startConstraintTimestamp = startConstraintTimestamp) }
+
+    fun setDeadline(deadlineTimestamp: Long): Unit = _state.update { it.copy(deadlineTimestamp = deadlineTimestamp) }
+
+    fun setTimeConsumed(timeConsumed: Int): Unit = _state.update { it.copy(timeConsumed = timeConsumed) }
+
+    fun setTimeRemaining(timeRemaining: Int): Unit = _state.update { it.copy(timeRemaining = timeRemaining) }
+
+    fun setPredecessors(predecessors: List<Int>): Unit = _state.update { it.copy(predecessors = predecessors) }
+
+    fun setSuccessors(successors: List<Int>): Unit = _state.update { it.copy(successors = successors) }
+
     fun commitToDb(dbManager: DbManager) {
+        // TODO: check start < deadline, recursive links, illegal links
         viewModelScope.launch {
             val snapshot = _state.value
             snapshot.commit(dbManager)

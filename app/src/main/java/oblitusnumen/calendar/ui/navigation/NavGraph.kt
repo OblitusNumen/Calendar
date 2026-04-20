@@ -128,7 +128,7 @@ fun NavigationGraph(navController: NavHostController, dbManager: DbManager, star
 
             TaskDetailsScreen(dbManager,
                 taskId,
-                { NavRoutes.TaskEdit.navHere(navController, null) },
+                { NavRoutes.TaskEdit.navHere(navController, taskId) },
                 { NavRoutes.backPress(navController) }
             )
         }
