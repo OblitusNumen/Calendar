@@ -124,6 +124,9 @@ data class TaskLink(val predecessor: Int, val successor: Int) : BaseColumns {
         }
 
         fun successors(dbManager: DbManager, id: Int): List<Int> {
+            // FIXME: mock
+            return all(dbManager).filter { it.predecessor == id }.map { it.successor }
+
             dbManager.readableDatabase.rawQuery(
                 "SELECT DISTINCT $COLUMN_NAME_SUCCESSOR_ID FROM $TABLE_NAME WHERE $COLUMN_NAME_PREDECESSOR_ID = ?",
                 arrayOf(id.toString())

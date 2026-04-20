@@ -7,6 +7,7 @@ import androidx.core.database.getLongOrNull
 import androidx.core.database.sqlite.transaction
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.tables.Entry.Companion.COLUMN_NAME_ID
+import oblitusnumen.calendar.implementation.data.views.ViewTaskWithOptions
 import java.time.ZoneId
 
 open class Task(
@@ -162,6 +163,9 @@ open class Task(
         }
 
         fun allIds(dbManager: DbManager): MutableList<Int> {
+            // FIXME: mock
+            return ViewTaskWithOptions.all(dbManager).map { it.taskId!! }.toMutableList()
+
             dbManager.readableDatabase.rawQuery(
                 "SELECT $COLUMN_NAME_ENTRY_ID FROM $TABLE_NAME",
                 arrayOf()
