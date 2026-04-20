@@ -1,6 +1,7 @@
 package oblitusnumen.calendar.implementation.data.tables
 
 import android.provider.BaseColumns
+import androidx.core.database.sqlite.transaction
 import oblitusnumen.calendar.implementation.data.DbManager
 
 class EntryTagLinks : BaseColumns {
@@ -40,6 +41,21 @@ class EntryTagLinks : BaseColumns {
                 "$COLUMN_NAME_ENTRY_ID = ?",
                 arrayOf(entryId.toString())
             )
+        }
+
+        fun updateTags(dbManager: DbManager, tags: List<Tag>, entryId: Int) {
+            dbManager.writableDatabase.transaction {
+                val tagsNew = tags.map { it.id }.toSet()
+                val tagsOld = Tag.forEntry(dbManager, entryId).map { it.id }
+                for (tId in tagsOld)
+                    if (!tagsNew.contains(tId))
+                        delete(dbManager, entryId, tId!!)
+                for (t in tags)
+                    if (t.id !in tagsOld) {
+                        t.createIfNotExists(dbManager)
+                        create(dbManager, entryId, t.id!!)
+                    }
+            }
         }
     }
 }

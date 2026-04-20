@@ -47,18 +47,7 @@ data class EntryEditState(
             }
 
             //setting tags
-            val tagsNew = tags.map { it.id }.toSet()
-            val tagsOld = Tag.forEntry(dbManager, entryId!!).map { it.id }
-            for (tId in tagsOld) {
-                if (!tagsNew.contains(tId))
-                    EntryTagLinks.delete(dbManager, entryId!!, tId!!)
-            }
-            for (t in tags) {
-                if (t.id !in tagsOld) {
-                    t.createIfNotExists(dbManager)
-                    EntryTagLinks.create(dbManager, entryId!!, t.id!!)
-                }
-            }
+            EntryTagLinks.updateTags(dbManager, tags, entryId!!)
 
             //setting dates
             val datesNew = dateStates.map { it.id }.toSet()

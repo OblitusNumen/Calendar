@@ -1,11 +1,10 @@
 package oblitusnumen.calendar.ui.state
 
+import android.database.sqlite.SQLiteDatabase
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.TextFieldValue
 import oblitusnumen.calendar.implementation.data.DbManager
-import oblitusnumen.calendar.implementation.data.tables.EventOptions
-import oblitusnumen.calendar.implementation.data.tables.Tag
-import oblitusnumen.calendar.implementation.data.tables.TaskLink
+import oblitusnumen.calendar.implementation.data.tables.*
 import oblitusnumen.calendar.implementation.data.views.ViewTaskWithOptions
 import oblitusnumen.calendar.implementation.defaultZoneId
 import java.time.Instant
@@ -36,12 +35,56 @@ data class TaskEditState(
         get() = _optionsId
     val options
         get() = EventOptions(optionsId, name = name.text, color = color, contents = contents.text)
+    val entry
+        get() = Entry(_taskId, _optionsId, isTask = true)
+    val task
+        get() = Task(_taskId, startConstraintTimestamp, deadlineTimestamp, timeZoneId, timeConsumed, timeRemaining)
 
     val hasStartConstraint: Boolean
         get() = startConstraintTimestamp != null
 
     fun commit(dbManager: DbManager) {
-        // TODO:
+        val options = options
+
+        val updateTransaction: SQLiteDatabase.() -> Unit = {
+            val entry = Entry(_taskId, _optionsId, isTask = true)
+            val isNew = entry.isNotCreated()
+
+            if (isNew) {
+                entry.create(dbManager)
+                _taskId = entry.id
+            } else {
+                entry.update(dbManager)
+            }
+            
+            val task = task
+            
+            if (isNew)
+                task.create(dbManager)
+            else
+                task.update(dbManager)
+
+            EntryTagLinks.updateTags(dbManager, tags, _taskId!!)
+
+            val predsNew = predecessors.toSet()
+            val predsOld = TaskLink.predecessors(dbManager, _taskId!!).toSet()
+            for (predId in predsOld - predsNew) TaskLink.delete(dbManager, predId, _taskId!!)
+            for (predId in predsNew - predsOld) TaskLink.create(dbManager, predId, _taskId!!)
+
+            val sucsNew = successors.toSet()
+            val sucsOld = TaskLink.successors(dbManager, _taskId!!).toSet()
+            for (sucId in sucsOld - sucsNew) TaskLink.delete(dbManager, _taskId!!, sucId)
+            for (sucId in sucsNew - sucsOld) TaskLink.create(dbManager, _taskId!!, sucId)
+        }
+
+        if (options.isNotCreated()) {
+            options.createWithTransaction(dbManager) { optionsId ->
+                _optionsId = optionsId
+                updateTransaction()
+            }
+        } else {
+            options.updateWithTransaction(dbManager, updateTransaction)
+        }
     }
 
     fun withTimeZone(timeZoneId: ZoneId): TaskEditState {

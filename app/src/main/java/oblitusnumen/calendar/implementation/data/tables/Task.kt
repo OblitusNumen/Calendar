@@ -42,7 +42,10 @@ open class Task(
     private fun getContentValues(): ContentValues {
         val contentValues = ContentValues()
         contentValues.put(COLUMN_NAME_ENTRY_ID, entryId)
-        contentValues.put(COLUMN_NAME_START_CONSTRAINT_TIMESTAMP, startConstraintTimestamp)
+        if (startConstraintTimestamp == null)
+            contentValues.putNull(COLUMN_NAME_START_CONSTRAINT_TIMESTAMP)
+        else
+            contentValues.put(COLUMN_NAME_START_CONSTRAINT_TIMESTAMP, startConstraintTimestamp)
         contentValues.put(COLUMN_NAME_DEADLINE_TIMESTAMP, deadlineTimestamp)
         contentValues.put(COLUMN_NAME_TIME_ZONE_ID, timeZoneId.toString())
         contentValues.put(COLUMN_NAME_TIME_CONSUMED, timeConsumed)
@@ -50,13 +53,13 @@ open class Task(
         return contentValues
     }
 
-    private fun create(dbManager: DbManager) { //todo may fail on UNIQUE violation?
+    fun create(dbManager: DbManager) { //todo may fail on UNIQUE violation?
         val contentValues = getContentValues()
         contentValues.put(COLUMN_NAME_ENTRY_ID, null as Int?)
         dbManager.writableDatabase.insert(TABLE_NAME, null, contentValues)
     }
 
-    private fun update(dbManager: DbManager) { //todo value update may fail?
+    fun update(dbManager: DbManager) { //todo value update may fail?
         dbManager.writableDatabase.update(
             TABLE_NAME,
             getContentValues(),
