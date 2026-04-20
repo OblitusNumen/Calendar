@@ -160,6 +160,22 @@ open class Task(
                 return cursor.getInt(cursor.getColumnIndex("eCount")) > 0
             }
         }
+
+        fun allIds(dbManager: DbManager): MutableList<Int> {
+            dbManager.readableDatabase.rawQuery(
+                "SELECT $COLUMN_NAME_ENTRY_ID FROM $TABLE_NAME",
+                arrayOf()
+            ).use { cursor ->
+                val ids = mutableListOf<Int>()
+
+                val idxId = cursor.getColumnIndex(COLUMN_NAME_ENTRY_ID)
+
+                while (cursor.moveToNext())
+                    ids.add(cursor.getInt(idxId))
+
+                return ids
+            }
+        }
     }
 }
 

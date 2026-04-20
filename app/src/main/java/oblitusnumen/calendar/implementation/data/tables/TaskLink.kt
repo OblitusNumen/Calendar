@@ -122,5 +122,37 @@ data class TaskLink(val predecessor: Int, val successor: Int) : BaseColumns {
                 return predecessors
             }
         }
+
+        fun successors(dbManager: DbManager, id: Int): List<Int> {
+            dbManager.readableDatabase.rawQuery(
+                "SELECT DISTINCT $COLUMN_NAME_SUCCESSOR_ID FROM $TABLE_NAME WHERE $COLUMN_NAME_PREDECESSOR_ID = ?",
+                arrayOf(id.toString())
+            ).use { cursor ->
+                val successors: MutableList<Int> = ArrayList()
+
+                val successorIdx = cursor.getColumnIndex(COLUMN_NAME_SUCCESSOR_ID)
+
+                while (cursor.moveToNext())
+                    successors.add(cursor.getInt(successorIdx))
+
+                return successors
+            }
+        }
+
+        fun checkPredecessor(dbManager: DbManager, id: Int, successors: List<Int>): Boolean {
+            for (successor in successors) {
+                if (!checkPredecessor(dbManager, id, successors(dbManager, successor)))
+                    return false
+            }
+            return true
+        }
+
+        fun checkSuccessor(dbManager: DbManager, id: Int, predecessors: List<Int>): Boolean {
+            for (predecessor in predecessors) {
+                if (!checkPredecessor(dbManager, predecessor, successors(dbManager, id)))
+                    return false
+            }
+            return true
+        }
     }
 }
