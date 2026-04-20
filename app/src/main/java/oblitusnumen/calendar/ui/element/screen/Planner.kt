@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import io.github.koalaplot.core.util.ExperimentalKoalaPlotApi
 import kotlinx.coroutines.launch
 import oblitusnumen.calendar.implementation.data.DbManager
+import oblitusnumen.calendar.implementation.data.tables.Date
 import oblitusnumen.calendar.implementation.data.tables.Tag
 import oblitusnumen.calendar.implementation.data.tables.Task
 import oblitusnumen.calendar.implementation.data.tables.TaskLink
@@ -31,6 +32,7 @@ import oblitusnumen.calendar.implementation.defaultZoneId
 import oblitusnumen.calendar.implementation.getZonedFromEpochSeconds
 import oblitusnumen.calendar.implementation.now
 import oblitusnumen.calendar.implementation.planTasks
+import oblitusnumen.calendar.ui.element.DateTimePicker
 import oblitusnumen.calendar.ui.element.EntryDescriptionAndTags
 import oblitusnumen.calendar.ui.formatTime
 import oblitusnumen.calendar.ui.theme.topBarColors
@@ -51,6 +53,9 @@ fun PlannerScreen(
     val coroutineScope = rememberCoroutineScope()
     val closeDrawer: () -> Unit = remember { { coroutineScope.launch { drawerState.close() } } }
     val openDrawer: () -> Unit = remember { { coroutineScope.launch { drawerState.open() } } }
+
+    val dtPicker = remember { DateTimePicker() }
+    dtPicker.tryCompose()
 
     ModalNavigationDrawer(
         drawerContent = { PlannerDrawer(closeDrawer, openSettings) },
@@ -172,11 +177,24 @@ fun PlannerScreen(
 
                     LazyColumn(Modifier.fillMaxSize()) {
                         items(tabTasks, key = { it.taskId!! }) { task ->
+                            val log = if (isToday) todayLogs[task.taskId!!] else null
                             Task(
                                 openTaskDetails, task, now, allTasks, predecessorLinks, dbManager,
-                                todayLog = if (isToday) todayLogs[task.taskId!!] else null,
-                                onToggleDone = if (isToday) { log, markDone ->
-                                    toggleTodayDone(task, log, markDone)
+                                todayLog = log,
+                                onToggleDone = if (isToday) { l, markDone ->
+                                    toggleTodayDone(task, l, markDone)
+                                } else null,
+                                onSchedulePortion = if (isToday && log != null) { ->
+                                    dtPicker.dateTimePick(
+                                        onCancel = {},
+                                        onConfirm = { dateTime ->
+                                            Date.scheduleOnce(
+                                                dbManager, task.entryId!!,
+                                                dateTime.atZone(task.timeZoneId),
+                                                log.timePlanned * 15
+                                            )
+                                        }
+                                    )
                                 } else null
                             )
                             // TODO:
@@ -200,6 +218,7 @@ fun Task(
     dbManager: DbManager,
     todayLog: TaskLog? = null,
     onToggleDone: ((TaskLog, Boolean) -> Unit)? = null,
+    onSchedulePortion: (() -> Unit)? = null,
 ) {
     Column(
         Modifier.padding(2.dp).fillMaxWidth().defaultMinSize(minHeight = 64.dp)
@@ -270,16 +289,23 @@ fun Task(
                 Modifier.fillMaxWidth().padding(4.dp),
             )
 
-        if (todayLog != null && onToggleDone != null) {
-            val isDoneToday = todayLog.timeConsumed >= todayLog.timePlanned && todayLog.timePlanned > 0
-            TextButton(
-                onClick = { onToggleDone(todayLog, !isDoneToday) },
-                modifier = Modifier.align(Alignment.End).padding(horizontal = 4.dp)
-            ) {
-                Text(
-                    if (isDoneToday) "Undo today"
-                    else "Done today (${formatTime(todayLog.timePlanned)})"
-                )
+        if (todayLog != null) {
+            Row(Modifier.align(Alignment.End)) {
+                if (onToggleDone != null) {
+                    val isDoneToday =
+                        todayLog.timeConsumed >= todayLog.timePlanned && todayLog.timePlanned > 0
+                    TextButton(onClick = { onToggleDone(todayLog, !isDoneToday) }) {
+                        Text(
+                            if (isDoneToday) "Undo today"
+                            else "Done today (${formatTime(todayLog.timePlanned)})"
+                        )
+                    }
+                }
+                if (onSchedulePortion != null) {
+                    TextButton(onClick = onSchedulePortion) {
+                        Text("Schedule")
+                    }
+                }
             }
         }
     }

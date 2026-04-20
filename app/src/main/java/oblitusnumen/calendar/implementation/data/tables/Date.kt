@@ -697,5 +697,17 @@ open class Date : BaseColumns {
                 arrayOf(entryId.toString())
             )
         }
+
+        fun scheduleOnce(dbManager: DbManager, entryId: Int, startTime: ZonedDateTime, durationMinutes: Int) {
+            val entry = Entry.byId(dbManager, entryId) ?: return
+            val date = Date(
+                time = startTime,
+                duration = Period.Minute(durationMinutes.toLong()),
+                timesRepeat = 1L,
+                period = Period.Once(),
+                entry = entry,
+            )
+            date.create(dbManager)
+        }
     }
 }

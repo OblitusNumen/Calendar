@@ -123,7 +123,7 @@ fun NavigationGraph(
                 { NavRoutes.TaskEdit.navHere(navController, null) },
                 { NavRoutes.TaskDetails.navHere(navController, it) },
                 { NavRoutes.Settings.navHere(navController) },
-                initialTab = if (openPlannerToday) PlannerTab.TODAY else PlannerTab.CURRENT
+                initialTab = if (openPlannerToday) PlannerTab.TODAY else PlannerTab.TODAY
             )
         }
 
