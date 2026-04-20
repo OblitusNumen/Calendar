@@ -144,7 +144,7 @@ fun PlannerScreen(
                     }
 
                     LazyColumn(Modifier.fillMaxSize()) {
-                        items(tabTasks) { task ->
+                        items(tabTasks, key = { it.taskId!! }) { task ->
                             Task(openTaskDetails, task, now, allTasks, predecessorLinks, dbManager)
                             // TODO:
                         }

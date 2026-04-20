@@ -61,7 +61,7 @@ fun TagsScreen(
         val tagNames: MutableSet<String> = remember(filteredTags) { filteredTags.map { it.name }.toMutableSet() }
 
         LazyColumn(contentPadding = paddingValues) {
-            items(filteredTags) { tag ->
+            items(filteredTags, key = { it.id!! }) { tag ->
                 Row(
                     Modifier.fillMaxWidth().defaultMinSize(minHeight = 56.dp)
                         .padding(horizontal = 8.dp).clickable(onClick = {

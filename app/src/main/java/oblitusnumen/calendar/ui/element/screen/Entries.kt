@@ -46,7 +46,7 @@ fun EntriesScreen(
             }
 
         LazyColumn(contentPadding = paddingValues) {
-            items(entries) { entry ->
+            items(entries, key = { it.id!! }) { entry ->
                 val id = entry.id!!
 
                 SelectableEntry(
