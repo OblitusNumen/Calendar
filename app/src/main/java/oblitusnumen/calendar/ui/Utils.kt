@@ -10,16 +10,30 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-fun formatDateTime(epochSecond: Long, zoneId: ZoneId): String =
-    Instant.ofEpochSecond(epochSecond).atZone(zoneId)
-        .format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm"))
+const val QUARTERS_PER_HOUR = 4
+const val MINUTES_PER_QUARTER = 15
+
+fun formatDateTime(epochSecond: Long, zoneId: ZoneId): String {
+    val zdt = Instant.ofEpochSecond(epochSecond).atZone(zoneId)
+    val today = LocalDate.now(zoneId)
+    val date = zdt.toLocalDate()
+    val time = zdt.format(DateTimeFormatter.ofPattern("HH:mm"))
+    return when {
+        date == today -> "Today $time"
+        date == today.plusDays(1) -> "Tomorrow $time"
+        date == today.minusDays(1) -> "Yesterday $time"
+        date.year == today.year -> zdt.format(DateTimeFormatter.ofPattern("d MMM HH:mm"))
+        else -> zdt.format(DateTimeFormatter.ofPattern("d MMM yyyy HH:mm"))
+    }
+}
 
 fun formatTime(quarterHours: Int): String {
-    val hours = quarterHours / 4
-    val minutes = (quarterHours % 4) * 15
+    val hours = quarterHours / QUARTERS_PER_HOUR
+    val minutes = (quarterHours % QUARTERS_PER_HOUR) * MINUTES_PER_QUARTER
     return if (minutes == 0) "${hours}h" else "${hours}h ${minutes}m"
 }
 

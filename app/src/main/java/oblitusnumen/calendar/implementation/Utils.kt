@@ -18,6 +18,9 @@ import java.util.zip.ZipOutputStream
 val LIST_CENTER: LocalDate = LocalDate.of(1970, 1, 1)
 const val LIST_LEN = 420168000 * 2 // ~5M years, should be enough (no point fixing bugs at >5M)
 
+const val MILLIS_PER_DAY = 86_400_000L
+const val SECONDS_PER_DAY = 86_400L
+
 fun ZonedDateTime.toEpochDays(): Long {
     return toLocalDate().toEpochDay()
 }

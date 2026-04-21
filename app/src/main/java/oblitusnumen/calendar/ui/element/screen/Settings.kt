@@ -6,9 +6,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.outlined.Notifications
+import oblitusnumen.calendar.implementation.data.Period
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -93,7 +95,8 @@ fun SettingsScreen(dbManager: DbManager, backPress: () -> Unit) {
                             Text(
                                 modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp)
                                     .weight(1f),
-                                text = "${notification.first.count} ${notification.first.name} before",// FIXME: text
+                                text = if (notification.first is Period.Once) "at event time"
+                                   else "${notification.first.count} ${notification.first.name}${if (notification.first.count != 1L) "s" else ""} before",
                                 style = MaterialTheme.typography.bodyLarge
                             )
                             IconButton(
@@ -105,15 +108,14 @@ fun SettingsScreen(dbManager: DbManager, backPress: () -> Unit) {
                                 content = { Icon(Icons.Filled.Clear, contentDescription = null) })
                         }
                     }
-                    Box(Modifier.defaultMinSize(minHeight = 52.dp).fillMaxWidth()/*.padding(top = 8.dp)*/.clickable {
-                        notificationChoose = true
-                    }) {
-                        Text(
-                            modifier = Modifier.align(Alignment.CenterStart)
-                                .padding(horizontal = 44.dp, vertical = 4.dp),
-                            text = "Add notification", // FIXME: start with plus icon
-                            style = MaterialTheme.typography.bodyLarge
-                        )
+                    Row(
+                        Modifier.defaultMinSize(minHeight = 52.dp).fillMaxWidth().clickable {
+                            notificationChoose = true
+                        }.padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Filled.Add, null, Modifier.padding(end = 8.dp))
+                        Text("Add notification", style = MaterialTheme.typography.bodyLarge)
                     }
                 }
             }

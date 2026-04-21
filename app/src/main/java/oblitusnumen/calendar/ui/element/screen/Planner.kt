@@ -29,7 +29,7 @@ import oblitusnumen.calendar.implementation.data.tables.TaskLink
 import oblitusnumen.calendar.implementation.data.tables.TaskLog
 import oblitusnumen.calendar.implementation.data.views.ViewTaskWithOptions
 import oblitusnumen.calendar.implementation.defaultZoneId
-import oblitusnumen.calendar.implementation.getZonedFromEpochSeconds
+import oblitusnumen.calendar.ui.formatDateTime
 import oblitusnumen.calendar.implementation.now
 import oblitusnumen.calendar.implementation.planTasks
 import oblitusnumen.calendar.ui.element.DateTimePicker
@@ -247,7 +247,7 @@ fun Task(
                 Icon(Icons.Filled.Done, tint = Color.Green, contentDescription = "done")
             else
                 Text(
-                    text = "${getZonedFromEpochSeconds(task.deadlineTimestamp).toLocalDate()}",
+                    text = formatDateTime(task.deadlineTimestamp, task.timeZoneId),
                     modifier = Modifier.align(Alignment.CenterVertically),
                     color = if (task.isOverdue(now)) Color.Red else Color.Unspecified,
                     style = MaterialTheme.typography.bodyLarge,
@@ -255,22 +255,26 @@ fun Task(
         }
 
         Row(Modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 8.dp)) {
-            Text(
-                text = "${
-                    task.countPredecessorsTimeEstimate(
-                        allTasks.associateBy { it.taskId!! },
-                        predecessorLinks
-                    )
-                }",
-                modifier = Modifier.weight(1.0f).padding(horizontal = 8.dp)
-                    .align(Alignment.CenterVertically),
-                style = MaterialTheme.typography.bodyLarge,
-                overflow = TextOverflow.Ellipsis,
-                maxLines = 1,
+            val predTime = task.countPredecessorsTimeEstimate(
+                allTasks.associateBy { it.taskId!! },
+                predecessorLinks
             )
 
+            if (predTime > 0)
+                Text(
+                    text = "+${formatTime(predTime)} deps",
+                    modifier = Modifier.weight(1.0f).padding(horizontal = 8.dp)
+                        .align(Alignment.CenterVertically),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    overflow = TextOverflow.Ellipsis,
+                    maxLines = 1,
+                )
+            else
+                Spacer(Modifier.weight(1.0f))
+
             Text(
-                text = "${task.timeRemaining}",
+                text = formatTime(task.timeRemaining),
                 modifier = Modifier.align(Alignment.CenterVertically),
                 color = if (task.isOverdue(now)) Color.Red else Color.Unspecified,
                 style = MaterialTheme.typography.bodyLarge,

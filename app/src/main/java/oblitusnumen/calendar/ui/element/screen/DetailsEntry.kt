@@ -12,8 +12,10 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.Call
 import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.Schedule
+import oblitusnumen.calendar.implementation.MILLIS_PER_DAY
+import oblitusnumen.calendar.implementation.data.Period
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -125,7 +127,8 @@ fun Notification(notification: Notification) {
         Text(
             modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp)
                 .weight(1f),
-            text = "${notification.offset.count} ${notification.offset.name} before",// FIXME: text
+            text = if (notification.offset is Period.Once) "at event time"
+               else "${notification.offset.count} ${notification.offset.name}${if (notification.offset.count != 1L) "s" else ""} before",
             style = MaterialTheme.typography.bodyLarge
         )
     }
@@ -151,7 +154,7 @@ fun Date(date: Date) {
     Column(Modifier.padding(bottom = 6.dp)) {
         Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp)) {
             Icon(
-                Icons.Outlined.Call, "",
+                Icons.Outlined.Schedule, "",
                 Modifier.align(Alignment.CenterVertically).padding(8.dp)
             )
 
@@ -197,7 +200,7 @@ fun Date(date: Date) {
         // exceptions
         if (date.isPeriodic) {
             for (epochDay in date.exceptionRules.listAll()) {
-                val textException = "except " + convertMillisToDate(epochDay * 86400000)
+                val textException = "except " + convertMillisToDate(epochDay * MILLIS_PER_DAY)
                 Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp).padding(horizontal = 40.dp)) {
                     Text(
                         modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp)

@@ -29,6 +29,7 @@ import kotlinx.coroutines.launch
 import oblitusnumen.calendar.R
 import oblitusnumen.calendar.implementation.LIST_CENTER
 import oblitusnumen.calendar.implementation.LIST_LEN
+import oblitusnumen.calendar.implementation.bgColorToTextColor
 import oblitusnumen.calendar.implementation.data.DateOccurrence
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.tables.Tag
@@ -39,6 +40,7 @@ import oblitusnumen.calendar.ui.horizontal
 import oblitusnumen.calendar.ui.measureTextLine
 import oblitusnumen.calendar.ui.theme.topBarColors
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import kotlin.math.max
 import kotlin.math.min
@@ -387,10 +389,69 @@ fun DisplayDayAgenda(
 //        return
     // FIXME: ------------------------------------------------------------------------------------------------------- 
     Column {
-        Text("Day: $day", Modifier.fillMaxWidth().clickable(onClick = openDayInfo))
-        for (occurrence in dates) {
-            Entry(dbManager, occurrence) { openEntryInfoByDateOccurrence(occurrence) }
+        AgendaDayHeader(day, now, openDayInfo)
+
+        if (dates.isEmpty()) {
+            Text(
+                "No events",
+                Modifier.padding(start = 56.dp, top = 4.dp, bottom = 8.dp),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        } else {
+            for (occurrence in dates) {
+                Entry(dbManager, occurrence) { openEntryInfoByDateOccurrence(occurrence) }
+            }
         }
+
+        HorizontalDivider(Modifier.padding(horizontal = 12.dp))
+    }
+}
+
+@Composable
+private fun AgendaDayHeader(day: LocalDate, now: LocalDate, onClick: () -> Unit) {
+    val isToday = day == now
+    val bgColor = if (isToday) MaterialTheme.colorScheme.onSurface.copy(alpha = .5f) else MaterialTheme.colorScheme.surface
+
+    val label: String? = when (day) {
+        now -> "Today"
+        now.plusDays(1) -> "Tomorrow"
+        now.minusDays(1) -> "Yesterday"
+        else -> null
+    }
+
+    val dateStr = if (day.year == now.year)
+        day.format(DateTimeFormatter.ofPattern("EEE, d MMM"))
+    else
+        day.format(DateTimeFormatter.ofPattern("EEE, d MMM yyyy"))
+
+    Row(
+        Modifier.fillMaxWidth()
+            .background(bgColor)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(Modifier.weight(1f)) {
+            if (label != null) {
+                Text(
+                    label,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (isToday) bgColorToTextColor(bgColor) else MaterialTheme.colorScheme.primary
+                )
+            }
+            Text(
+                dateStr,
+                style = MaterialTheme.typography.titleSmall,
+                color = if (isToday) bgColorToTextColor(bgColor) else MaterialTheme.colorScheme.onSurface
+            )
+        }
+        Icon(
+            Icons.AutoMirrored.Filled.KeyboardArrowRight, null,
+            Modifier.size(16.dp),
+            tint = if (isToday) bgColorToTextColor(bgColor).copy(alpha = .6f)
+                   else MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 

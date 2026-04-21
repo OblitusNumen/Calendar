@@ -267,7 +267,7 @@ fun CalendarDrawer(
             },
             icon = {
                 Icon(
-                    imageVector = Icons.Filled.ThumbUp,
+                    imageVector = Icons.Filled.ViewList,
                     contentDescription = null
                 )
             }

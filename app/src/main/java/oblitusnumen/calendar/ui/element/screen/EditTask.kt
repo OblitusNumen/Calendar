@@ -20,6 +20,8 @@ import oblitusnumen.calendar.implementation.data.tables.Task
 import oblitusnumen.calendar.implementation.data.tables.TaskLink
 import oblitusnumen.calendar.implementation.data.views.ViewTaskWithOptions
 import oblitusnumen.calendar.implementation.now
+import oblitusnumen.calendar.ui.MINUTES_PER_QUARTER
+import oblitusnumen.calendar.ui.QUARTERS_PER_HOUR
 import oblitusnumen.calendar.ui.element.*
 import oblitusnumen.calendar.ui.viewmodel.TaskEditViewModel
 import java.time.Instant
@@ -61,7 +63,7 @@ fun EditTaskScreen(
                             viewModel.setName(it)
                     },
                     textStyle = MaterialTheme.typography.titleLarge,
-                    label = { Text("Enter event name") },
+                    label = { Text("Enter task name") },
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                     trailingIcon = {
                         ColorSelectButton(state.color, true) {
@@ -105,15 +107,13 @@ fun EditTaskScreen(
 
             // choose tags
             item {
-                Box(Modifier.fillMaxWidth().padding(top = 8.dp).clickable {
-                    tagChoose = true
-                }) {
-                    Text(
-                        modifier = Modifier.align(Alignment.CenterStart)
-                            .padding(horizontal = 44.dp, vertical = 16.dp),
-                        text = "Choose tags...",
-                        style = MaterialTheme.typography.bodyLarge
-                    )
+                Row(
+                    Modifier.fillMaxWidth().padding(top = 8.dp).clickable { tagChoose = true }
+                        .padding(horizontal = 8.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Filled.Star, null, Modifier.padding(end = 8.dp))
+                    Text("Choose tags...", style = MaterialTheme.typography.bodyLarge)
                 }
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
             }
@@ -286,34 +286,53 @@ fun EditTaskScreen(
 
             // time consumed
             item {
-                Row {
-                    Text("Time elapsed", Modifier.align(Alignment.CenterVertically).padding(horizontal = 8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Time elapsed", Modifier.padding(horizontal = 8.dp).weight(1f))
 
                     IntTextField(
-                        state.timeConsumed / 4,
-                        { it?.let { viewModel.setTimeConsumed(it * 4) } ?: 0 },
-                        modifier = Modifier.width(200.dp).align(Alignment.CenterVertically).padding(4.dp),
-                        trailingIcon = { Text("h", Modifier.align(Alignment.CenterVertically).padding(horizontal = 8.dp)) },
-                        maxDigits = 7)
+                        state.timeConsumed / QUARTERS_PER_HOUR,
+                        { it?.let { h -> viewModel.setTimeConsumed(h * QUARTERS_PER_HOUR + state.timeConsumed % QUARTERS_PER_HOUR) } },
+                        modifier = Modifier.width(96.dp).padding(4.dp),
+                        trailingIcon = { Text("h", Modifier.padding(horizontal = 4.dp)) },
+                        maxDigits = 5)
+
+                    IntTextField(
+                        (state.timeConsumed % QUARTERS_PER_HOUR) * MINUTES_PER_QUARTER,
+                        { it?.let { m -> viewModel.setTimeConsumed(state.timeConsumed / QUARTERS_PER_HOUR * QUARTERS_PER_HOUR + m / MINUTES_PER_QUARTER) } },
+                        modifier = Modifier.width(88.dp).padding(4.dp),
+                        trailingIcon = { Text("m", Modifier.padding(horizontal = 4.dp)) },
+                        maxDigits = 2)
                 }
             }
 
             // time remaining
             item {
-                Row {
-                    Text("Time remaining", Modifier.align(Alignment.CenterVertically).padding(horizontal = 8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Time remaining", Modifier.padding(horizontal = 8.dp).weight(1f))
 
                     IntTextField(
-                        state.timeRemaining / 4,
-                        { it?.let { viewModel.setTimeRemaining(it * 4) } ?: 0 },
-                        modifier = Modifier.width(200.dp).align(Alignment.CenterVertically).padding(4.dp),
-                        trailingIcon = { Text("h", Modifier.align(Alignment.CenterVertically).padding(horizontal = 8.dp)) },
-                        maxDigits = 7)
+                        state.timeRemaining / QUARTERS_PER_HOUR,
+                        { it?.let { h -> viewModel.setTimeRemaining(h * QUARTERS_PER_HOUR + state.timeRemaining % QUARTERS_PER_HOUR) } },
+                        modifier = Modifier.width(96.dp).padding(4.dp),
+                        trailingIcon = { Text("h", Modifier.padding(horizontal = 4.dp)) },
+                        maxDigits = 5)
+
+                    IntTextField(
+                        (state.timeRemaining % QUARTERS_PER_HOUR) * MINUTES_PER_QUARTER,
+                        { it?.let { m -> viewModel.setTimeRemaining(state.timeRemaining / QUARTERS_PER_HOUR * QUARTERS_PER_HOUR + m / MINUTES_PER_QUARTER) } },
+                        modifier = Modifier.width(88.dp).padding(4.dp),
+                        trailingIcon = { Text("m", Modifier.padding(horizontal = 4.dp)) },
+                        maxDigits = 2)
                 }
             }
 
             item {
-                Text("Predecessors")
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
+                Text(
+                    "Predecessors",
+                    Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                    style = MaterialTheme.typography.titleMedium
+                )
             }
 
             // predecessors
@@ -328,7 +347,9 @@ fun EditTaskScreen(
             item {
                 var chooseDialogVisible by remember { mutableStateOf(false) }
 
-                Text("Add predecessors", Modifier.clickable { chooseDialogVisible = true })
+                TextButton(onClick = { chooseDialogVisible = true }) {
+                    Text("+ Add predecessor")
+                }
 
                 if (chooseDialogVisible) {
                     ChooseTasksDialog(
@@ -346,7 +367,12 @@ fun EditTaskScreen(
             }
 
             item {
-                Text("Successors")
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
+                Text(
+                    "Successors",
+                    Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                    style = MaterialTheme.typography.titleMedium
+                )
             }
 
             // successors
@@ -361,7 +387,9 @@ fun EditTaskScreen(
             item {
                 var chooseDialogVisible by remember { mutableStateOf(false) }
 
-                Text("Add successors", Modifier.clickable { chooseDialogVisible = true })
+                TextButton(onClick = { chooseDialogVisible = true }) {
+                    Text("+ Add successor")
+                }
 
                 if (chooseDialogVisible) {
                     ChooseTasksDialog(

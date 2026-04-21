@@ -1,9 +1,9 @@
 package oblitusnumen.calendar.ui.navigation
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.AccountBox
-import androidx.compose.material.icons.outlined.Call
 import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.DateRange
+import androidx.compose.material.icons.outlined.Home
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
@@ -175,8 +175,8 @@ sealed class NavRoutes(private val path: String, val route: String = path) {
 
     companion object {
         fun getTopLevelRoutes() = listOf(
-            TopLevelRoute("Dashboard", Dashboard, Icons.Outlined.AccountBox),
-            TopLevelRoute("Calendar", Calendar, Icons.Outlined.Call),
+            TopLevelRoute("Dashboard", Dashboard, Icons.Outlined.Home),
+            TopLevelRoute("Calendar", Calendar, Icons.Outlined.DateRange),
             TopLevelRoute("Planner", Planner, Icons.Outlined.CheckCircle)
         )
 

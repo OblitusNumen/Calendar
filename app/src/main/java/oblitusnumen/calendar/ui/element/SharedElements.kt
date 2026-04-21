@@ -35,7 +35,10 @@ import oblitusnumen.calendar.implementation.bgColorToTextColor
 import oblitusnumen.calendar.implementation.data.DateOccurrence
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.Period
+import oblitusnumen.calendar.implementation.data.Period.Hour
+import oblitusnumen.calendar.implementation.data.Period.Minute
 import oblitusnumen.calendar.implementation.data.Period.Once
+import oblitusnumen.calendar.ui.formatDateTime
 import oblitusnumen.calendar.implementation.data.tables.Date
 import oblitusnumen.calendar.implementation.data.tables.Tag
 import oblitusnumen.calendar.implementation.data.views.ViewEntryWithOptions
@@ -548,7 +551,7 @@ fun SelectableEntry(
             when (val nextDate = entryView.nextDate) {
                 null -> ""
                 -1L -> "Ended"
-                else -> getZonedFromEpochSeconds(nextDate).format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm"))
+                else -> formatDateTime(nextDate, defaultZoneId())
             }
         mutableStateOf(nextDateText)
     }
@@ -618,8 +621,16 @@ fun Entry(dbManager: DbManager, occurrence: DateOccurrence, openEntryInfo: () ->
 
             Text(
                 modifier = Modifier.align(Alignment.CenterVertically),
-                text = occurrence.occurrence
-                    .format(DateTimeFormatter.ofPattern("HH:mm")), //fixme should show end time
+                text = run {
+                    val start = occurrence.occurrence.format(DateTimeFormatter.ofPattern("HH:mm"))
+                    when (val dur = occurrence.date.duration) {
+                        is Minute, is Hour -> {
+                            val end = dur.addTo(occurrence.occurrenceZoned, 1)
+                            "$start–${end.format(DateTimeFormatter.ofPattern("HH:mm"))}"
+                        }
+                        else -> start
+                    }
+                },
                 style = MaterialTheme.typography.bodyLarge,
             )
         }
@@ -726,7 +737,7 @@ fun TopBarTagFilterTitle(dbManager: DbManager, tagsFilter: List<Tag>, tagsFilter
         }
 
         Icon(
-            Icons.Filled.Face,
+            Icons.Filled.FilterList,
             contentDescription = "filter",
             Modifier.size(40.dp),
             MaterialTheme.colorScheme.onSurface.copy(alpha = .5f)

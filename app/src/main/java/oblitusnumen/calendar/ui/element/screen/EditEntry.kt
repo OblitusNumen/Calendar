@@ -8,11 +8,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.Call
 import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.Schedule
+import oblitusnumen.calendar.implementation.MILLIS_PER_DAY
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -33,6 +35,7 @@ import oblitusnumen.calendar.ui.element.*
 import oblitusnumen.calendar.ui.state.DateState
 import oblitusnumen.calendar.ui.viewmodel.EntryEditViewModel
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -136,15 +139,13 @@ fun EditEntryScreen(
             }
 
             // choose tags
-            Box(Modifier.fillMaxWidth().padding(top = 8.dp).clickable {
-                tagChoose = true
-            }) {
-                Text(
-                    modifier = Modifier.align(Alignment.CenterStart)
-                        .padding(horizontal = 44.dp, vertical = 16.dp),
-                    text = "Choose tags...",
-                    style = MaterialTheme.typography.bodyLarge
-                )
+            Row(
+                Modifier.fillMaxWidth().padding(top = 8.dp).clickable { tagChoose = true }
+                    .padding(horizontal = 8.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Filled.Star, null, Modifier.padding(end = 8.dp))
+                Text("Choose tags...", style = MaterialTheme.typography.bodyLarge)
             }
             HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
 
@@ -163,8 +164,8 @@ fun EditEntryScreen(
                 }
 
             // add date
-            Box(
-                Modifier.defaultMinSize(minHeight = 52.dp).fillMaxWidth()/*.padding(top = 8.dp)*/.clickable {
+            Row(
+                Modifier.defaultMinSize(minHeight = 52.dp).fillMaxWidth().clickable {
                     dateTimePicker.dateTimePick(
                         {},
                         {
@@ -178,13 +179,11 @@ fun EditEntryScreen(
                                     )
                                 )
                         })
-                }) {
-                Text(
-                    modifier = Modifier.align(Alignment.CenterStart)
-                        .padding(horizontal = 44.dp, vertical = 16.dp),
-                    text = "Add date...",
-                    style = MaterialTheme.typography.bodyLarge
-                )
+                }.padding(horizontal = 8.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Outlined.Schedule, null, Modifier.padding(end = 8.dp))
+                Text("Add date...", style = MaterialTheme.typography.bodyLarge)
             }
             HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
 
@@ -217,7 +216,8 @@ fun EditEntryScreen(
                     Text(
                         modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp)
                             .weight(1f),
-                        text = "${notification.offset.count} ${notification.offset.name} before",// FIXME: text
+                        text = if (notification.offset is Once) "at event time"
+                           else "${notification.offset.count} ${notification.offset.name}${if (notification.offset.count != 1L) "s" else ""} before",
                         style = MaterialTheme.typography.bodyLarge
                     )
 
@@ -232,15 +232,14 @@ fun EditEntryScreen(
             }
 
             // add notifications
-            Box(Modifier.defaultMinSize(minHeight = 52.dp).fillMaxWidth()/*.padding(top = 8.dp)*/.clickable {
-                notificationChoose = true
-            }) {
-                Text(
-                    modifier = Modifier.align(Alignment.CenterStart)
-                        .padding(horizontal = 44.dp, vertical = 4.dp),
-                    text = "Add notification",
-                    style = MaterialTheme.typography.bodyLarge
-                )
+            Row(
+                Modifier.defaultMinSize(minHeight = 52.dp).fillMaxWidth().clickable {
+                    notificationChoose = true
+                }.padding(horizontal = 8.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Filled.Add, null, Modifier.padding(end = 8.dp))
+                Text("Add notification", style = MaterialTheme.typography.bodyLarge)
             }
 
             Spacer(Modifier.height(paddingValues.calculateBottomPadding()))
@@ -336,7 +335,7 @@ fun Date(
 
     var durationSelectorDate by remember { durationSelectorDate }
     if (durationSelectorDate == date)
-        DurationSelectorDialog(date, {
+        DurationSelectorDialog(date, dateTimePicker, {
             durationSelectorDate = null
             onUpdateDate(date.setDuration(it))
         }, { durationSelectorDate = null })
@@ -351,15 +350,23 @@ fun Date(
     else
         PeriodType(date.period).toString()
 
-    val textDuration: String = if (date.duration is Once)
-        "no duration"
-    else
-        "for ${date.duration.count} ${date.duration.name}"
+    val textDuration: String = when (val dur = date.duration) {
+        is Once -> "no duration"
+        is Minute -> {
+            val end = date.getFirstZoneDateTime().toLocalTime().plusMinutes(dur.count)
+            "ends ${end.format(DateTimeFormatter.ofPattern("HH:mm"))}"
+        }
+        is Hour -> {
+            val end = date.getFirstZoneDateTime().toLocalTime().plusHours(dur.count)
+            "ends ${end.format(DateTimeFormatter.ofPattern("HH:mm"))}"
+        }
+        else -> "for ${dur.count} ${dur.name}${if (dur.count != 1L) "s" else ""}"
+    }
 
     Column(Modifier.padding(bottom = 6.dp)) {
         Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp)) {
             Icon(
-                Icons.Outlined.Call, "",
+                Icons.Outlined.Schedule, "",
                 Modifier.align(Alignment.CenterVertically).padding(8.dp)
             )
 
@@ -465,17 +472,15 @@ fun Date(
             }
 
             // add exceptions
-            Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp).clickable {
-                dateTimePicker.datePick({}, {
-                    onUpdateDate(date.addExceptions(it))
-                })
-            }.padding(horizontal = 40.dp)) {
-                Text(
-                    modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp, vertical = 8.dp)
-                        .weight(1f),
-                    text = "Add exception...",
-                    style = MaterialTheme.typography.bodyLarge
-                )
+            Row(
+                Modifier.defaultMinSize(minHeight = 52.dp).fillMaxWidth().clickable {
+                    dateTimePicker.datePick({}, { onUpdateDate(date.addExceptions(it)) })
+                }.padding(horizontal = 8.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Spacer(Modifier.width(32.dp))
+                Icon(Icons.Filled.Add, null, Modifier.padding(end = 8.dp))
+                Text("Add exception...", style = MaterialTheme.typography.bodyLarge)
             }
         }
     }
@@ -512,7 +517,7 @@ fun PeriodSelectorDialog(
     var selectedMillis by remember {
         mutableStateOf(
             (if (date.isEndless) date.getFirstZoneDateTime() else date.getLastZoneDateTime()).toLocalDate()
-                .toEpochDay() * 86_400_000
+                .toEpochDay() * MILLIS_PER_DAY
         )
     }
     var occurrencesCount by remember { mutableStateOf(if (date.isEndless) "1" else "${date.getTimesRepeatUI()}") }
@@ -585,7 +590,7 @@ fun PeriodSelectorDialog(
                             DateSequenceEndVariant.ENDLESS -> updatedDateState.makeEndless()
                             DateSequenceEndVariant.BY_DATE -> updatedDateState.setRange(
                                 startOfDayEnd = ZonedDateTime.of(
-                                    LocalDate.ofEpochDay(selectedMillis / 86400000).atStartOfDay(),
+                                    LocalDate.ofEpochDay(selectedMillis / MILLIS_PER_DAY).atStartOfDay(),
                                     updatedDateState.getFirstZoneDateTime().zone
                                 )
                             )
@@ -716,6 +721,7 @@ fun PeriodSelectorDialog(
 @Composable
 fun DurationSelectorDialog(
     date: DateState,
+    dateTimePicker: DateTimePicker,
     onConfirm: (Period) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -725,38 +731,74 @@ fun DurationSelectorDialog(
     var offsetCount: Long by remember { mutableStateOf(initialOffsetCount) }
     var selectedOffsetType by remember { mutableStateOf(initialOffsetType) }
 
+    val startLocalTime = remember { date.getFirstZoneDateTime().toLocalTime() }
+    val endLocalTime: LocalTime? = when (val p = selectedOffsetType.period) {
+        is Once -> null
+        is Minute -> if (offsetCount > 0) startLocalTime.plusMinutes(offsetCount) else null
+        is Hour -> if (offsetCount > 0) startLocalTime.plusHours(offsetCount) else null
+        else -> null
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
         confirmButton = {
             TextButton(onClick = {
                 val count = if (offsetCount < 0)
-                    if (selectedOffsetType.period is Once)
-                        0
-                    else {// TODO:
-//                    showErrorToast("Could not parse count: '$periodCountText'")
-                        return@TextButton
-                    }
-                else
-                    offsetCount
+                    if (selectedOffsetType.period is Once) 0
+                    else return@TextButton
+                else offsetCount
 
                 onConfirm(
-                    if (count == 0L || selectedOffsetType.period is Once)
-                        Once()
-                    else {
-                        selectedOffsetType.period.updateCount(count)
-                    },
+                    if (count == 0L || selectedOffsetType.period is Once) Once()
+                    else selectedOffsetType.period.updateCount(count)
                 )
-            }) {
-                Text("OK")
-            }
+            }) { Text("OK") }
         },
         text = {
             Column {
+                Row(
+                    Modifier.fillMaxWidth().clickable {
+                        val initialEnd = endLocalTime ?: startLocalTime.plusHours(1)
+                        dateTimePicker.timePick({}, { picked ->
+                            val startMin = startLocalTime.hour * 60 + startLocalTime.minute
+                            val endMin = picked.hour * 60 + picked.minute
+                            val durationMin = if (endMin > startMin) endMin - startMin
+                                             else (24 * 60 - startMin + endMin)
+                            when {
+                                durationMin == 0 -> {
+                                    selectedOffsetType = OffsetType(Once())
+                                    offsetCount = 0
+                                }
+                                durationMin % 60 == 0 -> {
+                                    selectedOffsetType = OffsetType(Hour(1))
+                                    offsetCount = (durationMin / 60).toLong()
+                                }
+                                else -> {
+                                    selectedOffsetType = OffsetType(Minute(1))
+                                    offsetCount = durationMin.toLong()
+                                }
+                            }
+                        }, initialEnd)
+                    }.padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Outlined.Schedule, null, Modifier.padding(end = 12.dp))
+                    Column {
+                        Text(
+                            "End time",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            endLocalTime?.format(DateTimeFormatter.ofPattern("HH:mm")) ?: "no end",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
+                }
+
+                HorizontalDivider(Modifier.padding(vertical = 8.dp))
+
                 OffsetSelector(initialOffsetType, initialOffsetCount, { selectedOffsetType = it }, { offsetCount = it })
             }
         }
@@ -819,7 +861,7 @@ data class OffsetType(val period: Period) {
 data class PeriodType(val period: Period) {
     override fun toString(): String {
         return when (period) {
-            is Once -> "ounce"
+            is Once -> "once"
             is Minute -> "minute"
             is Hour -> "hour"
             is Day -> "day"

@@ -93,6 +93,9 @@ fun NavigationGraph(
                 { NavRoutes.Entries.navHere(navController) },
                 { NavRoutes.Tags.navHere(navController) },
                 { NavRoutes.Settings.navHere(navController) },
+                { NavRoutes.EntryDetails.navHere(navController, it) },
+                { NavRoutes.TaskDetails.navHere(navController, it) },
+                { navController.navigate(NavRoutes.Planner.route) },
             )
         }
 
