@@ -39,7 +39,7 @@ import oblitusnumen.calendar.ui.theme.topBarColors
 import java.time.format.DateTimeFormatter
 
 @Composable
-fun DetailsEntryScreen(dbManager: DbManager, entryId: Int, editEntry: () -> Unit, backPress: () -> Unit) {
+fun EntryDetailsScreen(dbManager: DbManager, entryId: Int, editEntry: () -> Unit, backPress: () -> Unit) {
     val entry = remember { ViewEntryWithOptions.byId(dbManager, entryId) }!! // FIXME: replace with View
 
     val entryName = remember { entry.displayName }

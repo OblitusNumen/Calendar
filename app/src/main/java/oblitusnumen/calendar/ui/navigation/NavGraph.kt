@@ -201,7 +201,7 @@ fun NavigationGraph(
                 return@composable
             }
 
-            DetailsEntryScreen(
+            EntryDetailsScreen(
                 dbManager,
                 entryId,
                 { NavRoutes.EntryEdit.navHere(navController, entryId) },
