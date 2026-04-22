@@ -4,11 +4,7 @@ import android.os.Bundle
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
@@ -86,15 +82,16 @@ fun NavigationGraph(
                 { BottomBar(navController) },
                 { NavRoutes.EntryEdit.navHere(navController, null) },
                 { NavRoutes.ThatDayDetails.navHere(navController, it) },
-                { year, monthValue ->
-                    NavRoutes.Agenda.navHere(navController, year, monthValue, null)
-                    log("year: $year, monthValue: $monthValue")
-                },
                 { NavRoutes.Entries.navHere(navController) },
                 { NavRoutes.Tags.navHere(navController) },
                 { NavRoutes.Settings.navHere(navController) },
                 { NavRoutes.EntryDetails.navHere(navController, it) },
                 { NavRoutes.TaskDetails.navHere(navController, it) },
+                { year, monthValue, day ->
+                    NavRoutes.Agenda.navHere(navController, year, monthValue, day)
+                    log("year: $year, monthValue: $monthValue")
+                },
+                { NavRoutes.Calendar.navHere(navController) },
                 { NavRoutes.Planner.navHere(navController, it) },
             )
         }
@@ -140,7 +137,8 @@ fun NavigationGraph(
                 return@composable
             }
 
-            TaskDetailsScreen(dbManager,
+            TaskDetailsScreen(
+                dbManager,
                 taskId!!,
                 { NavRoutes.TaskEdit.navHere(navController, taskId) },
                 { NavRoutes.backPress(navController) }

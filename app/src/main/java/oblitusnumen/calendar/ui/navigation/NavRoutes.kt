@@ -8,6 +8,7 @@ import androidx.compose.material.icons.outlined.Home
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import oblitusnumen.calendar.R
 import oblitusnumen.calendar.ui.element.screen.MonthDate
 import oblitusnumen.calendar.ui.element.screen.PlannerTab
@@ -15,7 +16,13 @@ import java.time.LocalDate
 
 sealed class NavRoutes(private val path: String, val route: String = path) {
     data object Dashboard : NavRoutes("dashboard")
-    data object Calendar : NavRoutes("calendar")
+
+    data object Calendar : NavRoutes("calendar") {
+        fun navHere(navController: NavHostController) {
+            navController.navigate(route)
+        }
+    }
+
     data object Planner : NavRoutes("planner", route = "planner/{tab}") {
         private const val tab = "tab"
 

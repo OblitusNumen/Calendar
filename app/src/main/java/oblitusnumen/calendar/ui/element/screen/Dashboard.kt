@@ -11,7 +11,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -21,8 +23,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 import oblitusnumen.calendar.R
-import oblitusnumen.calendar.implementation.bgColorToTextColor
 import oblitusnumen.calendar.implementation.data.DateOccurrence
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.tables.Task
@@ -33,7 +35,6 @@ import oblitusnumen.calendar.implementation.defaultZoneId
 import oblitusnumen.calendar.implementation.now
 import oblitusnumen.calendar.implementation.planTasks
 import oblitusnumen.calendar.implementation.zonedDateTime
-import oblitusnumen.calendar.ui.QUARTERS_PER_HOUR
 import oblitusnumen.calendar.ui.formatTime
 import oblitusnumen.calendar.ui.theme.topBarColors
 import java.time.DayOfWeek
@@ -48,12 +49,13 @@ fun DashboardScreen(
     navBar: @Composable () -> Unit,
     newEntry: () -> Unit,
     openThatDayInfo: (LocalDate) -> Unit,
-    openMonthAgenda: (Int, Int) -> Unit,
     openEntriesScreen: () -> Unit,
     openTagsScreen: () -> Unit,
     openSettings: () -> Unit,
     openEntryDetails: (Int) -> Unit,
     openTaskDetails: (Int) -> Unit,
+    openAgenda: (Int, Int, Int?) -> Unit,
+    openCalendar: () -> Unit,
     openPlanner: (PlannerTab) -> Unit,
 ) {
     val today = LocalDate.now()
@@ -104,104 +106,183 @@ fun DashboardScreen(
 
     val evtHeight = getEvtInDayExpectedHeight()
 
-    Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                colors = topBarColors(),
-                title = { Text(stringResource(R.string.dashboard_title)) },
-                actions = {
-                    IconButton(onClick = openSettings) {
-                        Icon(Icons.Filled.Settings, null)
-                    }
-                }
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
+    val coroutineScope = rememberCoroutineScope()
+    val closeDrawer: () -> Unit = { coroutineScope.launch { drawerState.close() } }
+    val openDrawer: () -> Unit = { coroutineScope.launch { drawerState.open() } }
+
+    ModalNavigationDrawer(
+        drawerContent = {
+            DashboardDrawer(
+                closeDrawer,
+                openEntriesScreen,
+                openTagsScreen,
+                openSettings
             )
         },
-        bottomBar = navBar,
-        floatingActionButton = {
-            FloatingActionButton(onClick = newEntry) {
-                Icon(Icons.Filled.Add, stringResource(R.string.cd_add_entry))
+        drawerState = drawerState,
+    ) {
+        Scaffold(
+            topBar = { DashboardTopBar(openDrawer) },
+            bottomBar = navBar,
+            floatingActionButton = {
+                FloatingActionButton(onClick = newEntry) {
+                    Icon(Icons.Filled.Add, stringResource(R.string.cd_add_entry))
+                }
+            }
+        ) { paddingValues ->
+            LazyColumn(contentPadding = paddingValues, modifier = Modifier.fillMaxSize()) {
+
+                item {
+                    DashboardGreeting(today)
+                }
+
+                item {
+                    DashboardStats(
+                        todayCount = todayOccurrences.size,
+                        activeCount = activeTasks.size,
+                        workLeftQuarters = workLeftQuarters,
+                        overdueCount = overdueTasks.size,
+                        onEventsClick = { openThatDayInfo(today) },
+                        onTasksClick = { openPlanner(PlannerTab.CURRENT) },
+                        onWorkClick = { openPlanner(PlannerTab.ALL) },
+                        onOverdueClick = { openPlanner(PlannerTab.OVERDUE) },
+                    )
+                }
+
+                item {
+                    DashboardSectionHeader(
+                        stringResource(R.string.dashboard_today_events),
+                        Icons.Filled.Event
+                    ) { openThatDayInfo(today) }
+                }
+
+                if (todayOccurrences.isEmpty()) {
+                    item {
+                        Text(
+                            stringResource(R.string.dashboard_no_events_today),
+                            Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                } else {
+                    items(todayOccurrences) { occurrence ->
+                        DashboardEventRow(occurrence) { occurrence.date.entryId?.let { openEntryDetails(it) } }
+                    }
+                }
+
+                item {
+                    DashboardSectionHeader(
+                        stringResource(R.string.dashboard_today_tasks),
+                        Icons.Filled.CheckBox
+                    ) { openPlanner(PlannerTab.TODAY) }
+                }
+
+                if (todayTasks.isEmpty()) {
+                    item {
+                        Text(
+                            stringResource(R.string.dashboard_no_tasks_today),
+                            Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                } else {
+                    items(todayTasks, key = { it.taskId!! }) { task ->
+                        DashboardTaskRow(task, now) { openTaskDetails(task.taskId!!) }
+                    }
+                }
+
+                item {
+                    DashboardSectionHeader(
+                        stringResource(R.string.dashboard_this_week),
+                        Icons.Filled.DateRange
+                    ) {
+                        val weekStart = today.plusDays(-(today.dayOfWeek.value - 1).toLong())
+                        openAgenda(weekStart.year, weekStart.monthValue, weekStart.dayOfMonth) // FIXME: should be week view
+                    }
+                }
+
+                item {
+                    DashboardWeekRow(dbManager, weekStart, weekDates, today, evtHeight, openThatDayInfo)
+                }
+
+                item {
+                    DashboardSectionHeader(stringResource(R.string.dashboard_this_month), Icons.Filled.CalendarMonth, openCalendar)
+                }
+
+                item {
+                    DashboardMonthGrid(gridStart, monthDates, today, today.monthValue, evtHeight, openThatDayInfo, )
+                }
+
+                item {
+                    Spacer(Modifier.height(16.dp))
+                }
             }
         }
-    ) { paddingValues ->
-        LazyColumn(contentPadding = paddingValues, modifier = Modifier.fillMaxSize()) {
+    }
+}
 
-            item {
-                DashboardGreeting(today)
+@Composable
+fun DashboardDrawer(
+    closeDrawer: () -> Unit,
+    openEntriesScreen: () -> Unit,
+    openTagsScreen: () -> Unit,
+    openSettings: () -> Unit
+) {
+    ModalDrawerSheet {
+        Row(Modifier.padding(16.dp)) {
+            Text(stringResource(R.string.nav_calendar), Modifier.align(Alignment.CenterVertically).weight(1f))
+            IconButton(onClick = closeDrawer) {
+                Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.cd_close_drawer))
             }
+        }
 
-            item {
-                DashboardStats(
-                    todayCount = todayOccurrences.size,
-                    activeCount = activeTasks.size,
-                    workLeftQuarters = workLeftQuarters,
-                    overdueCount = overdueTasks.size,
-                    onEventsClick = { openThatDayInfo(today) },
-                    onTasksClick = { openPlanner(PlannerTab.CURRENT) },
-                    onWorkClick = { openPlanner(PlannerTab.ALL) },
-                    onOverdueClick = { openPlanner(PlannerTab.OVERDUE) },
+        NavigationDrawerItem(
+            label = { Text(text = stringResource(R.string.nav_entries)) },
+            selected = false,
+            onClick = {
+                openEntriesScreen()
+                closeDrawer()
+            },
+            icon = {
+                Icon(
+                    imageVector = Icons.Filled.ViewList,
+                    contentDescription = null
                 )
             }
+        )
 
-            item {
-                DashboardSectionHeader(stringResource(R.string.dashboard_today_events), Icons.Filled.Event) { openThatDayInfo(today) }
+        NavigationDrawerItem(
+            label = { Text(text = stringResource(R.string.nav_tags)) },
+            selected = false,
+            onClick = {
+                openTagsScreen()
+                closeDrawer()
+            },
+            icon = {
+                Icon(
+                    imageVector = Icons.Filled.Star,
+                    contentDescription = null
+                )
             }
+        )
 
-            if (todayOccurrences.isEmpty()) {
-                item {
-                    Text(
-                        stringResource(R.string.dashboard_no_events_today),
-                        Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-            } else {
-                items(todayOccurrences) { occurrence ->
-                    DashboardEventRow(occurrence) { occurrence.date.entryId?.let { openEntryDetails(it) } }
-                }
+        NavigationDrawerItem(
+            label = { Text(text = stringResource(R.string.nav_settings)) },
+            selected = false,
+            onClick = {
+                openSettings()
+                closeDrawer()
+            },
+            icon = {
+                Icon(
+                    imageVector = Icons.Filled.Settings,
+                    contentDescription = null
+                )
             }
-
-            item {
-                DashboardSectionHeader(stringResource(R.string.dashboard_today_tasks), Icons.Filled.CheckBox) { openPlanner(PlannerTab.TODAY) }
-            }
-
-            if (todayTasks.isEmpty()) {
-                item {
-                    Text(
-                        stringResource(R.string.dashboard_no_tasks_today),
-                        Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-            } else {
-                items(todayTasks, key = { it.taskId!! }) { task ->
-                    DashboardTaskRow(task, now) { openTaskDetails(task.taskId!!) }
-                }
-            }
-
-            item {
-                DashboardSectionHeader(stringResource(R.string.dashboard_this_week), Icons.Filled.DateRange) { openThatDayInfo(today) }
-            }
-
-            item {
-                DashboardWeekRow(dbManager, weekStart, weekDates, today, evtHeight, openThatDayInfo)
-            }
-
-            item {
-                DashboardSectionHeader(stringResource(R.string.dashboard_this_month), Icons.Filled.CalendarMonth) {
-                    openMonthAgenda(today.year, today.monthValue)
-                }
-            }
-
-            item {
-                DashboardMonthGrid(gridStart, monthDates, today, today.monthValue, evtHeight, openThatDayInfo)
-            }
-
-            item {
-                Spacer(Modifier.height(16.dp))
-            }
-        }
+        )
     }
 }
 
@@ -253,8 +334,11 @@ private fun DashboardStats(
 
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             DashboardStatCard(
-                Modifier.weight(1f), stringResource(R.string.dashboard_stat_work_left), formatTime(context, workLeftQuarters),
-                Icons.Filled.Schedule, onClick = onWorkClick
+                Modifier.weight(1f),
+                stringResource(R.string.dashboard_stat_work_left),
+                formatTime(context, workLeftQuarters),
+                Icons.Filled.Schedule,
+                onClick = onWorkClick
             )
             DashboardStatCard(
                 Modifier.weight(1f), stringResource(R.string.dashboard_stat_overdue), overdueCount.toString(),
@@ -287,7 +371,11 @@ private fun DashboardStatCard(
             Spacer(Modifier.width(8.dp))
             Column {
                 Text(value, style = MaterialTheme.typography.titleMedium)
-                Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    label,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
@@ -432,4 +520,33 @@ private fun DashboardMonthGrid(
             weekStart = weekStart.plusWeeks(1)
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DashboardTopBar(openDrawer: () -> Unit) {
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
+
+    CenterAlignedTopAppBar(
+        colors = topBarColors(),
+        scrollBehavior = scrollBehavior,
+        navigationIcon = {
+            IconButton(onClick = openDrawer) {
+                Icon(
+                    imageVector = Icons.Filled.Menu,
+                    contentDescription = null
+                )
+            }
+        },
+        title = { Text(stringResource(R.string.dashboard_title)) },
+        actions = {
+            IconButton(onClick = {
+            }) {
+                Icon(
+                    imageVector = Icons.Filled.DateRange,
+                    contentDescription = null
+                )
+            }
+        },
+    )
 }
