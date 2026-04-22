@@ -554,11 +554,13 @@ fun SelectableEntry(
     onClick: () -> Unit,
 ) { //fixme Entry can not be created without DB
     val context = LocalContext.current
+    val stringEventEnded = stringResource(R.string.shared_ended)
+
     var nextDateText by remember {
         val nextDateText =
             when (val nextDate = entryView.nextDate) {
                 null -> ""
-                -1L -> context.getString(R.string.shared_ended)
+                -1L -> stringEventEnded
                 else -> formatDateTime(context, nextDate, defaultZoneId())
             }
         mutableStateOf(nextDateText)
