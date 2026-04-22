@@ -55,7 +55,7 @@ open class Task(
 
     fun create(dbManager: DbManager) { //todo may fail on UNIQUE violation?
         val contentValues = getContentValues()
-        contentValues.put(COLUMN_NAME_ENTRY_ID, null as Int?)
+        contentValues.put(COLUMN_NAME_ENTRY_ID, entryId)
         dbManager.writableDatabase.insert(TABLE_NAME, null, contentValues)
     }
 

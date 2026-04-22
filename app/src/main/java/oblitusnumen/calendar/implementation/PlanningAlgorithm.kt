@@ -16,6 +16,7 @@ fun planTasks(
     links: Collection<TaskLink>,
     now: Long
 ): Map<Int, Array<Int>> {
+    if (tasks.isEmpty()) return emptyMap()
     // id translations
     val indexTranslation: Map<Int, Int> = tasks.withIndex().associateBy({ it.value.taskId!! }, { it.index })
     val indexTranslationReverse: Map<Int, Int> = tasks.withIndex().associateBy({ it.index }, { it.value.taskId!! })
