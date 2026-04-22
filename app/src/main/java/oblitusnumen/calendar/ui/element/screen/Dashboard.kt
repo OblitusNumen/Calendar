@@ -54,7 +54,7 @@ fun DashboardScreen(
     openSettings: () -> Unit,
     openEntryDetails: (Int) -> Unit,
     openTaskDetails: (Int) -> Unit,
-    openPlanner: () -> Unit,
+    openPlanner: (PlannerTab) -> Unit,
 ) {
     val today = LocalDate.now()
     val now = now()
@@ -136,9 +136,9 @@ fun DashboardScreen(
                     workLeftQuarters = workLeftQuarters,
                     overdueCount = overdueTasks.size,
                     onEventsClick = { openThatDayInfo(today) },
-                    onTasksClick = openPlanner,
-                    onWorkClick = openPlanner,
-                    onOverdueClick = openPlanner,
+                    onTasksClick = { openPlanner(PlannerTab.CURRENT) },
+                    onWorkClick = { openPlanner(PlannerTab.ALL) },
+                    onOverdueClick = { openPlanner(PlannerTab.OVERDUE) },
                 )
             }
 
@@ -162,7 +162,7 @@ fun DashboardScreen(
             }
 
             item {
-                DashboardSectionHeader(stringResource(R.string.dashboard_today_tasks), Icons.Filled.CheckBox) { openPlanner() }
+                DashboardSectionHeader(stringResource(R.string.dashboard_today_tasks), Icons.Filled.CheckBox) { openPlanner(PlannerTab.TODAY) }
             }
 
             if (todayTasks.isEmpty()) {

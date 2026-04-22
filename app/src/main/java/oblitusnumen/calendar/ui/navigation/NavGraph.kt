@@ -74,9 +74,7 @@ fun NavigationGraph(
             if (openPlannerToday)
                 NavRoutes.Planner.route
             else if (startingEntryId == null)
-                NavRoutes.Calendar.route
-            // FIXME:
-//                    NavRoutes.Dashboard.route
+                NavRoutes.Dashboard.route
             else
                 NavRoutes.EntryDetails.withArgs(startingEntryId.toString())
     ) {
@@ -95,7 +93,7 @@ fun NavigationGraph(
                 { NavRoutes.Settings.navHere(navController) },
                 { NavRoutes.EntryDetails.navHere(navController, it) },
                 { NavRoutes.TaskDetails.navHere(navController, it) },
-                { navController.navigate(NavRoutes.Planner.route) },
+                { NavRoutes.Planner.navHere(navController, it) },
             )
         }
 
@@ -118,7 +116,9 @@ fun NavigationGraph(
             )
         }
 
-        composable(route = NavRoutes.Planner.route) {
+        composable(route = NavRoutes.Planner.route) { navBackStackEntry ->
+            val tab = NavRoutes.Planner.getArgTab(navBackStackEntry)?.let { PlannerTab.entries[it] } ?: PlannerTab.TODAY
+
             PlannerScreen(
                 dbManager,
                 tagsFilter,
@@ -126,7 +126,7 @@ fun NavigationGraph(
                 { NavRoutes.TaskEdit.navHere(navController, null) },
                 { NavRoutes.TaskDetails.navHere(navController, it) },
                 { NavRoutes.Settings.navHere(navController) },
-                initialTab = if (openPlannerToday) PlannerTab.TODAY else PlannerTab.TODAY
+                initialTab = if (openPlannerToday) PlannerTab.TODAY else tab
             )
         }
 

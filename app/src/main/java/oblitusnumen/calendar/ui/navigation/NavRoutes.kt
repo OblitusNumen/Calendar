@@ -10,12 +10,25 @@ import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
 import oblitusnumen.calendar.R
 import oblitusnumen.calendar.ui.element.screen.MonthDate
+import oblitusnumen.calendar.ui.element.screen.PlannerTab
 import java.time.LocalDate
 
 sealed class NavRoutes(private val path: String, val route: String = path) {
     data object Dashboard : NavRoutes("dashboard")
     data object Calendar : NavRoutes("calendar")
-    data object Planner : NavRoutes("planner")
+    data object Planner : NavRoutes("planner", route = "planner/{tab}") {
+        private const val tab = "tab"
+
+        fun navHere(navController: NavController, tab: PlannerTab) {
+            navController.navigate(withArgs("${tab.ordinal}"))
+        }
+
+        fun getArgTab(navBackStackEntry: NavBackStackEntry): Int? {
+            val tabText = navBackStackEntry.arguments?.getString(tab)
+            val tab = tabText?.toIntOrNull() ?: return null
+            return if (tab < 0) null else tab
+        }
+    }
 
     data object Settings : NavRoutes("settings") {
         fun navHere(navController: NavController) {
