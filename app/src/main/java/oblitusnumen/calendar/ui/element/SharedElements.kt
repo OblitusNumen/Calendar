@@ -38,26 +38,23 @@ import oblitusnumen.calendar.implementation.bgColorToTextColor
 import oblitusnumen.calendar.implementation.data.DateOccurrence
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.Period
-import oblitusnumen.calendar.implementation.data.Period.Hour
-import oblitusnumen.calendar.implementation.data.Period.Minute
-import oblitusnumen.calendar.implementation.data.Period.Once
-import oblitusnumen.calendar.ui.formatDateTime
+import oblitusnumen.calendar.implementation.data.Period.*
 import oblitusnumen.calendar.implementation.data.tables.Date
 import oblitusnumen.calendar.implementation.data.tables.Tag
 import oblitusnumen.calendar.implementation.data.views.ViewEntryWithOptions
 import oblitusnumen.calendar.implementation.data.views.ViewTaskWithOptions
 import oblitusnumen.calendar.implementation.defaultZoneId
-import oblitusnumen.calendar.implementation.getZonedFromEpochSeconds
 import oblitusnumen.calendar.ui.PositionStatus
 import oblitusnumen.calendar.ui.element.screen.ExcludeOccurrenceDialog
 import oblitusnumen.calendar.ui.element.screen.OffsetType
 import oblitusnumen.calendar.ui.element.screen.PeriodType
 import oblitusnumen.calendar.ui.element.screen.TagFilterMenu
+import oblitusnumen.calendar.ui.formatDateTime
 import oblitusnumen.calendar.ui.navigation.NavRoutes
 import oblitusnumen.calendar.ui.theme.topBarColors
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import java.util.TimeZone
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -638,6 +635,7 @@ fun Entry(dbManager: DbManager, occurrence: DateOccurrence, openEntryInfo: () ->
                             val end = dur.addTo(occurrence.occurrenceZoned, 1)
                             "$start–${end.format(DateTimeFormatter.ofPattern("HH:mm"))}"
                         }
+
                         else -> start
                     }
                 },

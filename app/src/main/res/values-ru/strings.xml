@@ -127,7 +127,7 @@
     <string name="planner_tab_all">ВСЕ</string>
     <string name="planner_undo_today">Отменить сегодня</string>
     <string name="planner_done_today">Выполнено сегодня (%1$s)</string>
-    <string name="planner_schedule">Расписание</string>
+    <string name="planner_schedule">Запланировать</string>
     <string name="planner_deps_suffix">+%1$s зав.</string>
 
     <!-- Date screen -->
