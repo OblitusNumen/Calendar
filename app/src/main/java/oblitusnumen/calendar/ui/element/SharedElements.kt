@@ -1072,7 +1072,7 @@ fun BottomBar(navController: NavController) {
                         // reselecting the same item
                         launchSingleTop = true
                         // Restore state when reselecting a previously selected item
-                        restoreState = true
+                        restoreState = false
                     }
                 }
             )
