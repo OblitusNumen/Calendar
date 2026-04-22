@@ -23,6 +23,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringArrayResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -161,7 +162,7 @@ fun CalendarScreen(
                                     { openMonthAgenda(mon.year, mon.month.value) },
                                     Modifier.align(Alignment.CenterEnd)
                                 ) {
-                                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, "open month agenda")
+                                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, stringResource(R.string.cd_open_month_agenda))
                                 }
                             }
                         } else {
@@ -252,14 +253,14 @@ fun CalendarDrawer(
 ) {
     ModalDrawerSheet {
         Row(Modifier.padding(16.dp)) {
-            Text("Calendar", Modifier.align(Alignment.CenterVertically).weight(1f))
+            Text(stringResource(R.string.nav_calendar), Modifier.align(Alignment.CenterVertically).weight(1f))
             IconButton(onClick = closeDrawer) {
-                Icon(Icons.Filled.Close, contentDescription = "close drawer")
+                Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.cd_close_drawer))
             }
         }
 
         NavigationDrawerItem(
-            label = { Text(text = "Entries") },
+            label = { Text(text = stringResource(R.string.nav_entries)) },
             selected = false,
             onClick = {
                 openEntriesScreen()
@@ -274,7 +275,7 @@ fun CalendarDrawer(
         )
 
         NavigationDrawerItem(
-            label = { Text(text = "Tags") },
+            label = { Text(text = stringResource(R.string.nav_tags)) },
             selected = false,
             onClick = {
                 openTagsScreen()
@@ -289,7 +290,7 @@ fun CalendarDrawer(
         )
 
         NavigationDrawerItem(
-            label = { Text(text = "Settings") },
+            label = { Text(text = stringResource(R.string.nav_settings)) },
             selected = false,
             onClick = {
                 openSettings()
@@ -515,7 +516,7 @@ fun TagFilterMenu(dbManager: DbManager, chosenTags: List<Tag>, onClose: () -> Un
         onDismissRequest = onClose,
         dismissButton = {
             TextButton(onClick = onClose) {
-                Text("Cancel")
+                Text(stringResource(R.string.common_cancel))
             }
         },
         confirmButton = {
@@ -525,7 +526,7 @@ fun TagFilterMenu(dbManager: DbManager, chosenTags: List<Tag>, onClose: () -> Un
                     allTags[it]!!
                 })
             }) {
-                Text("OK")
+                Text(stringResource(R.string.common_ok))
             }
         },
         text = {
@@ -539,7 +540,7 @@ fun TagFilterMenu(dbManager: DbManager, chosenTags: List<Tag>, onClose: () -> Un
                     keyboardOptions = KeyboardOptions(
                         imeAction = ImeAction.Done
                     ),
-                    label = { Text("Tag name") }
+                    label = { Text(stringResource(R.string.tags_name_label)) }
                 )
 
                 FlowRow(

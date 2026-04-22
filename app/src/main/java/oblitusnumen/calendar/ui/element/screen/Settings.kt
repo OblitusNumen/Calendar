@@ -10,16 +10,21 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.outlined.Notifications
-import oblitusnumen.calendar.implementation.data.Period
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import android.app.Activity
+import oblitusnumen.calendar.implementation.LocaleHelper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import oblitusnumen.calendar.R
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.zipDirectoryToStream
+import oblitusnumen.calendar.ui.displayOffsetBefore
 import oblitusnumen.calendar.ui.element.BackPressButton
 import oblitusnumen.calendar.ui.element.ColorSelectButton
 import oblitusnumen.calendar.ui.element.IntTextField
@@ -30,12 +35,13 @@ import java.io.File
 
 @Composable
 fun SettingsScreen(dbManager: DbManager, backPress: () -> Unit) {
+    val context = LocalContext.current
     Scaffold(topBar = { SettingsTopBar(backPress) }) { paddingValues ->
         LazyColumn(contentPadding = paddingValues) {
             item {
                 Row(Modifier.padding(top = 8.dp, bottom = 4.dp)) {
                     Text(
-                        "Default entry color",
+                        stringResource(R.string.settings_default_entry_color),
                         Modifier.weight(1f).align(Alignment.CenterVertically),
                         style = MaterialTheme.typography.titleLarge
                     )
@@ -49,7 +55,7 @@ fun SettingsScreen(dbManager: DbManager, backPress: () -> Unit) {
             item {
                 Row(Modifier.padding(vertical = 8.dp)) {
                     Text(
-                        "Default tag color",
+                        stringResource(R.string.settings_default_tag_color),
                         Modifier.weight(1f).align(Alignment.CenterVertically),
                         style = MaterialTheme.typography.titleLarge
                     )
@@ -77,7 +83,7 @@ fun SettingsScreen(dbManager: DbManager, backPress: () -> Unit) {
                     }, { notificationChoose = false })
                 Column(Modifier.padding(vertical = 8.dp)) {
                     Text(
-                        "Default notifications",
+                        stringResource(R.string.settings_default_notifications),
                         style = MaterialTheme.typography.titleLarge
                     )
                     for (notification in notifications) {
@@ -95,8 +101,7 @@ fun SettingsScreen(dbManager: DbManager, backPress: () -> Unit) {
                             Text(
                                 modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp)
                                     .weight(1f),
-                                text = if (notification.first is Period.Once) "at event time"
-                                   else "${notification.first.count} ${notification.first.name}${if (notification.first.count != 1L) "s" else ""} before",
+                                text = notification.first.displayOffsetBefore(context),
                                 style = MaterialTheme.typography.bodyLarge
                             )
                             IconButton(
@@ -115,16 +120,19 @@ fun SettingsScreen(dbManager: DbManager, backPress: () -> Unit) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(Icons.Filled.Add, null, Modifier.padding(end = 8.dp))
-                        Text("Add notification", style = MaterialTheme.typography.bodyLarge)
+                        Text(stringResource(R.string.settings_add_notification), style = MaterialTheme.typography.bodyLarge)
                     }
                 }
+            }
+            item {
+                LanguageSetting()
             }
             item {
                 var hour by remember { mutableStateOf(dbManager.morningNotificationHour) }
                 var minute by remember { mutableStateOf(dbManager.morningNotificationMinute) }
                 Column(Modifier.padding(vertical = 8.dp)) {
                     Text(
-                        "Morning notification time",
+                        stringResource(R.string.settings_morning_notification_time),
                         style = MaterialTheme.typography.titleLarge
                     )
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -137,7 +145,7 @@ fun SettingsScreen(dbManager: DbManager, backPress: () -> Unit) {
                                     dbManager.tryScheduleMorningNotification()
                                 }
                             },
-                            label = { Text("Hour") },
+                            label = { Text(stringResource(R.string.settings_hour)) },
                             maxDigits = 2
                         )
                         Text(":", Modifier.padding(horizontal = 4.dp))
@@ -150,7 +158,7 @@ fun SettingsScreen(dbManager: DbManager, backPress: () -> Unit) {
                                     dbManager.tryScheduleMorningNotification()
                                 }
                             },
-                            label = { Text("Minute") },
+                            label = { Text(stringResource(R.string.settings_minute)) },
                             maxDigits = 2
                         )
                     }
@@ -211,14 +219,63 @@ fun SettingsScreen(dbManager: DbManager, backPress: () -> Unit) {
                         onClick = { saveLauncher.launch("backup.zip") },
                         modifier = Modifier.weight(1f).padding(horizontal = 2.dp)
                     ) {
-                        Text(text = "Export All Events")
+                        Text(text = stringResource(R.string.settings_export))
                     }
                     Button(
                         onClick = { restoreLauncher.launch(arrayOf("application/zip")) },
                         modifier = Modifier.weight(1f).padding(horizontal = 2.dp)
                     ) {
-                        Text(text = "Restore Events")
+                        Text(text = stringResource(R.string.settings_restore))
                     }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun LanguageSetting() {
+    val context = LocalContext.current
+    val options = listOf(
+        "" to stringResource(R.string.settings_language_system),
+        "en" to stringResource(R.string.settings_language_english),
+        "ru" to stringResource(R.string.settings_language_russian),
+    )
+    val selectedTag = LocaleHelper.getTag(context)
+    val selectedLabel = options.firstOrNull { it.first == selectedTag }?.second ?: options[0].second
+    var expanded by remember { mutableStateOf(false) }
+    Column(Modifier.padding(vertical = 8.dp)) {
+        Text(
+            stringResource(R.string.settings_language),
+            style = MaterialTheme.typography.titleLarge
+        )
+        ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = { expanded = it },
+        ) {
+            OutlinedTextField(
+                value = selectedLabel,
+                onValueChange = {},
+                readOnly = true,
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable)
+            )
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+            ) {
+                options.forEach { (tag, label) ->
+                    DropdownMenuItem(
+                        text = { Text(label) },
+                        onClick = {
+                            expanded = false
+                            if (tag != selectedTag) {
+                                LocaleHelper.setTag(context, tag)
+                                (context as? Activity)?.recreate()
+                            }
+                        }
+                    )
                 }
             }
         }
@@ -233,6 +290,6 @@ fun SettingsTopBar(backPress: () -> Unit) {
         colors = topBarColors(),
         scrollBehavior = scrollBehavior,
         navigationIcon = { BackPressButton(backPress) },
-        title = { Text("Settings", maxLines = 1) },
+        title = { Text(stringResource(R.string.settings_title), maxLines = 1) },
     )
 }

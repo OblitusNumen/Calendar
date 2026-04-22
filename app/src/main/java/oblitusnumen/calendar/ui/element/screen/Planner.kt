@@ -17,10 +17,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.koalaplot.core.util.ExperimentalKoalaPlotApi
 import kotlinx.coroutines.launch
+import oblitusnumen.calendar.R
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.tables.Date
 import oblitusnumen.calendar.implementation.data.tables.Tag
@@ -66,7 +69,7 @@ fun PlannerScreen(
             bottomBar = navBar,
             floatingActionButton = {
                 FloatingActionButton(onClick = openEditNewTask) {
-                    Icon(Icons.Filled.Add, "add task")
+                    Icon(Icons.Filled.Add, stringResource(R.string.cd_add_task))
                 }
             }
         ) { paddingValues ->
@@ -89,7 +92,13 @@ fun PlannerScreen(
                             },
                             text = {
                                 Text(
-                                    text = destination.name,
+                                    text = stringResource(when (destination) {
+                                        PlannerTab.TODAY -> R.string.planner_tab_today
+                                        PlannerTab.CURRENT -> R.string.planner_tab_current
+                                        PlannerTab.PAST -> R.string.planner_tab_past
+                                        PlannerTab.OVERDUE -> R.string.planner_tab_overdue
+                                        PlannerTab.ALL -> R.string.planner_tab_all
+                                    }),
                                     overflow = TextOverflow.Ellipsis,
                                     style = MaterialTheme.typography.titleSmall,
                                     maxLines = 1,
@@ -220,6 +229,7 @@ fun Task(
     onToggleDone: ((TaskLog, Boolean) -> Unit)? = null,
     onSchedulePortion: (() -> Unit)? = null,
 ) {
+    val context = LocalContext.current
     Column(
         Modifier.padding(2.dp).fillMaxWidth().defaultMinSize(minHeight = 64.dp)
             .background(
@@ -244,10 +254,10 @@ fun Task(
             )
 
             if (task.isDone)
-                Icon(Icons.Filled.Done, tint = Color.Green, contentDescription = "done")
+                Icon(Icons.Filled.Done, tint = Color.Green, contentDescription = stringResource(R.string.cd_done))
             else
                 Text(
-                    text = formatDateTime(task.deadlineTimestamp, task.timeZoneId),
+                    text = formatDateTime(context, task.deadlineTimestamp, task.timeZoneId),
                     modifier = Modifier.align(Alignment.CenterVertically),
                     color = if (task.isOverdue(now)) Color.Red else Color.Unspecified,
                     style = MaterialTheme.typography.bodyLarge,
@@ -262,7 +272,7 @@ fun Task(
 
             if (predTime > 0)
                 Text(
-                    text = "+${formatTime(predTime)} deps",
+                    text = stringResource(R.string.planner_deps_suffix, formatTime(context, predTime)),
                     modifier = Modifier.weight(1.0f).padding(horizontal = 8.dp)
                         .align(Alignment.CenterVertically),
                     style = MaterialTheme.typography.bodyLarge,
@@ -274,7 +284,7 @@ fun Task(
                 Spacer(Modifier.weight(1.0f))
 
             Text(
-                text = formatTime(task.timeRemaining),
+                text = formatTime(context, task.timeRemaining),
                 modifier = Modifier.align(Alignment.CenterVertically),
                 color = if (task.isOverdue(now)) Color.Red else Color.Unspecified,
                 style = MaterialTheme.typography.bodyLarge,
@@ -300,14 +310,14 @@ fun Task(
                         todayLog.timeConsumed >= todayLog.timePlanned && todayLog.timePlanned > 0
                     TextButton(onClick = { onToggleDone(todayLog, !isDoneToday) }) {
                         Text(
-                            if (isDoneToday) "Undo today"
-                            else "Done today (${formatTime(todayLog.timePlanned)})"
+                            if (isDoneToday) stringResource(R.string.planner_undo_today)
+                            else stringResource(R.string.planner_done_today, formatTime(context, todayLog.timePlanned))
                         )
                     }
                 }
                 if (onSchedulePortion != null) {
                     TextButton(onClick = onSchedulePortion) {
-                        Text("Schedule")
+                        Text(stringResource(R.string.planner_schedule))
                     }
                 }
             }
@@ -322,14 +332,14 @@ fun PlannerDrawer(
 ) {
     ModalDrawerSheet {
         Row(Modifier.padding(16.dp)) {
-            Text("Planner", Modifier.align(Alignment.CenterVertically).weight(1f))
+            Text(stringResource(R.string.planner_title), Modifier.align(Alignment.CenterVertically).weight(1f))
             IconButton(onClick = closeDrawer) {
-                Icon(Icons.Filled.Close, contentDescription = "close drawer")
+                Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.cd_close_drawer))
             }
         }
 
         NavigationDrawerItem(
-            label = { Text(text = "Settings") },
+            label = { Text(text = stringResource(R.string.nav_settings)) },
             selected = false,
             onClick = {
                 openSettings()

@@ -16,11 +16,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.github.skydoves.colorpicker.compose.HsvColorPicker
 import com.github.skydoves.colorpicker.compose.rememberColorPickerController
+import oblitusnumen.calendar.R
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.toColor
 import oblitusnumen.calendar.implementation.toInt
@@ -73,7 +75,7 @@ fun ColorPicker(initialColor: Color, allowCustomColor: Boolean, onColorPicked: (
                                 pickCustom = true
                             }
                             Text(
-                                "Custom colors",
+                                stringResource(R.string.color_picker_custom_colors),
                                 style = MaterialTheme.typography.bodyLarge,
                                 modifier = Modifier.padding(8.dp).align(Alignment.CenterVertically)
                             )
@@ -105,7 +107,7 @@ fun PickCustomColor(onColorPicked: (Color?) -> Unit, initialColor: Color) {
         onDismissRequest = { onColorPicked(null) },
         dismissButton = {
             TextButton(onClick = { onColorPicked(null) }) {
-                Text("Cancel")
+                Text(stringResource(R.string.common_cancel))
             }
         },
         confirmButton = {
@@ -113,7 +115,7 @@ fun PickCustomColor(onColorPicked: (Color?) -> Unit, initialColor: Color) {
                 if (!hasError.value)
                     onColorPicked(pickedColor.value)
             }) {
-                Text("OK")
+                Text(stringResource(R.string.common_ok))
             }
         },
         text = {
@@ -146,7 +148,7 @@ fun ColorTextField(
     var value: String by remember(pickedColor.value) { mutableStateOf(String.format("#%06X", pickedColor.toInt())) }
     OutlinedTextField(// FIXME: ui paddings
         modifier = Modifier.padding(horizontal = 8.dp),
-        label = { Text("Color") },
+        label = { Text(stringResource(R.string.color_picker_color_label)) },
         value = value,
         onValueChange = {
             if (it.startsWith("#") && it.length <= 7) {

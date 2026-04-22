@@ -19,6 +19,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -31,6 +33,7 @@ import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import kotlinx.coroutines.launch
+import oblitusnumen.calendar.R
 import oblitusnumen.calendar.implementation.bgColorToTextColor
 import oblitusnumen.calendar.implementation.data.DateOccurrence
 import oblitusnumen.calendar.implementation.data.DbManager
@@ -84,14 +87,14 @@ fun SearchTopBar(
                 if (searchQuery.value.isBlank()) {
                     Icon(
                         Icons.Filled.Search,
-                        contentDescription = "filter",
+                        contentDescription = stringResource(R.string.cd_filter),
                         Modifier.size(40.dp),
                         MaterialTheme.colorScheme.onSurface.copy(alpha = .5f)
                     )
                 } else {
                     Icon(
                         Icons.Filled.Clear,
-                        contentDescription = "filter",
+                        contentDescription = stringResource(R.string.cd_filter),
                         Modifier.size(40.dp).clickable { searchQuery.value = "" },
                         MaterialTheme.colorScheme.onSurface.copy(alpha = .5f)
                     )
@@ -130,7 +133,7 @@ fun NotificationAddMenu(onConfirm: (Period, Boolean) -> Unit, onDismiss: () -> U
         onDismissRequest = onDismiss,
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.common_cancel))
             }
         },
         confirmButton = {
@@ -154,7 +157,7 @@ fun NotificationAddMenu(onConfirm: (Period, Boolean) -> Unit, onDismiss: () -> U
                     !silent
                 )
             }) {
-                Text("OK")
+                Text(stringResource(R.string.common_ok))
             }
         },
         text = {
@@ -162,7 +165,7 @@ fun NotificationAddMenu(onConfirm: (Period, Boolean) -> Unit, onDismiss: () -> U
                 OffsetSelector(OffsetType(Once()), initialCount, { selectedOffsetType = it }, { offsetCount = it })
 
                 Row {
-                    Text("silent")
+                    Text(stringResource(R.string.shared_silent))
                     Switch(silent, onCheckedChange = { silent = it })
                 }
             }
@@ -212,14 +215,16 @@ fun PeriodSelector(
                 keyboardType = KeyboardType.Number,
                 imeAction = ImeAction.Done
             ),
-            label = { Text("Count") }
+            label = { Text(stringResource(R.string.shared_count_label)) }
         )
 
+        val context = LocalContext.current
         materialSpinner(
-            "Type", PeriodType.getAll(),
+            stringResource(R.string.shared_type_label), PeriodType.getAll(),
             onSelectPeriodType,
             selectedPeriodType,
-            Modifier.padding(horizontal = 8.dp).width(150.dp)
+            Modifier.padding(horizontal = 8.dp).width(150.dp),
+            labelFor = { it.displayName(context) }
         )
 
         LaunchedEffect(selectedPeriodType) {
@@ -274,14 +279,16 @@ fun OffsetSelector(
                 keyboardType = KeyboardType.Number,
                 imeAction = ImeAction.Done
             ),
-            label = { Text("Count") }
+            label = { Text(stringResource(R.string.shared_count_label)) }
         )
 
+        val context = LocalContext.current
         materialSpinner(
-            "Type", OffsetType.getAll(),
+            stringResource(R.string.shared_type_label), OffsetType.getAll(),
             onSelectOffsetType,
             selectedOffsetType,
-            Modifier.padding(horizontal = 8.dp).width(150.dp)
+            Modifier.padding(horizontal = 8.dp).width(150.dp),
+            labelFor = { it.displayName(context) }
         )
 
         LaunchedEffect(selectedOffsetType) {
@@ -357,7 +364,7 @@ fun TimeZoneSelector(
     selectedTimeZoneId: String,
     onTimeZoneSelected: (String) -> Unit,
     modifier: Modifier = Modifier,
-    label: @Composable () -> Unit = { Text("Time zone") }
+    label: @Composable () -> Unit = { Text(stringResource(R.string.timezone_label)) }
 ) {
     val selectedTimeZone = remember(selectedTimeZoneId) {
         TimeZone.getTimeZone(selectedTimeZoneId.ifBlank { TimeZone.getDefault().id })
@@ -447,7 +454,7 @@ private fun TimeZoneSelectionDialog(
                     .padding(24.dp)
             ) {
                 Text(
-                    text = "Select time zone",
+                    text = stringResource(R.string.timezone_select_title),
                     style = MaterialTheme.typography.headlineSmall
                 )
 
@@ -456,7 +463,7 @@ private fun TimeZoneSelectionDialog(
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    label = { Text("Search (e.g. Europe, America, GMT)") },
+                    label = { Text(stringResource(R.string.timezone_search_hint)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
@@ -515,7 +522,7 @@ private fun TimeZoneSelectionDialog(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = "No time zones found",
+                                    text = stringResource(R.string.timezone_none_found),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -530,7 +537,7 @@ private fun TimeZoneSelectionDialog(
                     onClick = onDismiss,
                     modifier = Modifier.align(Alignment.End)
                 ) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.common_cancel))
                 }
             }
         }
@@ -546,12 +553,13 @@ fun SelectableEntry(
     onLongClick: () -> Unit,
     onClick: () -> Unit,
 ) { //fixme Entry can not be created without DB
+    val context = LocalContext.current
     var nextDateText by remember {
         val nextDateText =
             when (val nextDate = entryView.nextDate) {
                 null -> ""
-                -1L -> "Ended"
-                else -> formatDateTime(nextDate, defaultZoneId())
+                -1L -> context.getString(R.string.shared_ended)
+                else -> formatDateTime(context, nextDate, defaultZoneId())
             }
         mutableStateOf(nextDateText)
     }
@@ -679,7 +687,7 @@ fun ColorSelectButton(
 @Composable
 fun NewEntryFunctionButton(openEditNewEntry: () -> Unit) {
     FloatingActionButton(onClick = openEditNewEntry) {
-        Icon(Icons.Filled.Add, "add event")
+        Icon(Icons.Filled.Add, stringResource(R.string.cd_add_event))
     }
 }
 
@@ -738,7 +746,7 @@ fun TopBarTagFilterTitle(dbManager: DbManager, tagsFilter: List<Tag>, tagsFilter
 
         Icon(
             Icons.Filled.FilterList,
-            contentDescription = "filter",
+            contentDescription = stringResource(R.string.cd_filter),
             Modifier.size(40.dp),
             MaterialTheme.colorScheme.onSurface.copy(alpha = .5f)
         )
@@ -844,7 +852,7 @@ fun Link(task: ViewTaskWithOptions, isValid: Boolean, onRemove: () -> Unit) {
         if (task.isDone) {
             Icon(
                 Icons.Filled.Done,
-                contentDescription = "done",
+                contentDescription = stringResource(R.string.cd_done),
                 Modifier.align(Alignment.CenterVertically),
                 tint = Color.Green
             )
@@ -852,7 +860,7 @@ fun Link(task: ViewTaskWithOptions, isValid: Boolean, onRemove: () -> Unit) {
             Text(
                 text = "${
                     task.timeRemaining
-                    // FIXME: 
+                    // FIXME:
 //                    task.countPredecessorsTimeEstimate(
 //                        allTasks.associateBy { it.taskId!! },
 //                        predecessorLinks
@@ -867,7 +875,7 @@ fun Link(task: ViewTaskWithOptions, isValid: Boolean, onRemove: () -> Unit) {
         }
 
         IconButton(onClick = onRemove) {
-            Icon(Icons.Filled.Remove, contentDescription = "remove")
+            Icon(Icons.Filled.Remove, contentDescription = stringResource(R.string.cd_remove))
         }
     }
 }
@@ -885,8 +893,8 @@ fun ChooseTasksDialog(
     AlertDialog(
         title = { Text(title) },
         onDismissRequest = onClose,
-        dismissButton = { TextButton(onClick = onClose) { Text("Cancel") } },
-        confirmButton = { TextButton(onClick = { onChoose(chosenTasks) }) { Text("OK") } },
+        dismissButton = { TextButton(onClick = onClose) { Text(stringResource(R.string.common_cancel)) } },
+        confirmButton = { TextButton(onClick = { onChoose(chosenTasks) }) { Text(stringResource(R.string.common_ok)) } },
         text = {
             LazyColumn {
                 items(tasksToChoose, key = { "choose$it" }) { task ->
@@ -924,7 +932,7 @@ fun SelectableTask(task: ViewTaskWithOptions, checked: Boolean, onClick: () -> U
         if (task.isDone) {
             Icon(
                 Icons.Filled.Done,
-                contentDescription = "done",
+                contentDescription = stringResource(R.string.cd_done),
                 Modifier.align(Alignment.CenterVertically),
                 tint = Color.Green
             )
@@ -932,7 +940,7 @@ fun SelectableTask(task: ViewTaskWithOptions, checked: Boolean, onClick: () -> U
             Text(
                 text = "${
                     task.timeRemaining
-                    // FIXME: 
+                    // FIXME:
 //                    task.countPredecessorsTimeEstimate(
 //                        allTasks.associateBy { it.taskId!! },
 //                        predecessorLinks
@@ -974,7 +982,7 @@ fun ActionButtonWithScroll(onClick: () -> Unit, scrollTo: suspend (LocalDate) ->
         }
 
         FloatingActionButton(onClick) {
-            Icon(Icons.Filled.Add, "add event")
+            Icon(Icons.Filled.Add, stringResource(R.string.cd_add_event))
         }
     }
 }
@@ -988,7 +996,7 @@ fun ScheduleDialog(dbManager: DbManager, entry: ViewEntryWithOptions, onClose: (
     if (dialogShown)
         AlertDialog(onDismissRequest = onClose, dismissButton = {
             TextButton(onClick = onClose) {
-                Text("Cancel")
+                Text(stringResource(R.string.common_cancel))
             }
         }, confirmButton = {
             TextButton(onClick = {
@@ -1005,11 +1013,11 @@ fun ScheduleDialog(dbManager: DbManager, entry: ViewEntryWithOptions, onClose: (
                     onSchedule()
                 })
             }) {
-                Text("OK")
+                Text(stringResource(R.string.common_ok))
             }
         }, text = {
             Column {
-                Text("Schedule ${entry.displayName} event?")
+                Text(stringResource(R.string.shared_schedule_event, entry.displayName))
             }
         })
 }
@@ -1045,8 +1053,8 @@ fun BottomBar(navController: NavController) {
         val currentDestination = navBackStackEntry?.destination
         NavRoutes.getTopLevelRoutes().forEach { topLevelRoute ->
             NavigationBarItem(
-                icon = { Icon(topLevelRoute.icon, contentDescription = topLevelRoute.name) },
-                label = { Text(topLevelRoute.name) },
+                icon = { Icon(topLevelRoute.icon, contentDescription = stringResource(topLevelRoute.nameRes)) },
+                label = { Text(stringResource(topLevelRoute.nameRes)) },
                 selected = currentDestination?.route == topLevelRoute.route.route ||
                         (topLevelRoute.route.route == NavRoutes.Calendar.route && currentDestination?.route == NavRoutes.ThatDayDetails.route),
                 onClick = {

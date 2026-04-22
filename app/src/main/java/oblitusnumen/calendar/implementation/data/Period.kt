@@ -128,18 +128,6 @@ sealed class Period : Comparable<Period> {
         }
     }
 
-    // TODO: localization
-    val name: String = when (this) {
-        is Once -> "time"
-        is Minute -> "minute"
-        is Hour -> "hour"
-        is Day -> "day"
-        is Week -> "week"
-        is Weekday -> "week"
-        is Month -> "month"
-        is Year -> "year"
-    }
-
     open val count = 1L
     abstract fun addTo(start: ZonedDateTime, count: Long): ZonedDateTime
     abstract fun secondsApproximation(): Long

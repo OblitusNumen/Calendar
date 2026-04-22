@@ -22,9 +22,12 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import oblitusnumen.calendar.R
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.tables.Tag
 import oblitusnumen.calendar.implementation.log
@@ -88,7 +91,7 @@ fun TagsScreen(
                     )
                     Text(
                         modifier = Modifier.align(Alignment.CenterVertically),
-                        text = tagsWithEntryCount[tag].toString() + " event",
+                        text = pluralStringResource(R.plurals.tags_event_count, tagsWithEntryCount[tag] ?: 0, tagsWithEntryCount[tag] ?: 0),
                         style = MaterialTheme.typography.bodyLarge,
                     )
                     IconButton(modifier = Modifier.size(48.dp).align(Alignment.CenterVertically), onClick = {
@@ -119,14 +122,16 @@ fun EditTag(
     onClose: () -> Unit
 ) {
     var hasError: Boolean by remember { mutableStateOf(tag.name == "") }
-    var error = "Enter tag name"
+    val enterTagNameMsg = stringResource(R.string.tags_enter_tag_name)
+    val nameExistsMsg = stringResource(R.string.tags_name_exists)
+    var error by remember { mutableStateOf(enterTagNameMsg) }
     var name by remember { mutableStateOf(tag.name) }
     var color by remember { mutableStateOf(tag.colorOrDefault(dbManager)) }
     AlertDialog(
         onDismissRequest = onClose,
         dismissButton = {
             TextButton(onClick = onClose) {
-                Text("Cancel")
+                Text(stringResource(R.string.common_cancel))
             }
         },
         confirmButton = {
@@ -147,7 +152,7 @@ fun EditTag(
                     onClose()
                 }
             }) {
-                Text("OK")
+                Text(stringResource(R.string.common_ok))
             }
         },
         text = {
@@ -165,10 +170,10 @@ fun EditTag(
                         value = name, onValueChange = {
                             if (it.isEmpty()) {
                                 hasError = true
-                                error = "Enter tag name"
+                                error = enterTagNameMsg
                             } else if (tagNames.contains(it) && tag.name != it) {
                                 hasError = true
-                                error = "Tag with that name already exists"
+                                error = nameExistsMsg
                             } else {
                                 hasError = false
                             }
@@ -178,7 +183,7 @@ fun EditTag(
                         keyboardOptions = KeyboardOptions(
                             imeAction = ImeAction.Done
                         ),
-                        label = { Text("Tag name") }
+                        label = { Text(stringResource(R.string.tags_name_label)) }
                     )
                     var colorPickerShown by remember { mutableStateOf(false) }
                     Box(
@@ -205,6 +210,6 @@ fun EditTag(
 @Composable
 fun TagsActionButton(openNewTagDialog: () -> Unit) {
     FloatingActionButton(openNewTagDialog) {
-        Icon(Icons.Filled.Add, "add tag")
+        Icon(Icons.Filled.Add, stringResource(R.string.cd_add_tag))
     }
 }

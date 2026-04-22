@@ -15,13 +15,6 @@
         <item>Dec</item>
     </string-array>
     <string-array name="weekdayNames">
-<!--        <item>M</item>-->
-<!--        <item>火</item>-->
-<!--        <item>水</item>-->
-<!--        <item>木</item>-->
-<!--        <item>金</item>-->
-<!--        <item>土</item>-->
-<!--        <item>日</item>-->
         <item>Mon</item>
         <item>Tue</item>
         <item>Wed</item>
@@ -30,4 +23,231 @@
         <item>Sat</item>
         <item>Sun</item>
     </string-array>
+
+    <!-- Common -->
+    <string name="common_ok">OK</string>
+    <string name="common_cancel">Cancel</string>
+
+    <!-- Navigation / drawers -->
+    <string name="nav_dashboard">Dashboard</string>
+    <string name="nav_calendar">Calendar</string>
+    <string name="nav_planner">Planner</string>
+    <string name="nav_entries">Entries</string>
+    <string name="nav_tags">Tags</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- Dashboard -->
+    <string name="dashboard_title">Dashboard</string>
+    <string name="dashboard_today_events">Today\'s events</string>
+    <string name="dashboard_no_events_today">No events today</string>
+    <string name="dashboard_today_tasks">Today\'s tasks</string>
+    <string name="dashboard_no_tasks_today">No tasks scheduled for today</string>
+    <string name="dashboard_this_week">This week</string>
+    <string name="dashboard_this_month">This month</string>
+    <string name="dashboard_good_morning">Good morning</string>
+    <string name="dashboard_good_afternoon">Good afternoon</string>
+    <string name="dashboard_good_evening">Good evening</string>
+    <string name="dashboard_stat_events_today">Events today</string>
+    <string name="dashboard_stat_active_tasks">Active tasks</string>
+    <string name="dashboard_stat_work_left">Work left</string>
+    <string name="dashboard_stat_overdue">Overdue</string>
+
+    <!-- Weekday short buttons (used in period selector) -->
+    <string name="weekday_mon">Mon</string>
+    <string name="weekday_tue">Tue</string>
+    <string name="weekday_wed">Wed</string>
+    <string name="weekday_thu">Thu</string>
+    <string name="weekday_fri">Fri</string>
+    <string name="weekday_sat">Sat</string>
+    <string name="weekday_sun">Sun</string>
+
+    <!-- Edit Entry -->
+    <string name="edit_entry_title">Edit event</string>
+    <string name="edit_entry_name_hint">Enter event name</string>
+    <string name="edit_entry_description_hint">Enter description</string>
+    <string name="edit_entry_choose_tags">Choose tags...</string>
+    <string name="edit_entry_add_date">Add date...</string>
+    <string name="edit_entry_add_notification">Add notification</string>
+    <string name="edit_entry_add_exception">Add exception...</string>
+    <string name="edit_entry_tag_name_hint">Tag name</string>
+    <string name="edit_entry_occurrences_label">Occurrences</string>
+    <string name="edit_entry_endless">Endless</string>
+    <string name="edit_entry_end_date_label">End date</string>
+    <string name="edit_entry_end_time_label">End time</string>
+    <string name="edit_entry_end_time_none">no end</string>
+    <string name="edit_entry_duration_no_end_time">no duration</string>
+    <string name="edit_entry_duration_ends">ends %1$s</string>
+    <string name="edit_entry_duration_for">for %1$s</string>
+    <string name="edit_entry_period_from">from %1$s</string>
+    <string name="edit_entry_period_every">every %1$s</string>
+    <string name="edit_entry_period_until">until %1$s</string>
+    <string name="edit_entry_period_except">except %1$s</string>
+
+    <!-- Edit Task -->
+    <string name="edit_task_title">Edit task</string>
+    <string name="edit_task_name_hint">Enter task name</string>
+    <string name="edit_task_description_hint">Enter description</string>
+    <string name="edit_task_choose_tags">Choose tags...</string>
+    <string name="edit_task_available_now">Available now</string>
+    <string name="edit_task_available_after">Available after </string>
+    <string name="edit_task_deadline_at">Deadline at </string>
+    <string name="edit_task_time_elapsed">Time elapsed</string>
+    <string name="edit_task_time_remaining">Time remaining</string>
+    <string name="edit_task_unit_hour">h</string>
+    <string name="edit_task_unit_minute">m</string>
+    <string name="edit_task_predecessors">Predecessors</string>
+    <string name="edit_task_add_predecessor">+ Add predecessor</string>
+    <string name="edit_task_add_predecessors">Add predecessors</string>
+    <string name="edit_task_successors">Successors</string>
+    <string name="edit_task_add_successor">+ Add successor</string>
+    <string name="edit_task_add_successors">Add successors</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_default_entry_color">Default entry color</string>
+    <string name="settings_default_tag_color">Default tag color</string>
+    <string name="settings_default_notifications">Default notifications</string>
+    <string name="settings_add_notification">Add notification</string>
+    <string name="settings_morning_notification_time">Morning notification time</string>
+    <string name="settings_hour">Hour</string>
+    <string name="settings_minute">Minute</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_language_system">System default</string>
+    <string name="settings_language_english">English</string>
+    <string name="settings_language_russian">Русский</string>
+    <string name="settings_export">Export All Events</string>
+    <string name="settings_restore">Restore Events</string>
+
+    <!-- Planner -->
+    <string name="planner_title">Planner</string>
+    <string name="planner_tab_today">TODAY</string>
+    <string name="planner_tab_current">CURRENT</string>
+    <string name="planner_tab_past">PAST</string>
+    <string name="planner_tab_overdue">OVERDUE</string>
+    <string name="planner_tab_all">ALL</string>
+    <string name="planner_undo_today">Undo today</string>
+    <string name="planner_done_today">Done today (%1$s)</string>
+    <string name="planner_schedule">Schedule</string>
+    <string name="planner_deps_suffix">+%1$s deps</string>
+
+    <!-- Date screen -->
+    <string name="date_screen_title">Date %1$s</string>
+    <string name="date_screen_exclude_occurrence">Exclude %1$s from %2$s</string>
+
+    <!-- Details Entry -->
+    <string name="details_entry_description">Description</string>
+    <string name="details_entry_no_duration">no duration</string>
+
+    <!-- Task details -->
+    <string name="task_details_description">Description</string>
+    <string name="task_details_available_now">Available now</string>
+    <string name="task_details_available_from">Available from %1$s</string>
+    <string name="task_details_deadline">Deadline: %1$s</string>
+    <string name="task_details_done">Done</string>
+    <string name="task_details_time_elapsed">Time elapsed</string>
+    <string name="task_details_time_remaining">Time remaining</string>
+    <string name="task_details_pred_work">Pred. work</string>
+    <string name="task_details_dependencies">Dependencies</string>
+    <string name="task_details_successors">Successors</string>
+
+    <!-- Agenda -->
+    <string name="agenda_no_events">No events</string>
+    <string name="agenda_today">Today</string>
+    <string name="agenda_tomorrow">Tomorrow</string>
+    <string name="agenda_yesterday">Yesterday</string>
+
+    <!-- Tags screens -->
+    <string name="tags_enter_tag_name">Enter tag name</string>
+    <string name="tags_name_exists">Tag with that name already exists</string>
+    <string name="tags_name_label">Tag name</string>
+    <string name="tags_events_associated">%1$d events are associated with this tag.</string>
+    <string name="tags_delete_tag_title">Delete tag %1$s?</string>
+    <string name="tags_selected_count">%1$d/%2$d selected</string>
+
+    <plurals name="tags_event_count">
+        <item quantity="one">%d event</item>
+        <item quantity="other">%d events</item>
+    </plurals>
+
+    <!-- Color picker -->
+    <string name="color_picker_custom_colors">Custom colors</string>
+    <string name="color_picker_color_label">Color</string>
+
+    <!-- Time zone -->
+    <string name="timezone_label">Time zone</string>
+    <string name="timezone_select_title">Select time zone</string>
+    <string name="timezone_search_hint">Search (e.g. Europe, America, GMT)</string>
+    <string name="timezone_none_found">No time zones found</string>
+
+    <!-- Shared -->
+    <string name="shared_silent">silent</string>
+    <string name="shared_ended">Ended</string>
+    <string name="shared_count_label">Count</string>
+    <string name="shared_type_label">Type</string>
+    <string name="shared_schedule_event">Schedule %1$s event?</string>
+
+    <!-- Content descriptions -->
+    <string name="cd_add_entry">add entry</string>
+    <string name="cd_add_task">add task</string>
+    <string name="cd_add_tag">add tag</string>
+    <string name="cd_add_event">add event</string>
+    <string name="cd_add_events_to_tag">add events to tag</string>
+    <string name="cd_close_drawer">close drawer</string>
+    <string name="cd_open_month_agenda">open month agenda</string>
+    <string name="cd_select_date">Select date</string>
+    <string name="cd_filter">filter</string>
+    <string name="cd_done">done</string>
+    <string name="cd_remove">remove</string>
+    <string name="cd_tags">Tags</string>
+
+    <!-- Notifications -->
+    <string name="notification_channel_normal">Normal</string>
+    <string name="notification_channel_silent">Silent</string>
+    <string name="notification_channel_morning">Morning tasks</string>
+    <string name="notification_today_tasks_title">Today\'s tasks: %1$d</string>
+    <string name="notification_tap_to_view">Tap to view</string>
+    <string name="notification_upcoming_event">Upcoming event in %1$s\n(at %2$s)</string>
+
+    <!-- Toasts -->
+    <string name="toast_restore_finished">Restore finished</string>
+
+    <!-- Period unit singular labels (used in dropdowns and type selection) -->
+    <string name="period_unit_at_time">at time</string>
+    <string name="period_unit_once">once</string>
+    <string name="period_unit_minute">minute</string>
+    <string name="period_unit_hour">hour</string>
+    <string name="period_unit_day">day</string>
+    <string name="period_unit_week">week</string>
+    <string name="period_unit_month">month</string>
+    <string name="period_unit_year">year</string>
+
+    <!-- Period unit pluralized count phrases (e.g. "5 minutes") -->
+    <plurals name="period_minute_count">
+        <item quantity="one">%d minute</item>
+        <item quantity="other">%d minutes</item>
+    </plurals>
+    <plurals name="period_hour_count">
+        <item quantity="one">%d hour</item>
+        <item quantity="other">%d hours</item>
+    </plurals>
+    <plurals name="period_day_count">
+        <item quantity="one">%d day</item>
+        <item quantity="other">%d days</item>
+    </plurals>
+    <plurals name="period_week_count">
+        <item quantity="one">%d week</item>
+        <item quantity="other">%d weeks</item>
+    </plurals>
+    <plurals name="period_month_count">
+        <item quantity="one">%d month</item>
+        <item quantity="other">%d months</item>
+    </plurals>
+    <plurals name="period_year_count">
+        <item quantity="one">%d year</item>
+        <item quantity="other">%d years</item>
+    </plurals>
+
+    <!-- Period offset phrases -->
+    <string name="period_at_event_time">at event time</string>
+    <string name="period_offset_before">%1$s before</string>
 </resources>

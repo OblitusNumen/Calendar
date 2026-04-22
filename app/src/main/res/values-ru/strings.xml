@@ -1,0 +1,267 @@
+<resources>
+    <string name="app_name">Календарь</string>
+    <string-array name="monthNames">
+        <item>Янв</item>
+        <item>Фев</item>
+        <item>Мар</item>
+        <item>Апр</item>
+        <item>Май</item>
+        <item>Июн</item>
+        <item>Июл</item>
+        <item>Авг</item>
+        <item>Сен</item>
+        <item>Окт</item>
+        <item>Ноя</item>
+        <item>Дек</item>
+    </string-array>
+    <string-array name="weekdayNames">
+        <item>Пн</item>
+        <item>Вт</item>
+        <item>Ср</item>
+        <item>Чт</item>
+        <item>Пт</item>
+        <item>Сб</item>
+        <item>Вс</item>
+    </string-array>
+
+    <!-- Common -->
+    <string name="common_ok">OK</string>
+    <string name="common_cancel">Отмена</string>
+
+    <!-- Navigation / drawers -->
+    <string name="nav_dashboard">Главная</string>
+    <string name="nav_calendar">Календарь</string>
+    <string name="nav_planner">Планировщик</string>
+    <string name="nav_entries">Записи</string>
+    <string name="nav_tags">Метки</string>
+    <string name="nav_settings">Настройки</string>
+
+    <!-- Dashboard -->
+    <string name="dashboard_title">Главная</string>
+    <string name="dashboard_today_events">Сегодняшние события</string>
+    <string name="dashboard_no_events_today">Нет событий на сегодня</string>
+    <string name="dashboard_today_tasks">Сегодняшние задачи</string>
+    <string name="dashboard_no_tasks_today">На сегодня задач не запланировано</string>
+    <string name="dashboard_this_week">На этой неделе</string>
+    <string name="dashboard_this_month">В этом месяце</string>
+    <string name="dashboard_good_morning">Доброе утро</string>
+    <string name="dashboard_good_afternoon">Добрый день</string>
+    <string name="dashboard_good_evening">Добрый вечер</string>
+    <string name="dashboard_stat_events_today">Событий сегодня</string>
+    <string name="dashboard_stat_active_tasks">Активные задачи</string>
+    <string name="dashboard_stat_work_left">Осталось работы</string>
+    <string name="dashboard_stat_overdue">Просрочено</string>
+
+    <!-- Weekday short buttons (used in period selector) -->
+    <string name="weekday_mon">Пн</string>
+    <string name="weekday_tue">Вт</string>
+    <string name="weekday_wed">Ср</string>
+    <string name="weekday_thu">Чт</string>
+    <string name="weekday_fri">Пт</string>
+    <string name="weekday_sat">Сб</string>
+    <string name="weekday_sun">Вс</string>
+
+    <!-- Edit Entry -->
+    <string name="edit_entry_title">Редактировать событие</string>
+    <string name="edit_entry_name_hint">Введите название события</string>
+    <string name="edit_entry_description_hint">Введите описание</string>
+    <string name="edit_entry_choose_tags">Выберите метки...</string>
+    <string name="edit_entry_add_date">Добавить дату...</string>
+    <string name="edit_entry_add_notification">Добавить уведомление</string>
+    <string name="edit_entry_add_exception">Добавить исключение...</string>
+    <string name="edit_entry_tag_name_hint">Название метки</string>
+    <string name="edit_entry_occurrences_label">Повторения</string>
+    <string name="edit_entry_endless">Бесконечно</string>
+    <string name="edit_entry_end_date_label">Дата окончания</string>
+    <string name="edit_entry_end_time_label">Время окончания</string>
+    <string name="edit_entry_end_time_none">без окончания</string>
+    <string name="edit_entry_duration_no_end_time">без длительности</string>
+    <string name="edit_entry_duration_ends">заканчивается %1$s</string>
+    <string name="edit_entry_duration_for">на %1$s</string>
+    <string name="edit_entry_period_from">с %1$s</string>
+    <string name="edit_entry_period_every">каждые %1$s</string>
+    <string name="edit_entry_period_until">до %1$s</string>
+    <string name="edit_entry_period_except">кроме %1$s</string>
+
+    <!-- Edit Task -->
+    <string name="edit_task_title">Редактировать задачу</string>
+    <string name="edit_task_name_hint">Введите название задачи</string>
+    <string name="edit_task_description_hint">Введите описание</string>
+    <string name="edit_task_choose_tags">Выберите метки...</string>
+    <string name="edit_task_available_now">Доступна сейчас</string>
+    <string name="edit_task_available_after">Доступна после </string>
+    <string name="edit_task_deadline_at">Срок до </string>
+    <string name="edit_task_time_elapsed">Затрачено времени</string>
+    <string name="edit_task_time_remaining">Осталось времени</string>
+    <string name="edit_task_unit_hour">ч</string>
+    <string name="edit_task_unit_minute">м</string>
+    <string name="edit_task_predecessors">Предшественники</string>
+    <string name="edit_task_add_predecessor">+ Добавить предшественника</string>
+    <string name="edit_task_add_predecessors">Добавить предшественников</string>
+    <string name="edit_task_successors">Последователи</string>
+    <string name="edit_task_add_successor">+ Добавить последователя</string>
+    <string name="edit_task_add_successors">Добавить последователей</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Настройки</string>
+    <string name="settings_default_entry_color">Цвет записи по умолчанию</string>
+    <string name="settings_default_tag_color">Цвет метки по умолчанию</string>
+    <string name="settings_default_notifications">Уведомления по умолчанию</string>
+    <string name="settings_add_notification">Добавить уведомление</string>
+    <string name="settings_morning_notification_time">Время утреннего уведомления</string>
+    <string name="settings_hour">Час</string>
+    <string name="settings_minute">Минута</string>
+    <string name="settings_language">Язык</string>
+    <string name="settings_language_system">Системный</string>
+    <string name="settings_language_english">English</string>
+    <string name="settings_language_russian">Русский</string>
+    <string name="settings_export">Экспортировать все события</string>
+    <string name="settings_restore">Восстановить события</string>
+
+    <!-- Planner -->
+    <string name="planner_title">Планировщик</string>
+    <string name="planner_tab_today">СЕГОДНЯ</string>
+    <string name="planner_tab_current">ТЕКУЩИЕ</string>
+    <string name="planner_tab_past">ПРОШЛЫЕ</string>
+    <string name="planner_tab_overdue">ПРОСРОЧЕНО</string>
+    <string name="planner_tab_all">ВСЕ</string>
+    <string name="planner_undo_today">Отменить сегодня</string>
+    <string name="planner_done_today">Выполнено сегодня (%1$s)</string>
+    <string name="planner_schedule">Расписание</string>
+    <string name="planner_deps_suffix">+%1$s зав.</string>
+
+    <!-- Date screen -->
+    <string name="date_screen_title">Дата %1$s</string>
+    <string name="date_screen_exclude_occurrence">Исключить %1$s из %2$s</string>
+
+    <!-- Details Entry -->
+    <string name="details_entry_description">Описание</string>
+    <string name="details_entry_no_duration">без длительности</string>
+
+    <!-- Task details -->
+    <string name="task_details_description">Описание</string>
+    <string name="task_details_available_now">Доступна сейчас</string>
+    <string name="task_details_available_from">Доступна с %1$s</string>
+    <string name="task_details_deadline">Срок: %1$s</string>
+    <string name="task_details_done">Выполнено</string>
+    <string name="task_details_time_elapsed">Затрачено времени</string>
+    <string name="task_details_time_remaining">Осталось времени</string>
+    <string name="task_details_pred_work">Работа предш.</string>
+    <string name="task_details_dependencies">Зависимости</string>
+    <string name="task_details_successors">Последователи</string>
+
+    <!-- Agenda -->
+    <string name="agenda_no_events">Нет событий</string>
+    <string name="agenda_today">Сегодня</string>
+    <string name="agenda_tomorrow">Завтра</string>
+    <string name="agenda_yesterday">Вчера</string>
+
+    <!-- Tags screens -->
+    <string name="tags_enter_tag_name">Введите название метки</string>
+    <string name="tags_name_exists">Метка с таким названием уже существует</string>
+    <string name="tags_name_label">Название метки</string>
+    <string name="tags_events_associated">С этой меткой связано %1$d событий.</string>
+    <string name="tags_delete_tag_title">Удалить метку %1$s?</string>
+    <string name="tags_selected_count">Выбрано %1$d/%2$d</string>
+
+    <plurals name="tags_event_count">
+        <item quantity="one">%d событие</item>
+        <item quantity="few">%d события</item>
+        <item quantity="many">%d событий</item>
+        <item quantity="other">%d события</item>
+    </plurals>
+
+    <!-- Color picker -->
+    <string name="color_picker_custom_colors">Свои цвета</string>
+    <string name="color_picker_color_label">Цвет</string>
+
+    <!-- Time zone -->
+    <string name="timezone_label">Часовой пояс</string>
+    <string name="timezone_select_title">Выберите часовой пояс</string>
+    <string name="timezone_search_hint">Поиск (напр. Europe, America, GMT)</string>
+    <string name="timezone_none_found">Часовые пояса не найдены</string>
+
+    <!-- Shared -->
+    <string name="shared_silent">без звука</string>
+    <string name="shared_ended">Завершено</string>
+    <string name="shared_count_label">Количество</string>
+    <string name="shared_type_label">Тип</string>
+    <string name="shared_schedule_event">Запланировать событие %1$s?</string>
+
+    <!-- Content descriptions -->
+    <string name="cd_add_entry">добавить запись</string>
+    <string name="cd_add_task">добавить задачу</string>
+    <string name="cd_add_tag">добавить метку</string>
+    <string name="cd_add_event">добавить событие</string>
+    <string name="cd_add_events_to_tag">добавить события к метке</string>
+    <string name="cd_close_drawer">закрыть меню</string>
+    <string name="cd_open_month_agenda">открыть повестку месяца</string>
+    <string name="cd_select_date">Выбрать дату</string>
+    <string name="cd_filter">фильтр</string>
+    <string name="cd_done">выполнено</string>
+    <string name="cd_remove">удалить</string>
+    <string name="cd_tags">Метки</string>
+
+    <!-- Notifications -->
+    <string name="notification_channel_normal">Обычные</string>
+    <string name="notification_channel_silent">Без звука</string>
+    <string name="notification_channel_morning">Утренние задачи</string>
+    <string name="notification_today_tasks_title">Задачи на сегодня: %1$d</string>
+    <string name="notification_tap_to_view">Нажмите, чтобы посмотреть</string>
+    <string name="notification_upcoming_event">Предстоящее событие через %1$s\n(в %2$s)</string>
+
+    <!-- Toasts -->
+    <string name="toast_restore_finished">Восстановление завершено</string>
+
+    <!-- Period unit singular labels (used in dropdowns and type selection) -->
+    <string name="period_unit_at_time">в момент</string>
+    <string name="period_unit_once">однократно</string>
+    <string name="period_unit_minute">минута</string>
+    <string name="period_unit_hour">час</string>
+    <string name="period_unit_day">день</string>
+    <string name="period_unit_week">неделя</string>
+    <string name="period_unit_month">месяц</string>
+    <string name="period_unit_year">год</string>
+
+    <!-- Period unit pluralized count phrases (e.g. "5 minutes") -->
+    <plurals name="period_minute_count">
+        <item quantity="one">%d минута</item>
+        <item quantity="few">%d минуты</item>
+        <item quantity="many">%d минут</item>
+        <item quantity="other">%d минуты</item>
+    </plurals>
+    <plurals name="period_hour_count">
+        <item quantity="one">%d час</item>
+        <item quantity="few">%d часа</item>
+        <item quantity="many">%d часов</item>
+        <item quantity="other">%d часа</item>
+    </plurals>
+    <plurals name="period_day_count">
+        <item quantity="one">%d день</item>
+        <item quantity="few">%d дня</item>
+        <item quantity="many">%d дней</item>
+        <item quantity="other">%d дня</item>
+    </plurals>
+    <plurals name="period_week_count">
+        <item quantity="one">%d неделя</item>
+        <item quantity="few">%d недели</item>
+        <item quantity="many">%d недель</item>
+        <item quantity="other">%d недели</item>
+    </plurals>
+    <plurals name="period_month_count">
+        <item quantity="one">%d месяц</item>
+        <item quantity="few">%d месяца</item>
+        <item quantity="many">%d месяцев</item>
+        <item quantity="other">%d месяца</item>
+    </plurals>
+    <plurals name="period_year_count">
+        <item quantity="one">%d год</item>
+        <item quantity="few">%d года</item>
+        <item quantity="many">%d лет</item>
+        <item quantity="other">%d года</item>
+    </plurals>
+
+    <!-- Period offset phrases -->
+    <string name="period_at_event_time">во время события</string>
+    <string name="period_offset_before">за %1$s до</string>
+</resources>

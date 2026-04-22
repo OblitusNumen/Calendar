@@ -17,8 +17,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import oblitusnumen.calendar.R
 import oblitusnumen.calendar.implementation.bgColorToTextColor
 import oblitusnumen.calendar.implementation.data.DateOccurrence
 import oblitusnumen.calendar.implementation.data.DbManager
@@ -105,7 +108,7 @@ fun DashboardScreen(
         topBar = {
             CenterAlignedTopAppBar(
                 colors = topBarColors(),
-                title = { Text("Dashboard") },
+                title = { Text(stringResource(R.string.dashboard_title)) },
                 actions = {
                     IconButton(onClick = openSettings) {
                         Icon(Icons.Filled.Settings, null)
@@ -116,7 +119,7 @@ fun DashboardScreen(
         bottomBar = navBar,
         floatingActionButton = {
             FloatingActionButton(onClick = newEntry) {
-                Icon(Icons.Filled.Add, "add entry")
+                Icon(Icons.Filled.Add, stringResource(R.string.cd_add_entry))
             }
         }
     ) { paddingValues ->
@@ -140,13 +143,13 @@ fun DashboardScreen(
             }
 
             item {
-                DashboardSectionHeader("Today's events", Icons.Filled.Event) { openThatDayInfo(today) }
+                DashboardSectionHeader(stringResource(R.string.dashboard_today_events), Icons.Filled.Event) { openThatDayInfo(today) }
             }
 
             if (todayOccurrences.isEmpty()) {
                 item {
                     Text(
-                        "No events today",
+                        stringResource(R.string.dashboard_no_events_today),
                         Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodyMedium
@@ -159,13 +162,13 @@ fun DashboardScreen(
             }
 
             item {
-                DashboardSectionHeader("Today's tasks", Icons.Filled.CheckBox) { openPlanner() }
+                DashboardSectionHeader(stringResource(R.string.dashboard_today_tasks), Icons.Filled.CheckBox) { openPlanner() }
             }
 
             if (todayTasks.isEmpty()) {
                 item {
                     Text(
-                        "No tasks scheduled for today",
+                        stringResource(R.string.dashboard_no_tasks_today),
                         Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodyMedium
@@ -178,7 +181,7 @@ fun DashboardScreen(
             }
 
             item {
-                DashboardSectionHeader("This week", Icons.Filled.DateRange) { openThatDayInfo(today) }
+                DashboardSectionHeader(stringResource(R.string.dashboard_this_week), Icons.Filled.DateRange) { openThatDayInfo(today) }
             }
 
             item {
@@ -186,7 +189,7 @@ fun DashboardScreen(
             }
 
             item {
-                DashboardSectionHeader("This month", Icons.Filled.CalendarMonth) {
+                DashboardSectionHeader(stringResource(R.string.dashboard_this_month), Icons.Filled.CalendarMonth) {
                     openMonthAgenda(today.year, today.monthValue)
                 }
             }
@@ -206,9 +209,9 @@ fun DashboardScreen(
 private fun DashboardGreeting(today: LocalDate) {
     val hour = ZonedDateTime.now(defaultZoneId()).hour
     val greeting = when {
-        hour < 12 -> "Good morning"
-        hour < 17 -> "Good afternoon"
-        else -> "Good evening"
+        hour < 12 -> stringResource(R.string.dashboard_good_morning)
+        hour < 17 -> stringResource(R.string.dashboard_good_afternoon)
+        else -> stringResource(R.string.dashboard_good_evening)
     }
     val dateStr = today.format(DateTimeFormatter.ofPattern("EEEE, d MMMM"))
 
@@ -233,14 +236,15 @@ private fun DashboardStats(
     onWorkClick: () -> Unit,
     onOverdueClick: () -> Unit,
 ) {
+    val context = LocalContext.current
     Column(Modifier.padding(horizontal = 12.dp, vertical = 4.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             DashboardStatCard(
-                Modifier.weight(1f), "Events today", todayCount.toString(),
+                Modifier.weight(1f), stringResource(R.string.dashboard_stat_events_today), todayCount.toString(),
                 Icons.Filled.Event, onClick = onEventsClick
             )
             DashboardStatCard(
-                Modifier.weight(1f), "Active tasks", activeCount.toString(),
+                Modifier.weight(1f), stringResource(R.string.dashboard_stat_active_tasks), activeCount.toString(),
                 Icons.Filled.CheckBox, onClick = onTasksClick
             )
         }
@@ -249,11 +253,11 @@ private fun DashboardStats(
 
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             DashboardStatCard(
-                Modifier.weight(1f), "Work left", formatTime(workLeftQuarters),
+                Modifier.weight(1f), stringResource(R.string.dashboard_stat_work_left), formatTime(context, workLeftQuarters),
                 Icons.Filled.Schedule, onClick = onWorkClick
             )
             DashboardStatCard(
-                Modifier.weight(1f), "Overdue", overdueCount.toString(),
+                Modifier.weight(1f), stringResource(R.string.dashboard_stat_overdue), overdueCount.toString(),
                 Icons.Filled.Warning,
                 tint = if (overdueCount > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
                 onClick = onOverdueClick
@@ -336,8 +340,9 @@ private fun DashboardEventRow(occurrence: DateOccurrence, onClick: () -> Unit) {
 
 @Composable
 private fun DashboardTaskRow(task: ViewTaskWithOptions, nowEpochSecond: Long, onClick: () -> Unit) {
+    val context = LocalContext.current
     val isOverdue = task.isOverdue(nowEpochSecond)
-    val timeLeft = formatTime(task.timeRemaining)
+    val timeLeft = formatTime(context, task.timeRemaining)
 
     Row(
         Modifier.fillMaxWidth().clickable(onClick = onClick)

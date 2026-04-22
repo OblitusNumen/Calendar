@@ -11,6 +11,7 @@ import android.content.SharedPreferences
 import androidx.core.app.NotificationCompat
 import oblitusnumen.calendar.MainActivity
 import oblitusnumen.calendar.R
+import oblitusnumen.calendar.implementation.LocaleHelper
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.tables.TaskLink
 import oblitusnumen.calendar.implementation.data.views.ViewTaskWithOptions
@@ -19,13 +20,15 @@ import oblitusnumen.calendar.implementation.log
 import oblitusnumen.calendar.implementation.now
 import oblitusnumen.calendar.implementation.planTasks
 import oblitusnumen.calendar.implementation.setLogFile
+import oblitusnumen.calendar.ui.displayCount
 import java.time.format.DateTimeFormatter
 
 class NotificationBroadcastReceiver : BroadcastReceiver() {
     // TODO: show missed events, show events that is in progress
-    override fun onReceive(c: Context, intent: Intent?) {
-        setLogFile(c)
+    override fun onReceive(rawContext: Context, intent: Intent?) {
+        setLogFile(rawContext)
         log("NotificationBroadcastReceiver RECEIVED INTENT: ${intent?.action}")
+        val c = LocaleHelper.wrap(rawContext)
         DbManager(c).use { dbManager ->
             val now = now() + 10// fixing possible early invocation
             val manager = c.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -42,8 +45,8 @@ class NotificationBroadcastReceiver : BroadcastReceiver() {
 
                 val notification = NotificationCompat.Builder(c, MORNING_TASK_CHANNEL_ID)
                     .setSmallIcon(R.drawable.ic_calendar)
-                    .setContentTitle("Today's tasks: $todayCount")
-                    .setContentText("Tap to view")
+                    .setContentTitle(c.getString(R.string.notification_today_tasks_title, todayCount))
+                    .setContentText(c.getString(R.string.notification_tap_to_view))
                     .setAutoCancel(true)
                     .setContentIntent(
                         PendingIntent.getActivity(
@@ -87,11 +90,12 @@ class NotificationBroadcastReceiver : BroadcastReceiver() {
                         )
                     )
                     .setContentText(// FIXME: format, missed events
-                        "Upcoming event in ${pendingNotification.notification.offset.count} ${pendingNotification.notification.offset.name}\n(at ${
-                            getZonedFromEpochSeconds(
-                                pendingNotification.eventDateTime
-                            ).format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm"))
-                        })"
+                        c.getString(
+                            R.string.notification_upcoming_event,
+                            pendingNotification.notification.offset.displayCount(c),
+                            getZonedFromEpochSeconds(pendingNotification.eventDateTime)
+                                .format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm"))
+                        )
                     )
                     .build()
                 manager.notify(pendingNotification.dateHash(), notification)
@@ -161,21 +165,21 @@ class NotificationBroadcastReceiver : BroadcastReceiver() {
             notificationManager.createNotificationChannel(
                 NotificationChannel(
                     NORMAL_CHANNEL_ID,
-                    "Normal",
+                    c.getString(R.string.notification_channel_normal),
                     NotificationManager.IMPORTANCE_DEFAULT
                 )
             )
             notificationManager.createNotificationChannel(
                 NotificationChannel(
                     SILENT_CHANNEL_ID,
-                    "Silent",
+                    c.getString(R.string.notification_channel_silent),
                     NotificationManager.IMPORTANCE_LOW
                 )
             )
             notificationManager.createNotificationChannel(
                 NotificationChannel(
                     MORNING_TASK_CHANNEL_ID,
-                    "Morning tasks",
+                    c.getString(R.string.notification_channel_morning),
                     NotificationManager.IMPORTANCE_DEFAULT
                 )
             )

@@ -11,10 +11,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import oblitusnumen.calendar.R
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.tables.Task
 import oblitusnumen.calendar.implementation.data.tables.TaskLink
@@ -40,7 +42,7 @@ fun EditTaskScreen(
 
     Scaffold(topBar = {
         EditTopBar(
-            "Edit task",
+            stringResource(R.string.edit_task_title),
             {
                 backPress()
                 viewModel.commitToDb(dbManager)
@@ -63,7 +65,7 @@ fun EditTaskScreen(
                             viewModel.setName(it)
                     },
                     textStyle = MaterialTheme.typography.titleLarge,
-                    label = { Text("Enter task name") },
+                    label = { Text(stringResource(R.string.edit_task_name_hint)) },
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                     trailingIcon = {
                         ColorSelectButton(state.color, true) {
@@ -82,7 +84,7 @@ fun EditTaskScreen(
                         viewModel.setContents(it)
                     },
                     textStyle = MaterialTheme.typography.bodyLarge,
-                    label = { Text("Enter description") },
+                    label = { Text(stringResource(R.string.edit_task_description_hint)) },
                     minLines = 5
                 )
             }
@@ -90,7 +92,7 @@ fun EditTaskScreen(
             // draw tags
             item {
                 Row {
-                    Icon(Icons.Filled.Star, "Tags", Modifier.padding(8.dp))
+                    Icon(Icons.Filled.Star, stringResource(R.string.cd_tags), Modifier.padding(8.dp))
 
                     FlowRow(
                         Modifier.fillMaxWidth().padding(end = 16.dp)
@@ -113,7 +115,7 @@ fun EditTaskScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(Icons.Filled.Star, null, Modifier.padding(end = 8.dp))
-                    Text("Choose tags...", style = MaterialTheme.typography.bodyLarge)
+                    Text(stringResource(R.string.edit_task_choose_tags), style = MaterialTheme.typography.bodyLarge)
                 }
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
             }
@@ -124,7 +126,7 @@ fun EditTaskScreen(
                     Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp)) {
                         RadioButton(!state.hasStartConstraint, { viewModel.setStartConstraint(null) })
 
-                        Text("Available now", Modifier.align(Alignment.CenterVertically).clickable {
+                        Text(stringResource(R.string.edit_task_available_now), Modifier.align(Alignment.CenterVertically).clickable {
                             viewModel.setStartConstraint(null)
                         })
                     }
@@ -163,7 +165,7 @@ fun EditTaskScreen(
                                         localDate.atTime(localTime).atZone(state.timeZoneId).toEpochSecond()
                                     )
                                 },
-                            text = "Available after ",
+                            text = stringResource(R.string.edit_task_available_after),
                             style = MaterialTheme.typography.bodyLarge,
                             maxLines = 1
                         )
@@ -232,7 +234,7 @@ fun EditTaskScreen(
                     Text(
                         modifier = Modifier.align(Alignment.CenterVertically).padding(vertical = 8.dp)
                             .padding(start = 40.dp),
-                        text = "Deadline at ",
+                        text = stringResource(R.string.edit_task_deadline_at),
                         style = MaterialTheme.typography.bodyLarge,
                         maxLines = 1
                     )
@@ -287,20 +289,20 @@ fun EditTaskScreen(
             // time consumed
             item {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Time elapsed", Modifier.padding(horizontal = 8.dp).weight(1f))
+                    Text(stringResource(R.string.edit_task_time_elapsed), Modifier.padding(horizontal = 8.dp).weight(1f))
 
                     IntTextField(
                         state.timeConsumed / QUARTERS_PER_HOUR,
                         { it?.let { h -> viewModel.setTimeConsumed(h * QUARTERS_PER_HOUR + state.timeConsumed % QUARTERS_PER_HOUR) } },
                         modifier = Modifier.width(96.dp).padding(4.dp),
-                        trailingIcon = { Text("h", Modifier.padding(horizontal = 4.dp)) },
+                        trailingIcon = { Text(stringResource(R.string.edit_task_unit_hour), Modifier.padding(horizontal = 4.dp)) },
                         maxDigits = 5)
 
                     IntTextField(
                         (state.timeConsumed % QUARTERS_PER_HOUR) * MINUTES_PER_QUARTER,
                         { it?.let { m -> viewModel.setTimeConsumed(state.timeConsumed / QUARTERS_PER_HOUR * QUARTERS_PER_HOUR + m / MINUTES_PER_QUARTER) } },
                         modifier = Modifier.width(88.dp).padding(4.dp),
-                        trailingIcon = { Text("m", Modifier.padding(horizontal = 4.dp)) },
+                        trailingIcon = { Text(stringResource(R.string.edit_task_unit_minute), Modifier.padding(horizontal = 4.dp)) },
                         maxDigits = 2)
                 }
             }
@@ -308,20 +310,20 @@ fun EditTaskScreen(
             // time remaining
             item {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Time remaining", Modifier.padding(horizontal = 8.dp).weight(1f))
+                    Text(stringResource(R.string.edit_task_time_remaining), Modifier.padding(horizontal = 8.dp).weight(1f))
 
                     IntTextField(
                         state.timeRemaining / QUARTERS_PER_HOUR,
                         { it?.let { h -> viewModel.setTimeRemaining(h * QUARTERS_PER_HOUR + state.timeRemaining % QUARTERS_PER_HOUR) } },
                         modifier = Modifier.width(96.dp).padding(4.dp),
-                        trailingIcon = { Text("h", Modifier.padding(horizontal = 4.dp)) },
+                        trailingIcon = { Text(stringResource(R.string.edit_task_unit_hour), Modifier.padding(horizontal = 4.dp)) },
                         maxDigits = 5)
 
                     IntTextField(
                         (state.timeRemaining % QUARTERS_PER_HOUR) * MINUTES_PER_QUARTER,
                         { it?.let { m -> viewModel.setTimeRemaining(state.timeRemaining / QUARTERS_PER_HOUR * QUARTERS_PER_HOUR + m / MINUTES_PER_QUARTER) } },
                         modifier = Modifier.width(88.dp).padding(4.dp),
-                        trailingIcon = { Text("m", Modifier.padding(horizontal = 4.dp)) },
+                        trailingIcon = { Text(stringResource(R.string.edit_task_unit_minute), Modifier.padding(horizontal = 4.dp)) },
                         maxDigits = 2)
                 }
             }
@@ -329,7 +331,7 @@ fun EditTaskScreen(
             item {
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
                 Text(
-                    "Predecessors",
+                    stringResource(R.string.edit_task_predecessors),
                     Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
                     style = MaterialTheme.typography.titleMedium
                 )
@@ -348,13 +350,13 @@ fun EditTaskScreen(
                 var chooseDialogVisible by remember { mutableStateOf(false) }
 
                 TextButton(onClick = { chooseDialogVisible = true }) {
-                    Text("+ Add predecessor")
+                    Text(stringResource(R.string.edit_task_add_predecessor))
                 }
 
                 if (chooseDialogVisible) {
                     ChooseTasksDialog(
                         dbManager,
-                        "Add predecessors",
+                        stringResource(R.string.edit_task_add_predecessors),
                         Task.allIds(dbManager) - state.predecessors,
                         { chooseDialogVisible = false },
                         {
@@ -369,7 +371,7 @@ fun EditTaskScreen(
             item {
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
                 Text(
-                    "Successors",
+                    stringResource(R.string.edit_task_successors),
                     Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
                     style = MaterialTheme.typography.titleMedium
                 )
@@ -388,13 +390,13 @@ fun EditTaskScreen(
                 var chooseDialogVisible by remember { mutableStateOf(false) }
 
                 TextButton(onClick = { chooseDialogVisible = true }) {
-                    Text("+ Add successor")
+                    Text(stringResource(R.string.edit_task_add_successor))
                 }
 
                 if (chooseDialogVisible) {
                     ChooseTasksDialog(
                         dbManager,
-                        "Add successors",
+                        stringResource(R.string.edit_task_add_successors),
                         Task.allIds(dbManager) - state.successors,
                         { chooseDialogVisible = false },
                         {

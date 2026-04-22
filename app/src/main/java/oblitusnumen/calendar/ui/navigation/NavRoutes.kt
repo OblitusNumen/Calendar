@@ -1,5 +1,6 @@
 package oblitusnumen.calendar.ui.navigation
 
+import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.DateRange
@@ -7,6 +8,7 @@ import androidx.compose.material.icons.outlined.Home
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
+import oblitusnumen.calendar.R
 import oblitusnumen.calendar.ui.element.screen.MonthDate
 import java.time.LocalDate
 
@@ -175,9 +177,9 @@ sealed class NavRoutes(private val path: String, val route: String = path) {
 
     companion object {
         fun getTopLevelRoutes() = listOf(
-            TopLevelRoute("Dashboard", Dashboard, Icons.Outlined.Home),
-            TopLevelRoute("Calendar", Calendar, Icons.Outlined.DateRange),
-            TopLevelRoute("Planner", Planner, Icons.Outlined.CheckCircle)
+            TopLevelRoute(R.string.nav_dashboard, Dashboard, Icons.Outlined.Home),
+            TopLevelRoute(R.string.nav_calendar, Calendar, Icons.Outlined.DateRange),
+            TopLevelRoute(R.string.nav_planner, Planner, Icons.Outlined.CheckCircle)
         )
 
         fun isTopLevel(route: String?): Boolean {
@@ -192,4 +194,4 @@ sealed class NavRoutes(private val path: String, val route: String = path) {
     }
 }
 
-data class TopLevelRoute(val name: String, val route: NavRoutes, val icon: ImageVector)
+data class TopLevelRoute(@StringRes val nameRes: Int, val route: NavRoutes, val icon: ImageVector)

@@ -14,9 +14,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import oblitusnumen.calendar.R
 import oblitusnumen.calendar.implementation.LIST_LEN
 import oblitusnumen.calendar.implementation.bgColorToTextColor
 import oblitusnumen.calendar.implementation.data.DateOccurrence
@@ -251,10 +253,10 @@ fun DateTopBar(day: LocalDate, openAgenda: () -> Unit, backPress: () -> Unit) {
         navigationIcon = { BackPressButton(backPress) },
         title = {
             Row {
-                Text("Date $day", Modifier.weight(1f).align(Alignment.CenterVertically), maxLines = 1)
+                Text(stringResource(R.string.date_screen_title, day.toString()), Modifier.weight(1f).align(Alignment.CenterVertically), maxLines = 1)
 
                 IconButton(openAgenda, Modifier.align(Alignment.CenterVertically)) {
-                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, "open month agenda")
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, stringResource(R.string.cd_open_month_agenda))
                 }
             }
         },
@@ -267,17 +269,17 @@ fun ExcludeOccurrenceDialog(occurrence: LocalDateTime, name: String, doExclude: 
         onDismissRequest = onClose,
         dismissButton = {
             TextButton(onClick = onClose) {
-                Text("Cancel")
+                Text(stringResource(R.string.common_cancel))
             }
         },
         confirmButton = {
             TextButton(doExclude) {
-                Text("OK")
+                Text(stringResource(R.string.common_ok))
             }
         },
         text = {
             Column {
-                Text("Exclude $occurrence from $name")
+                Text(stringResource(R.string.date_screen_exclude_occurrence, occurrence.toString(), name))
             }
         }
     )

@@ -20,11 +20,19 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import android.content.Context
+import oblitusnumen.calendar.R
+import oblitusnumen.calendar.ui.displayCount
+import oblitusnumen.calendar.ui.displayOffsetBefore
+import oblitusnumen.calendar.ui.displayOffsetUnitName
+import oblitusnumen.calendar.ui.displayUnitName
 import oblitusnumen.calendar.implementation.convertMillisToDate
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.Period
@@ -73,7 +81,7 @@ fun EditEntryScreen(
 
     Scaffold(topBar = {
         EditTopBar(
-            "Edit event",
+            stringResource(R.string.edit_entry_title),
             {
                 backPress()
                 viewModel.commitToDb(dbManager)
@@ -92,7 +100,7 @@ fun EditEntryScreen(
                         viewModel.setName(it)
                 },
                 textStyle = MaterialTheme.typography.titleLarge,
-                label = { Text("Enter event name") },
+                label = { Text(stringResource(R.string.edit_entry_name_hint)) },
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 trailingIcon = {
                     ColorSelectButton(state.color, true) {
@@ -109,7 +117,7 @@ fun EditEntryScreen(
                     viewModel.setContents(it)
                 },
                 textStyle = MaterialTheme.typography.bodyLarge,
-                label = { Text("Enter description") },
+                label = { Text(stringResource(R.string.edit_entry_description_hint)) },
                 minLines = 5
             )
 //            HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
@@ -124,7 +132,7 @@ fun EditEntryScreen(
 
             // draw tags
             Row {
-                Icon(Icons.Filled.Star, "Tags", Modifier.padding(8.dp))
+                Icon(Icons.Filled.Star, stringResource(R.string.cd_tags), Modifier.padding(8.dp))
 
                 FlowRow(
                     Modifier.fillMaxWidth().padding(end = 16.dp)
@@ -145,7 +153,7 @@ fun EditEntryScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(Icons.Filled.Star, null, Modifier.padding(end = 8.dp))
-                Text("Choose tags...", style = MaterialTheme.typography.bodyLarge)
+                Text(stringResource(R.string.edit_entry_choose_tags), style = MaterialTheme.typography.bodyLarge)
             }
             HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
 
@@ -183,7 +191,7 @@ fun EditEntryScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(Icons.Outlined.Schedule, null, Modifier.padding(end = 8.dp))
-                Text("Add date...", style = MaterialTheme.typography.bodyLarge)
+                Text(stringResource(R.string.edit_entry_add_date), style = MaterialTheme.typography.bodyLarge)
             }
             HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
 
@@ -213,11 +221,11 @@ fun EditEntryScreen(
                     )
 
                     // offset
+                    val ctx = LocalContext.current
                     Text(
                         modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp)
                             .weight(1f),
-                        text = if (notification.offset is Once) "at event time"
-                           else "${notification.offset.count} ${notification.offset.name}${if (notification.offset.count != 1L) "s" else ""} before",
+                        text = notification.offset.displayOffsetBefore(ctx),
                         style = MaterialTheme.typography.bodyLarge
                     )
 
@@ -239,7 +247,7 @@ fun EditEntryScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(Icons.Filled.Add, null, Modifier.padding(end = 8.dp))
-                Text("Add notification", style = MaterialTheme.typography.bodyLarge)
+                Text(stringResource(R.string.edit_entry_add_notification), style = MaterialTheme.typography.bodyLarge)
             }
 
             Spacer(Modifier.height(paddingValues.calculateBottomPadding()))
@@ -258,7 +266,7 @@ fun TagChooseMenu(dbManager: DbManager, tags: List<Tag>, onClose: () -> Unit, on
         onDismissRequest = onClose,
         dismissButton = {
             TextButton(onClick = onClose) {
-                Text("Cancel")
+                Text(stringResource(R.string.common_cancel))
             }
         },
         confirmButton = {
@@ -266,7 +274,7 @@ fun TagChooseMenu(dbManager: DbManager, tags: List<Tag>, onClose: () -> Unit, on
                 onClose()
                 onTagsChange(chosenTags.map { allTags[it] ?: Tag(it) })
             }) {
-                Text("OK")
+                Text(stringResource(R.string.common_ok))
             }
         },
         text = {
@@ -280,7 +288,7 @@ fun TagChooseMenu(dbManager: DbManager, tags: List<Tag>, onClose: () -> Unit, on
                     keyboardOptions = KeyboardOptions(
                         imeAction = ImeAction.Done
                     ),
-                    label = { Text("Tag name") }
+                    label = { Text(stringResource(R.string.tags_name_label)) }
                 )
                 FlowRow(
                     Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)
@@ -326,6 +334,7 @@ fun Date(
     onRmDate: () -> Unit,
     onUpdateDate: (DateState) -> Unit,
 ) {
+    val context = LocalContext.current
     var periodSelectorDate by remember { periodSelectorDate }
     if (periodSelectorDate == date)
         PeriodSelectorDialog(date, {
@@ -340,27 +349,35 @@ fun Date(
             onUpdateDate(date.setDuration(it))
         }, { durationSelectorDate = null })
 
-    val dateStartText = (if (date.isPeriodic) "from " else "") +
-            date.getFirstZoneDateTime().format(DateTimeFormatter.ofPattern("dd MMM yyyy "))
+    val dateFormatted = date.getFirstZoneDateTime().format(DateTimeFormatter.ofPattern("dd MMM yyyy "))
+    val dateStartText =
+        if (date.isPeriodic) stringResource(R.string.edit_entry_period_from, dateFormatted)
+        else dateFormatted
     val timeText = date.getFirstZoneDateTime().format(DateTimeFormatter.ofPattern("HH:mm"))
-    val textPeriod: String = if (date.isPeriodic)
-        "every " + date.period.count.toString() + " " + PeriodType(date.period).toString() +
-                if (date.isEndless) "" else
-                    " until " + date.getLastZoneDateTime().format(DateTimeFormatter.ofPattern("dd MMM yyyy"))
-    else
-        PeriodType(date.period).toString()
+    val textPeriod: String = if (date.isPeriodic) {
+        val every = stringResource(
+            R.string.edit_entry_period_every,
+            date.period.displayCount(context)
+        )
+        if (date.isEndless) every
+        else every + " " + stringResource(
+            R.string.edit_entry_period_until,
+            date.getLastZoneDateTime().format(DateTimeFormatter.ofPattern("dd MMM yyyy"))
+        )
+    } else
+        PeriodType(date.period).displayName(context)
 
     val textDuration: String = when (val dur = date.duration) {
-        is Once -> "no duration"
+        is Once -> stringResource(R.string.edit_entry_duration_no_end_time)
         is Minute -> {
             val end = date.getFirstZoneDateTime().toLocalTime().plusMinutes(dur.count)
-            "ends ${end.format(DateTimeFormatter.ofPattern("HH:mm"))}"
+            stringResource(R.string.edit_entry_duration_ends, end.format(DateTimeFormatter.ofPattern("HH:mm")))
         }
         is Hour -> {
             val end = date.getFirstZoneDateTime().toLocalTime().plusHours(dur.count)
-            "ends ${end.format(DateTimeFormatter.ofPattern("HH:mm"))}"
+            stringResource(R.string.edit_entry_duration_ends, end.format(DateTimeFormatter.ofPattern("HH:mm")))
         }
-        else -> "for ${dur.count} ${dur.name}${if (dur.count != 1L) "s" else ""}"
+        else -> stringResource(R.string.edit_entry_duration_for, dur.displayCount(context))
     }
 
     Column(Modifier.padding(bottom = 6.dp)) {
@@ -451,7 +468,7 @@ fun Date(
         // exceptions
         if (date.isPeriodic) {
             for (epochDay in date.exceptionRules.listAll()) {
-                val textException = "except " + convertMillisToDate(epochDay * 86400000)
+                val textException = stringResource(R.string.edit_entry_period_except, convertMillisToDate(epochDay * 86400000))
 
                 Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp).padding(horizontal = 40.dp)) {
                     Text(
@@ -480,7 +497,7 @@ fun Date(
             ) {
                 Spacer(Modifier.width(32.dp))
                 Icon(Icons.Filled.Add, null, Modifier.padding(end = 8.dp))
-                Text("Add exception...", style = MaterialTheme.typography.bodyLarge)
+                Text(stringResource(R.string.edit_entry_add_exception), style = MaterialTheme.typography.bodyLarge)
             }
         }
     }
@@ -549,7 +566,7 @@ fun PeriodSelectorDialog(
         onDismissRequest = onDismiss,
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.common_cancel))
             }
         },
         confirmButton = {
@@ -603,7 +620,7 @@ fun PeriodSelectorDialog(
 
                 onConfirm(updatedDateState)
             }) {
-                Text("OK")
+                Text(stringResource(R.string.common_ok))
             }
         },
         text = {
@@ -617,13 +634,13 @@ fun PeriodSelectorDialog(
 
                 if (selectedPeriodType.period is Weekday) {
                     Row {
-                        WeekdayButton(monSelected, "Mon")
-                        WeekdayButton(tueSelected, "Tue")
-                        WeekdayButton(wedSelected, "Wed")
-                        WeekdayButton(thuSelected, "Thu")
-                        WeekdayButton(friSelected, "Fri")
-                        WeekdayButton(satSelected, "Sat")
-                        WeekdayButton(sunSelected, "Sun")
+                        WeekdayButton(monSelected, stringResource(R.string.weekday_mon))
+                        WeekdayButton(tueSelected, stringResource(R.string.weekday_tue))
+                        WeekdayButton(wedSelected, stringResource(R.string.weekday_wed))
+                        WeekdayButton(thuSelected, stringResource(R.string.weekday_thu))
+                        WeekdayButton(friSelected, stringResource(R.string.weekday_fri))
+                        WeekdayButton(satSelected, stringResource(R.string.weekday_sat))
+                        WeekdayButton(sunSelected, stringResource(R.string.weekday_sun))
                     }
                 }
 
@@ -646,7 +663,7 @@ fun PeriodSelectorDialog(
                         enabled = selectedPeriodType.period !is Once
                     )
                     Text(
-                        "Endless",
+                        stringResource(R.string.edit_entry_endless),
                         Modifier.padding(vertical = 4.dp, horizontal = 16.dp).align(Alignment.CenterVertically),
                         style = MaterialTheme.typography.bodyLarge,
                         color = if (selectedPeriodType.period !is Once) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(
@@ -669,7 +686,7 @@ fun PeriodSelectorDialog(
                         enabled = selectedPeriodType.period !is Once
                     )
                     DateTimePicker.datePickerField(
-                        selectedMillis, "End date",
+                        selectedMillis, stringResource(R.string.edit_entry_end_date_label),
                         selectedPeriodType.period !is Once
                     ) {
                         endVariantSelectedOption = DateSequenceEndVariant.BY_DATE
@@ -710,7 +727,7 @@ fun PeriodSelectorDialog(
                             keyboardType = KeyboardType.Number,
                             imeAction = ImeAction.Done
                         ),
-                        label = { Text("Occurrences") }
+                        label = { Text(stringResource(R.string.edit_entry_occurrences_label)) }
                     )
                 }
             }
@@ -741,7 +758,7 @@ fun DurationSelectorDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) } },
         confirmButton = {
             TextButton(onClick = {
                 val count = if (offsetCount < 0)
@@ -753,7 +770,7 @@ fun DurationSelectorDialog(
                     if (count == 0L || selectedOffsetType.period is Once) Once()
                     else selectedOffsetType.period.updateCount(count)
                 )
-            }) { Text("OK") }
+            }) { Text(stringResource(R.string.common_ok)) }
         },
         text = {
             Column {
@@ -786,12 +803,13 @@ fun DurationSelectorDialog(
                     Icon(Icons.Outlined.Schedule, null, Modifier.padding(end = 12.dp))
                     Column {
                         Text(
-                            "End time",
+                            stringResource(R.string.edit_entry_end_time_label),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            endLocalTime?.format(DateTimeFormatter.ofPattern("HH:mm")) ?: "no end",
+                            endLocalTime?.format(DateTimeFormatter.ofPattern("HH:mm"))
+                                ?: stringResource(R.string.edit_entry_end_time_none),
                             style = MaterialTheme.typography.bodyLarge
                         )
                     }
@@ -831,18 +849,7 @@ enum class DateSequenceEndVariant {
 }
 
 data class OffsetType(val period: Period) {
-    override fun toString(): String {
-        return when (period) {
-            is Once -> "at time"
-            is Minute -> "minute"
-            is Hour -> "hour"
-            is Day -> "day"
-            is Week -> "week"
-            is Month -> "month"
-            is Year -> "year"
-            is Weekday -> "week"
-        }
-    }
+    fun displayName(context: Context): String = period.displayOffsetUnitName(context)
 
     companion object {
         fun getAll(): List<OffsetType> {
@@ -859,18 +866,7 @@ data class OffsetType(val period: Period) {
 }
 
 data class PeriodType(val period: Period) {
-    override fun toString(): String {
-        return when (period) {
-            is Once -> "once"
-            is Minute -> "minute"
-            is Hour -> "hour"
-            is Day -> "day"
-            is Week -> "week"
-            is Month -> "month"
-            is Year -> "year"
-            is Weekday -> "week"
-        }
-    }
+    fun displayName(context: Context): String = period.displayUnitName(context)
 
     companion object {
         fun getAll(): List<PeriodType> {

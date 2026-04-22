@@ -7,7 +7,9 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import oblitusnumen.calendar.R
 import oblitusnumen.calendar.implementation.convertMillisToDate
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -122,7 +124,7 @@ class DateTimePicker {
                         onClick = { showDatePicker = !showDatePicker }) {
                         Icon(
                             imageVector = Icons.Default.DateRange,
-                            contentDescription = "Select date"
+                            contentDescription = stringResource(R.string.cd_select_date)
                         )
                     }
                 },
@@ -173,12 +175,12 @@ class DateTimePicker {
                         if (selMillis != null)
                             onDateSelected(selMillis)
                     }) {
-                        Text("OK")
+                        Text(stringResource(R.string.common_ok))
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = onDismiss) {
-                        Text("Cancel")
+                        Text(stringResource(R.string.common_cancel))
                     }
                 }
             ) {
@@ -202,14 +204,14 @@ class DateTimePicker {
                 onDismissRequest = onDismiss,
                 dismissButton = {
                     TextButton(onClick = { onDismiss() }) {
-                        Text("Cancel")
+                        Text(stringResource(R.string.common_cancel))
                     }
                 },
                 confirmButton = {
                     TextButton(onClick = {
                         onConfirm(timePickerState.hour, timePickerState.minute)
                     }) {
-                        Text("OK")
+                        Text(stringResource(R.string.common_ok))
                     }
                 },
                 text = {
@@ -226,7 +228,8 @@ class DateTimePicker {
 @Composable
 fun <T> materialSpinner(
     title: String, options: List<T>,
-    onSelect: (option: T) -> Unit, initialOption: T = options[0], modifier: Modifier = Modifier
+    onSelect: (option: T) -> Unit, initialOption: T = options[0], modifier: Modifier = Modifier,
+    labelFor: (T) -> String = { it.toString() }
 ) {
     var expanded by remember { mutableStateOf(false) }
     var selectedOption by remember { mutableStateOf(initialOption) }
@@ -237,7 +240,7 @@ fun <T> materialSpinner(
     ) {
         OutlinedTextField(
             modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable),
-            value = selectedOption.toString(),
+            value = labelFor(selectedOption),
             onValueChange = {},
             readOnly = true,
             singleLine = true,
@@ -247,7 +250,7 @@ fun <T> materialSpinner(
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             options.forEach { option ->
                 DropdownMenuItem(
-                    text = { Text(option.toString(), style = MaterialTheme.typography.bodyLarge) },
+                    text = { Text(labelFor(option), style = MaterialTheme.typography.bodyLarge) },
                     onClick = {
                         selectedOption = option
                         onSelect(selectedOption)

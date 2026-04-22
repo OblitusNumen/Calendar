@@ -15,8 +15,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import oblitusnumen.calendar.R
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.tables.Tag
 import oblitusnumen.calendar.implementation.data.tables.Task
@@ -31,6 +34,7 @@ import oblitusnumen.calendar.ui.theme.topBarColors
 
 @Composable
 fun TaskDetailsScreen(dbManager: DbManager, taskId: Int, editTask: () -> Unit, backPress: () -> Unit) {
+    val context = LocalContext.current
     val task = remember { ViewTaskWithOptions.byId(dbManager, taskId) }!! // FIXME: replace with View
     val now = remember { now() }
 
@@ -77,7 +81,7 @@ fun TaskDetailsScreen(dbManager: DbManager, taskId: Int, editTask: () -> Unit, b
                 if (contents.isNotEmpty()) {
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
 
-                    Text("Description", modifier = Modifier.padding(12.dp))
+                    Text(stringResource(R.string.task_details_description), modifier = Modifier.padding(12.dp))
 
                     SelectionContainer {
                         Text(
@@ -95,7 +99,7 @@ fun TaskDetailsScreen(dbManager: DbManager, taskId: Int, editTask: () -> Unit, b
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
 
                     Row {
-                        Icon(Icons.Filled.Star, "Tags", Modifier.padding(8.dp))
+                        Icon(Icons.Filled.Star, stringResource(R.string.cd_tags), Modifier.padding(8.dp))
 
                         FlowRow(Modifier.fillMaxWidth().padding(end = 16.dp)) {
                             for (tag in tags)
@@ -117,10 +121,10 @@ fun TaskDetailsScreen(dbManager: DbManager, taskId: Int, editTask: () -> Unit, b
                     Icon(Icons.Filled.PlayArrow, contentDescription = null, Modifier.size(20.dp))
                     Spacer(Modifier.width(8.dp))
                     if (startConstraint == null || startConstraint <= now)
-                        Text("Available now", style = MaterialTheme.typography.bodyLarge)
+                        Text(stringResource(R.string.task_details_available_now), style = MaterialTheme.typography.bodyLarge)
                     else
                         Text(
-                            "Available from ${formatDateTime(startConstraint, task.timeZoneId)}",
+                            stringResource(R.string.task_details_available_from, formatDateTime(context, startConstraint, task.timeZoneId)),
                             style = MaterialTheme.typography.bodyLarge
                         )
                 }
@@ -136,7 +140,7 @@ fun TaskDetailsScreen(dbManager: DbManager, taskId: Int, editTask: () -> Unit, b
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        "Deadline: ${formatDateTime(task.deadlineTimestamp, task.timeZoneId)}",
+                        stringResource(R.string.task_details_deadline, formatDateTime(context, task.deadlineTimestamp, task.timeZoneId)),
                         style = MaterialTheme.typography.bodyLarge,
                         color = if (overdue) Color.Red else Color.Unspecified
                     )
@@ -163,7 +167,7 @@ fun TaskDetailsScreen(dbManager: DbManager, taskId: Int, editTask: () -> Unit, b
                     ) {
                         Icon(Icons.Filled.Done, contentDescription = null, tint = Color.Green)
                         Spacer(Modifier.width(8.dp))
-                        Text("Done", style = MaterialTheme.typography.bodyLarge)
+                        Text(stringResource(R.string.task_details_done), style = MaterialTheme.typography.bodyLarge)
                     }
                 } else {
                     val predTime = remember { task.countPredecessorsTimeEstimate(allTasks, predecessorLinks) }
@@ -171,28 +175,28 @@ fun TaskDetailsScreen(dbManager: DbManager, taskId: Int, editTask: () -> Unit, b
                     Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp)) {
                         Column(Modifier.weight(1f)) {
                             Text(
-                                "Time elapsed",
+                                stringResource(R.string.task_details_time_elapsed),
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                            Text(formatTime(task.timeConsumed), style = MaterialTheme.typography.bodyLarge)
+                            Text(formatTime(context, task.timeConsumed), style = MaterialTheme.typography.bodyLarge)
                         }
                         Column(Modifier.weight(1f)) {
                             Text(
-                                "Time remaining",
+                                stringResource(R.string.task_details_time_remaining),
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                            Text(formatTime(task.timeRemaining), style = MaterialTheme.typography.bodyLarge)
+                            Text(formatTime(context, task.timeRemaining), style = MaterialTheme.typography.bodyLarge)
                         }
                         if (predTime > 0) {
                             Column(Modifier.weight(1f)) {
                                 Text(
-                                    "Pred. work",
+                                    stringResource(R.string.task_details_pred_work),
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
-                                Text(formatTime(predTime), style = MaterialTheme.typography.bodyLarge)
+                                Text(formatTime(context, predTime), style = MaterialTheme.typography.bodyLarge)
                             }
                         }
                     }
@@ -212,7 +216,7 @@ fun TaskDetailsScreen(dbManager: DbManager, taskId: Int, editTask: () -> Unit, b
 
                 if (predecessors.isNotEmpty()) {
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
-                    Text("Dependencies", modifier = Modifier.padding(12.dp))
+                    Text(stringResource(R.string.task_details_dependencies), modifier = Modifier.padding(12.dp))
 
                     predecessors.forEach { predecessor ->
                         PredecessorTreeNode(dbManager, predecessor, 0, allTasks, predecessorLinks)
@@ -226,7 +230,7 @@ fun TaskDetailsScreen(dbManager: DbManager, taskId: Int, editTask: () -> Unit, b
 
                 if (successors.isNotEmpty()) {
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
-                    Text("Successors", modifier = Modifier.padding(12.dp))
+                    Text(stringResource(R.string.task_details_successors), modifier = Modifier.padding(12.dp))
                     successors.forEach { successor ->
                         SuccessorTreeNode(dbManager, successor, 0)
                     }
@@ -244,6 +248,7 @@ fun PredecessorTreeNode(
     allTasks: Map<Int, ViewTaskWithOptions>,
     predecessorLinks: Map<Int, List<Int>>
 ) {
+    val context = LocalContext.current
     val task = remember { allTasks[taskId] ?: ViewTaskWithOptions.byId(dbManager, taskId)!! }
     var expanded by remember { mutableStateOf(false) }
     val ownPredecessors = remember { predecessorLinks[taskId] ?: emptyList() }
@@ -281,7 +286,7 @@ fun PredecessorTreeNode(
             val predTime = remember { task.countPredecessorsTimeEstimate(allTasks, predecessorLinks) }
             if (predTime > 0)
                 Text(
-                    "+${formatTime(predTime)}",
+                    "+${formatTime(context, predTime)}",
                     Modifier.padding(horizontal = 4.dp).align(Alignment.CenterVertically),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -289,7 +294,7 @@ fun PredecessorTreeNode(
                     maxLines = 1,
                 )
             Text(
-                formatTime(task.timeRemaining),
+                formatTime(context, task.timeRemaining),
                 Modifier.padding(horizontal = 8.dp).align(Alignment.CenterVertically),
                 style = MaterialTheme.typography.bodyLarge,
                 overflow = TextOverflow.Ellipsis,
@@ -307,6 +312,7 @@ fun PredecessorTreeNode(
 
 @Composable
 fun SuccessorTreeNode(dbManager: DbManager, taskId: Int, level: Int) {
+    val context = LocalContext.current
     val task = remember { ViewTaskWithOptions.byId(dbManager, taskId) }!!
     var expanded by remember { mutableStateOf(false) }
     var successors by remember { mutableStateOf<List<Int>?>(null) }
@@ -344,7 +350,7 @@ fun SuccessorTreeNode(dbManager: DbManager, taskId: Int, level: Int) {
             )
         else
             Text(
-                formatTime(task.timeRemaining),
+                formatTime(context, task.timeRemaining),
                 Modifier.padding(horizontal = 8.dp).align(Alignment.CenterVertically),
                 style = MaterialTheme.typography.bodyLarge,
                 overflow = TextOverflow.Ellipsis,

@@ -1,6 +1,7 @@
 package oblitusnumen.calendar
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -12,6 +13,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.navigation.compose.rememberNavController
 import oblitusnumen.calendar.implementation.data.DbManager
+import oblitusnumen.calendar.implementation.LocaleHelper
 import oblitusnumen.calendar.implementation.log
 import oblitusnumen.calendar.implementation.notifications.NotificationBroadcastReceiver
 import oblitusnumen.calendar.implementation.rmRecursively
@@ -22,6 +24,10 @@ import oblitusnumen.calendar.ui.theme.CalendarTheme
 import java.io.File
 
 class MainActivity : ComponentActivity() {
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(LocaleHelper.wrap(newBase))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) { //fixme ask for required permissions somewhere
         super.onCreate(savedInstanceState)
 
@@ -38,7 +44,7 @@ class MainActivity : ComponentActivity() {
                 log("Error while restoring ${e.message}")
             }
             stagedZip.delete()
-            Toast.makeText(this, "Restore finished", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, getString(R.string.toast_restore_finished), Toast.LENGTH_LONG).show()
             // optional: kill and restart app to reload clean state
 //            android.os.Process.killProcess(android.os.Process.myPid())
         }

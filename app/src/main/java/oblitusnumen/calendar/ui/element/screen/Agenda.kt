@@ -24,6 +24,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringArrayResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import oblitusnumen.calendar.R
@@ -393,7 +394,7 @@ fun DisplayDayAgenda(
 
         if (dates.isEmpty()) {
             Text(
-                "No events",
+                stringResource(R.string.agenda_no_events),
                 Modifier.padding(start = 56.dp, top = 4.dp, bottom = 8.dp),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodyMedium
@@ -414,9 +415,9 @@ private fun AgendaDayHeader(day: LocalDate, now: LocalDate, onClick: () -> Unit)
     val bgColor = if (isToday) MaterialTheme.colorScheme.onSurface.copy(alpha = .5f) else MaterialTheme.colorScheme.surface
 
     val label: String? = when (day) {
-        now -> "Today"
-        now.plusDays(1) -> "Tomorrow"
-        now.minusDays(1) -> "Yesterday"
+        now -> stringResource(R.string.agenda_today)
+        now.plusDays(1) -> stringResource(R.string.agenda_tomorrow)
+        now.minusDays(1) -> stringResource(R.string.agenda_yesterday)
         else -> null
     }
 

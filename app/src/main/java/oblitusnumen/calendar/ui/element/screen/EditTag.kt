@@ -16,8 +16,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import oblitusnumen.calendar.R
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.tables.Entry
 import oblitusnumen.calendar.implementation.data.tables.Tag
@@ -80,7 +82,7 @@ fun TagEditScreen(
                             }
                         )
 
-                        Text("${selectedEntries.size}/${edits.entryAssociations.size} selected", Modifier.weight(1f))
+                        Text(stringResource(R.string.tags_selected_count, selectedEntries.size, edits.entryAssociations.size), Modifier.weight(1f))
 
                         DeleteButton { edits.rmEntryAssociations(*selectedEntries.toIntArray()) }
                     }
@@ -187,7 +189,7 @@ fun TagEditTopBar(
                         keyboardOptions = KeyboardOptions(
                             imeAction = ImeAction.Done
                         ),
-                        placeholder = { Text("Enter tag name") }
+                        placeholder = { Text(stringResource(R.string.tags_enter_tag_name)) }
                     )
                 }
 //                LaunchedEffect(Unit) {
@@ -227,8 +229,8 @@ fun TagEditTopBar(
         if (error != TagNameError.NONE)
             Text(
                 when (error) {
-                    TagNameError.EMPTY_NAME -> "Enter tag name"
-                    TagNameError.ALREADY_EXISTS -> "Tag with that name already exists"
+                    TagNameError.EMPTY_NAME -> stringResource(R.string.tags_enter_tag_name)
+                    TagNameError.ALREADY_EXISTS -> stringResource(R.string.tags_name_exists)
                     else -> throw RuntimeException("Unknown error")
                 },
                 Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background.copy(alpha = .5f)),
@@ -261,7 +263,7 @@ fun DeleteTag(
         onDismissRequest = onClose,
         dismissButton = {
             TextButton(onClick = onClose) {
-                Text("Cancel")
+                Text(stringResource(R.string.common_cancel))
             }
         },
         confirmButton = {
@@ -269,15 +271,15 @@ fun DeleteTag(
                 onDelete()
                 onClose()
             }) {
-                Text("OK")
+                Text(stringResource(R.string.common_ok))
             }
         },
         text = {
             Column {
-                Text("Delete tag ${tagName}?")
+                Text(stringResource(R.string.tags_delete_tag_title, tagName))
                 if (entriesNumber > 0)
                     Text(
-                        "$entriesNumber events are associated with this tag.",
+                        stringResource(R.string.tags_events_associated, entriesNumber),
                         color = Color.Red
                     )
             }
@@ -288,7 +290,7 @@ fun DeleteTag(
 @Composable
 fun TagEditActionButton(onClick: () -> Unit) {
     FloatingActionButton(onClick) {
-        Icon(Icons.Filled.Add, "add events to tag")
+        Icon(Icons.Filled.Add, stringResource(R.string.cd_add_events_to_tag))
     }
 }
 
@@ -305,7 +307,7 @@ fun AddEntriesDialog(
         onDismissRequest = onClose,
         dismissButton = {
             TextButton(onClick = onClose) {
-                Text("Cancel")
+                Text(stringResource(R.string.common_cancel))
             }
         },
         confirmButton = {
@@ -313,7 +315,7 @@ fun AddEntriesDialog(
                 addEntries(selectedEntries)
                 onClose()
             }) {
-                Text("OK")
+                Text(stringResource(R.string.common_ok))
             }
         },
         text = {
@@ -326,7 +328,7 @@ fun AddEntriesDialog(
                         }
                     )
 
-                    Text("${selectedEntries.size}/${allEntries.size} selected", Modifier.weight(1f))
+                    Text(stringResource(R.string.tags_selected_count, selectedEntries.size, allEntries.size), Modifier.weight(1f))
 
 
                     IconButton({ selectedEntries = setOf() }) {

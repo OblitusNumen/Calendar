@@ -13,10 +13,11 @@
             android:fullBackupContent="@xml/backup_rules"
             android:icon="@drawable/ic_calendar"
             android:label="@string/app_name"
+            android:localeConfig="@xml/locales_config"
             android:roundIcon="@drawable/ic_calendar"
             android:supportsRtl="true"
             android:theme="@style/Theme.Calendar"
-            tools:targetApi="31">
+            tools:targetApi="33">
         <receiver
                 android:name=".implementation.notifications.NotificationBroadcastReceiver"
                 android:enabled="true"
