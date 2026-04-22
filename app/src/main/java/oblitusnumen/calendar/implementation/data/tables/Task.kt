@@ -69,7 +69,9 @@ open class Task(
     }
 
     fun deleteCascade(dbManager: DbManager) {
-//        entry.deleteCascade()
+        if (entryId == null) return
+
+        Entry(entryId, null, isTask = true).deleteCascade(dbManager)
     }
 
     private fun delete(dbManager: DbManager) {
