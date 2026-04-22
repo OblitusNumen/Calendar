@@ -83,7 +83,7 @@ class DbManager(val context: Context) :
 //            entry.fixup()
 //        }
         // FIXME: for debug
-        fillTasksDB()
+//        fillTasksDB()
         tryScheduleMorningNotification()
     }
 
