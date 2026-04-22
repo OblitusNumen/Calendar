@@ -5,8 +5,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
@@ -132,13 +134,14 @@ fun NavigationGraph(
 
         composable(route = NavRoutes.TaskDetails.route) { navBackStackEntry ->
             val taskId = NavRoutes.TaskDetails.getArgs(navBackStackEntry)
-            if (taskId == null || !Task.exists(dbManager, taskId)) {
-                NavRoutes.backPress(navController)
+            val taskExists = remember { taskId != null && Task.exists(dbManager, taskId) }
+            if (!taskExists) {
+                LaunchedEffect(Unit) { NavRoutes.backPress(navController) }
                 return@composable
             }
 
             TaskDetailsScreen(dbManager,
-                taskId,
+                taskId!!,
                 { NavRoutes.TaskEdit.navHere(navController, taskId) },
                 { NavRoutes.backPress(navController) }
             )
@@ -152,7 +155,7 @@ fun NavigationGraph(
                 month,
                 tagsFilter,
                 { BottomBar(navController) },
-                {},// FIXME:
+                { NavRoutes.EntryEdit.navHere(navController, null) },
                 { NavRoutes.ThatDayDetails.navHere(navController, it) },
                 { NavRoutes.EntryDetails.navHere(navController, it.date.entryId) },
                 { NavRoutes.backPress(navController) }
@@ -196,14 +199,15 @@ fun NavigationGraph(
 
         composable(route = NavRoutes.EntryDetails.route) { navBackStackEntry ->
             val entryId = NavRoutes.EntryDetails.getArgs(navBackStackEntry)
-            if (entryId == null || !Entry.exists(dbManager, entryId)) {
-                NavRoutes.backPress(navController)
+            val entryExists = remember { entryId != null && Entry.exists(dbManager, entryId) }
+            if (!entryExists) {
+                LaunchedEffect(Unit) { NavRoutes.backPress(navController) }
                 return@composable
             }
 
             EntryDetailsScreen(
                 dbManager,
-                entryId,
+                entryId!!,
                 { NavRoutes.EntryEdit.navHere(navController, entryId) },
                 { NavRoutes.backPress(navController) }
             )
