@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Schedule
 import oblitusnumen.calendar.implementation.MILLIS_PER_DAY
@@ -39,7 +40,7 @@ import oblitusnumen.calendar.ui.theme.topBarColors
 import java.time.format.DateTimeFormatter
 
 @Composable
-fun EntryDetailsScreen(dbManager: DbManager, entryId: Int, editEntry: () -> Unit, backPress: () -> Unit) {
+fun EntryDetailsScreen(dbManager: DbManager, entryId: Int, editEntry: () -> Unit, viewTask: () -> Unit, backPress: () -> Unit) {
     val entry = remember { ViewEntryWithOptions.byId(dbManager, entryId) }!! // FIXME: replace with View
 
     val entryName = remember { entry.displayName }
@@ -58,17 +59,24 @@ fun EntryDetailsScreen(dbManager: DbManager, entryId: Int, editEntry: () -> Unit
 
             // name and color
             val color = remember { entry.color }
-            SelectionContainer {
-                Row {
-                    Box(
-                        Modifier.padding(8.dp).background(color, CircleShape).border(0.dp, color, CircleShape)
-                            .size(24.dp).align(Alignment.CenterVertically)
-                    )
-                    Text(
-                        entryName,
-                        Modifier.align(Alignment.CenterVertically).padding(4.dp),
-                        style = MaterialTheme.typography.titleLarge
-                    )
+            Row(Modifier.fillMaxWidth()) {
+                SelectionContainer(Modifier.weight(1f)) {
+                    Row {
+                        Box(
+                            Modifier.padding(8.dp).background(color, CircleShape).border(0.dp, color, CircleShape)
+                                .size(24.dp).align(Alignment.CenterVertically)
+                        )
+                        Text(
+                            entryName,
+                            Modifier.align(Alignment.CenterVertically).padding(4.dp),
+                            style = MaterialTheme.typography.titleLarge
+                        )
+                    }
+                }
+                if (entry.isTask) {
+                    IconButton(onClick = viewTask, modifier = Modifier.align(Alignment.CenterVertically)) {
+                        Icon(Icons.Outlined.CheckCircle, contentDescription = null)
+                    }
                 }
             }
 

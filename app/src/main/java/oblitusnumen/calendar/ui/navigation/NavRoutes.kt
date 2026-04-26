@@ -148,9 +148,14 @@ sealed class NavRoutes(private val path: String, val route: String = path) {
     }
 
     data object EntryDetails : NavRoutes("entryDetails", route = "entryDetails/{entry}") {
+        private const val path = "entryDetails"
         private const val entry = "entry"
 
         fun navHere(navController: NavController, entryId: Int?) {
+            if (navController.previousBackStackEntry?.destination?.route?.startsWith(path) ?: false) {// FIXME:
+                navController.popBackStack()
+                navController.popBackStack()
+            }
             navController.navigate(if (entryId != null) withArgs(entryId.toString()) else withArgs("-1"))
         }
 
@@ -162,9 +167,14 @@ sealed class NavRoutes(private val path: String, val route: String = path) {
     }
 
     data object TaskDetails : NavRoutes("taskDetails", route = "taskDetails/{task}") {
+        private const val path = "taskDetails"
         private const val task = "task"
 
         fun navHere(navController: NavController, taskId: Int?) {
+            if (navController.previousBackStackEntry?.destination?.route?.startsWith(path) ?: false) {// FIXME:
+                navController.popBackStack()
+                navController.popBackStack()
+            }
             navController.navigate(if (taskId != null) withArgs(taskId.toString()) else withArgs("-1"))
         }
 

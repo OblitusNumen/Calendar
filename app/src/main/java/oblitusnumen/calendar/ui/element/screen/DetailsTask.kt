@@ -10,6 +10,7 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.DateRange
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -33,7 +34,7 @@ import oblitusnumen.calendar.ui.formatTime
 import oblitusnumen.calendar.ui.theme.topBarColors
 
 @Composable
-fun TaskDetailsScreen(dbManager: DbManager, taskId: Int, editTask: () -> Unit, backPress: () -> Unit) {
+fun TaskDetailsScreen(dbManager: DbManager, taskId: Int, editTask: () -> Unit, viewEntry: () -> Unit, backPress: () -> Unit) {
     val context = LocalContext.current
     val task = remember { ViewTaskWithOptions.byId(dbManager, taskId) }!! // FIXME: replace with View
     val now = remember { now() }
@@ -61,17 +62,22 @@ fun TaskDetailsScreen(dbManager: DbManager, taskId: Int, editTask: () -> Unit, b
             // name and color
             item {
                 val color = remember { task.color }
-                SelectionContainer {
-                    Row {
-                        Box(
-                            Modifier.padding(8.dp).background(color, CircleShape).border(0.dp, color, CircleShape)
-                                .size(24.dp).align(Alignment.CenterVertically)
-                        )
-                        Text(
-                            taskName,
-                            Modifier.align(Alignment.CenterVertically).padding(4.dp),
-                            style = MaterialTheme.typography.titleLarge
-                        )
+                Row(Modifier.fillMaxWidth()) {
+                    SelectionContainer(Modifier.weight(1f)) {
+                        Row {
+                            Box(
+                                Modifier.padding(8.dp).background(color, CircleShape).border(0.dp, color, CircleShape)
+                                    .size(24.dp).align(Alignment.CenterVertically)
+                            )
+                            Text(
+                                taskName,
+                                Modifier.align(Alignment.CenterVertically).padding(4.dp),
+                                style = MaterialTheme.typography.titleLarge
+                            )
+                        }
+                    }
+                    IconButton(onClick = viewEntry, modifier = Modifier.align(Alignment.CenterVertically)) {
+                        Icon(Icons.Outlined.DateRange, contentDescription = null)
                     }
                 }
             }

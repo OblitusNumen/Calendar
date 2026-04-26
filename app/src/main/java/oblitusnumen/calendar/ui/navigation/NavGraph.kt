@@ -141,6 +141,7 @@ fun NavigationGraph(
                 dbManager,
                 taskId!!,
                 { NavRoutes.TaskEdit.navHere(navController, taskId) },
+                { NavRoutes.EntryDetails.navHere(navController, taskId) },
                 { NavRoutes.backPress(navController) }
             )
         }
@@ -207,6 +208,7 @@ fun NavigationGraph(
                 dbManager,
                 entryId!!,
                 { NavRoutes.EntryEdit.navHere(navController, entryId) },
+                { NavRoutes.TaskDetails.navHere(navController, entryId) },
                 { NavRoutes.backPress(navController) }
             )
         }
