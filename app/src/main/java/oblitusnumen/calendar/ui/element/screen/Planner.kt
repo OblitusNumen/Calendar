@@ -193,14 +193,17 @@ fun PlannerScreen(
                                 onToggleDone = if (isToday) { l, markDone ->
                                     toggleTodayDone(task, l, markDone)
                                 } else null,
-                                onSchedulePortion = if (isToday && log != null) { ->
+                                onSchedulePortion = if ((isToday && log != null) || task.timeRemaining > 0) { ->
+                                    val durationMinutes =
+                                        if (isToday && log != null) log.timePlanned * 15
+                                        else task.timeRemaining * 15
                                     dtPicker.dateTimePick(
                                         onCancel = {},
                                         onConfirm = { dateTime ->
                                             Date.scheduleOnce(
                                                 dbManager, task.entryId!!,
                                                 dateTime.atZone(task.timeZoneId),
-                                                log.timePlanned * 15
+                                                durationMinutes
                                             )
                                         }
                                     )
@@ -303,9 +306,9 @@ fun Task(
                 Modifier.fillMaxWidth().padding(4.dp),
             )
 
-        if (todayLog != null) {
+        if ((todayLog != null && onToggleDone != null) || onSchedulePortion != null) {
             Row(Modifier.align(Alignment.End)) {
-                if (onToggleDone != null) {
+                if (todayLog != null && onToggleDone != null) {
                     val isDoneToday =
                         todayLog.timeConsumed >= todayLog.timePlanned && todayLog.timePlanned > 0
                     TextButton(onClick = { onToggleDone(todayLog, !isDoneToday) }) {
