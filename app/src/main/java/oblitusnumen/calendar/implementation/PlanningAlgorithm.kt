@@ -36,9 +36,6 @@ fun planTasks(
     }
 
     // initialization and checks
-    val time: Array<Array<Int>>
-    val dayCount = tasks.maxOf { it.endLimit } + 1
-
     val predecessorLinks: Array<MutableList<Int>> = Array(tasks.size) { mutableListOf() }
     val successorsLinks: Array<MutableList<Int>> = Array(tasks.size) { mutableListOf() }
 
@@ -60,42 +57,17 @@ fun planTasks(
     }
 
     // algorithm initialization
-    time = Array(tasks.size) { Array(dayCount) { 0 } }
+    val dayCount = tasks.maxOf { it.endLimit } + 1
+    val time: Array<Array<Int>> = Array(tasks.size) { Array(dayCount) { 0 } }
+    // valid initial solution
     repeat(tasks.size) { index ->
         time[index][tasks[index].startLimit] = tasks[index].duration
         tasks[index].start = tasks[index].startLimit
         tasks[index].end = tasks[index].startLimit
     }
-    val tasksByEndDate = tasks.sortedBy { -it.endLimit }
-    val tasksByStartDate = tasks.sortedBy { it.startLimit }
-//    println(printOut(tasks, time))
-    val tasksByAvg = tasks.sortedBy { it.avg }
-
-    val avgMin: Array<Int> = Array(dayCount) { day ->
-        Array(tasks.size) {
-            val task = tasks[it]
-            if (task.startLimit <= day && day <= task.endLimit)
-                task.avg
-            else
-                0
-        }.maxOf { it }
-    }
 
     // algorithm
-    for (task in tasksByAvg) {
-        rangeOptimizingAlgorithm(
-            task.startLimit,
-            task.endLimit,
-            dayCount,
-            time,
-            tasksByEndDate,
-            tasksByStartDate,
-            successorsLinks,
-            predecessorLinks,
-            tasks,
-            avgMin,
-        )
-    }
+    solveAlgo(tasks, time, dayCount, successorsLinks, predecessorLinks)
 
     // calculating real duration
     tasks.forEach { task ->
@@ -108,7 +80,7 @@ fun planTasks(
         task.end = i
     }
 
-    checkResult(tasks, links)
+    checkResult(tasks, links, time)
 
     // id translation
     return time.withIndex().associateBy({ indexTranslationReverse[it.index]!! }, { it.value })
@@ -176,6 +148,72 @@ fun checkIllegalLinks(tasks: Array<Task>) {
     tasks.forEach {
         if (it.startLimit > it.endLimit)
             throw IllegalArgumentException("Illegal links detected")
+    }
+}
+
+fun solveAlgo(
+    tasks: Array<Task>,
+    time: Array<Array<Int>>,
+    dayCount: Int,
+    successorsLinks: Array<MutableList<Int>>,
+    predecessorLinks: Array<MutableList<Int>>,
+) {
+    val tasksByEndDate = tasks.sortedBy { -it.endLimit }
+    val tasksByStartDate = tasks.sortedBy { it.startLimit }
+
+    val avgMin: Array<Int> = Array(dayCount) { day ->
+        Array(tasks.size) {
+            val task = tasks[it]
+            if (task.startLimit <= day && day <= task.endLimit)
+                task.avg
+            else
+                0
+        }.maxOf { it }
+    }
+
+    rangeOptimizingAlgorithm(
+        0,
+        dayCount - 1,
+        dayCount,
+        time,
+        tasksByEndDate,
+        tasksByStartDate,
+        successorsLinks,
+        predecessorLinks,
+        tasks,
+        avgMin,
+    )
+
+    val tasksByStartByEnd = tasks.groupBy { it.startLimit }
+        .mapValues { (_, list) ->
+            list.sortedBy { -it.endLimit }
+        }
+        .toSortedMap()
+    for (tasksByEnd in tasksByStartByEnd) {
+        val lastPeak = tasksByEnd.key
+        var i = lastPeak
+        while (i < dayCount - 2) {
+            if (sumByDay(time, i) > sumByDay(time, i + 1) + i - lastPeak + 1) {
+                for (task in tasksByEnd.value) {
+                    rangeOptimizingAlgorithm(
+                        lastPeak,
+                        task.endLimit,
+                        dayCount,
+                        time,
+                        tasksByEndDate,
+                        tasksByStartDate,
+                        successorsLinks,
+                        predecessorLinks,
+                        tasks,
+                        avgMin,
+                    )
+                }
+                break
+            }
+            if (!tasksByStartByEnd.containsKey(i))
+                break
+            i++
+        }
     }
 }
 
@@ -292,9 +330,14 @@ fun rangeOptimizingAlgorithm(
 
 fun checkResult(
     tasks: Array<Task>,
-    links: List<TaskLink>
+    links: List<TaskLink>,
+    time: Array<Array<Int>>
 ) {
     for (task in tasks) {
+        val actualSum = time[task.index].sliceArray(task.start..task.end).sum()
+        if (actualSum != task.duration) throw RuntimeException("start and end are wrong: $task")
+        if (time[task.index].sum() != task.duration) throw RuntimeException("duration unsatisfied: $task")
+        if (time[task.index].any({ it < 0 })) throw RuntimeException("negative portions: $task")
         if (task.start < task.startLimit) throw RuntimeException("startLimit unsatisfied: $task")
         if (task.end > task.endLimit) throw RuntimeException("endLimit unsatisfied: $task")
     }
