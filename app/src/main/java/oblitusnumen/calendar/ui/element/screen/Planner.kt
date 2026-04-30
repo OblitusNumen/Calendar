@@ -37,6 +37,7 @@ import oblitusnumen.calendar.implementation.now
 import oblitusnumen.calendar.implementation.planTasks
 import oblitusnumen.calendar.ui.element.DateTimePicker
 import oblitusnumen.calendar.ui.element.EntryDescriptionAndTags
+import oblitusnumen.calendar.ui.element.MainDrawer
 import oblitusnumen.calendar.ui.element.PlanDistributionDialog
 import oblitusnumen.calendar.ui.formatTime
 import oblitusnumen.calendar.ui.theme.topBarColors
@@ -50,6 +51,8 @@ fun PlannerScreen(
     navBar: @Composable () -> Unit,
     openEditNewTask: () -> Unit,
     openTaskDetails: (Int) -> Unit,
+    openEntriesScreen: () -> Unit,
+    openTagsScreen: () -> Unit,
     openSettings: () -> Unit,
     initialTab: PlannerTab = PlannerTab.TODAY,
 ) {
@@ -102,7 +105,7 @@ fun PlannerScreen(
         PlanDistributionDialog(planned, today) { showPlanDist = false }
 
     ModalNavigationDrawer(
-        drawerContent = { PlannerDrawer(closeDrawer, openSettings) },
+        drawerContent = { MainDrawer(stringResource(R.string.planner_title), closeDrawer, openEntriesScreen, openTagsScreen, openSettings) },
         drawerState = drawerState,
     ) {
         Scaffold(
@@ -326,36 +329,6 @@ fun Task(
                 }
             }
         }
-    }
-}
-
-@Composable
-fun PlannerDrawer(
-    closeDrawer: () -> Unit,
-    openSettings: () -> Unit
-) {
-    ModalDrawerSheet {
-        Row(Modifier.padding(16.dp)) {
-            Text(stringResource(R.string.planner_title), Modifier.align(Alignment.CenterVertically).weight(1f))
-            IconButton(onClick = closeDrawer) {
-                Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.cd_close_drawer))
-            }
-        }
-
-        NavigationDrawerItem(
-            label = { Text(text = stringResource(R.string.nav_settings)) },
-            selected = false,
-            onClick = {
-                openSettings()
-                closeDrawer()
-            },
-            icon = {
-                Icon(
-                    imageVector = Icons.Filled.Settings,
-                    contentDescription = null
-                )
-            }
-        )
     }
 }
 

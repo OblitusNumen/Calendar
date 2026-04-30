@@ -1117,6 +1117,69 @@ fun EntryDescriptionAndTags(dbManager: DbManager, contents: String, tags: List<T
 }
 
 @Composable
+fun MainDrawer(
+    title: String,
+    closeDrawer: () -> Unit,
+    openEntriesScreen: () -> Unit,
+    openTagsScreen: () -> Unit,
+    openSettings: () -> Unit
+) {
+    ModalDrawerSheet {
+        Row(Modifier.padding(16.dp)) {
+            Text(title, Modifier.align(Alignment.CenterVertically).weight(1f))
+            IconButton(onClick = closeDrawer) {
+                Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.cd_close_drawer))
+            }
+        }
+
+        NavigationDrawerItem(
+            label = { Text(text = stringResource(R.string.nav_entries)) },
+            selected = false,
+            onClick = {
+                openEntriesScreen()
+                closeDrawer()
+            },
+            icon = {
+                Icon(
+                    imageVector = Icons.Filled.ViewList,
+                    contentDescription = null
+                )
+            }
+        )
+
+        NavigationDrawerItem(
+            label = { Text(text = stringResource(R.string.nav_tags)) },
+            selected = false,
+            onClick = {
+                openTagsScreen()
+                closeDrawer()
+            },
+            icon = {
+                Icon(
+                    imageVector = Icons.Filled.Star,
+                    contentDescription = null
+                )
+            }
+        )
+
+        NavigationDrawerItem(
+            label = { Text(text = stringResource(R.string.nav_settings)) },
+            selected = false,
+            onClick = {
+                openSettings()
+                closeDrawer()
+            },
+            icon = {
+                Icon(
+                    imageVector = Icons.Filled.Settings,
+                    contentDescription = null
+                )
+            }
+        )
+    }
+}
+
+@Composable
 fun BottomBar(navController: NavController) {
     NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.9f)) {
         val navBackStackEntry by navController.currentBackStackEntryAsState()

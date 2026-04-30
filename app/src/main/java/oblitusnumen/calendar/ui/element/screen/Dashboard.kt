@@ -38,6 +38,7 @@ import oblitusnumen.calendar.implementation.defaultZoneId
 import oblitusnumen.calendar.implementation.now
 import oblitusnumen.calendar.implementation.planTasks
 import oblitusnumen.calendar.implementation.zonedDateTime
+import oblitusnumen.calendar.ui.element.MainDrawer
 import oblitusnumen.calendar.ui.element.PlanDistributionDialog
 import oblitusnumen.calendar.ui.formatTime
 import oblitusnumen.calendar.ui.theme.topBarColors
@@ -119,7 +120,8 @@ fun DashboardScreen(
 
     ModalNavigationDrawer(
         drawerContent = {
-            DashboardDrawer(
+            MainDrawer(
+                stringResource(R.string.dashboard_title),
                 closeDrawer,
                 openEntriesScreen,
                 openTagsScreen,
@@ -227,68 +229,6 @@ fun DashboardScreen(
                 }
             }
         }
-    }
-}
-
-@Composable
-fun DashboardDrawer(
-    closeDrawer: () -> Unit,
-    openEntriesScreen: () -> Unit,
-    openTagsScreen: () -> Unit,
-    openSettings: () -> Unit
-) {
-    ModalDrawerSheet {
-        Row(Modifier.padding(16.dp)) {
-            Text(stringResource(R.string.nav_calendar), Modifier.align(Alignment.CenterVertically).weight(1f))
-            IconButton(onClick = closeDrawer) {
-                Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.cd_close_drawer))
-            }
-        }
-
-        NavigationDrawerItem(
-            label = { Text(text = stringResource(R.string.nav_entries)) },
-            selected = false,
-            onClick = {
-                openEntriesScreen()
-                closeDrawer()
-            },
-            icon = {
-                Icon(
-                    imageVector = Icons.Filled.ViewList,
-                    contentDescription = null
-                )
-            }
-        )
-
-        NavigationDrawerItem(
-            label = { Text(text = stringResource(R.string.nav_tags)) },
-            selected = false,
-            onClick = {
-                openTagsScreen()
-                closeDrawer()
-            },
-            icon = {
-                Icon(
-                    imageVector = Icons.Filled.Star,
-                    contentDescription = null
-                )
-            }
-        )
-
-        NavigationDrawerItem(
-            label = { Text(text = stringResource(R.string.nav_settings)) },
-            selected = false,
-            onClick = {
-                openSettings()
-                closeDrawer()
-            },
-            icon = {
-                Icon(
-                    imageVector = Icons.Filled.Settings,
-                    contentDescription = null
-                )
-            }
-        )
     }
 }
 

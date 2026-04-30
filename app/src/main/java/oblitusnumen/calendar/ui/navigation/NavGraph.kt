@@ -124,6 +124,8 @@ fun NavigationGraph(
                 { BottomBar(navController) },
                 { NavRoutes.TaskEdit.navHere(navController, null) },
                 { NavRoutes.TaskDetails.navHere(navController, it) },
+                { NavRoutes.Entries.navHere(navController) },
+                { NavRoutes.Tags.navHere(navController) },
                 { NavRoutes.Settings.navHere(navController) },
                 initialTab = if (openPlannerToday) PlannerTab.TODAY else tab
             )
