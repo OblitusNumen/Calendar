@@ -1191,6 +1191,9 @@ fun BottomBar(navController: NavController) {
                 selected = currentDestination?.route == topLevelRoute.route.route ||
                         (topLevelRoute.route.route == NavRoutes.Calendar.route && currentDestination?.route == NavRoutes.ThatDayDetails.route),
                 onClick = {
+                    if (navBackStackEntry?.destination?.route == topLevelRoute.route.route)
+                        return@NavigationBarItem
+
                     navController.navigate(topLevelRoute.route.route) {
                         // Pop up to the start destination of the graph to
                         // avoid building up a large stack of destinations
