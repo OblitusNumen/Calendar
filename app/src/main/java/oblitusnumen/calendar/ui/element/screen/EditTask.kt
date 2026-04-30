@@ -7,10 +7,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
+import android.widget.Toast
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -25,6 +27,7 @@ import oblitusnumen.calendar.implementation.now
 import oblitusnumen.calendar.ui.MINUTES_PER_QUARTER
 import oblitusnumen.calendar.ui.QUARTERS_PER_HOUR
 import oblitusnumen.calendar.ui.element.*
+import oblitusnumen.calendar.ui.state.TaskEditValidationError
 import oblitusnumen.calendar.ui.viewmodel.TaskEditViewModel
 import java.time.Instant
 import java.time.ZoneId
@@ -38,14 +41,25 @@ fun EditTaskScreen(
     backPress: () -> Unit
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val context = LocalContext.current
     // TODO: show/hide options mb same for editEntry
 
     Scaffold(topBar = {
         EditTopBar(
             stringResource(R.string.edit_task_title),
             {
-                backPress()
-                viewModel.commitToDb(dbManager)
+                viewModel.commitToDb(
+                    dbManager,
+                    onError = { err ->
+                        val msgRes = when (err) {
+                            TaskEditValidationError.StartAfterDeadline -> R.string.edit_task_error_start_after_deadline
+                            TaskEditValidationError.RecursiveLinks -> R.string.edit_task_error_recursive_links
+                            TaskEditValidationError.IllegalLinks -> R.string.edit_task_error_illegal_links
+                        }
+                        Toast.makeText(context, context.getString(msgRes), Toast.LENGTH_LONG).show()
+                    },
+                    onSuccess = backPress,
+                )
             },
             backPress
         )

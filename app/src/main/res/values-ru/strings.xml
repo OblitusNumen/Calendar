@@ -101,6 +101,9 @@
     <string name="edit_task_successors">Последователи</string>
     <string name="edit_task_add_successor">+ Добавить последователя</string>
     <string name="edit_task_add_successors">Добавить последователей</string>
+    <string name="edit_task_error_start_after_deadline">Время начала должно быть раньше срока</string>
+    <string name="edit_task_error_recursive_links">Обнаружена циклическая зависимость между задачами</string>
+    <string name="edit_task_error_illegal_links">Связи задач делают планирование невозможным</string>
 
     <!-- Settings -->
     <string name="settings_title">Настройки</string>

@@ -3,10 +3,12 @@ package oblitusnumen.calendar.ui.state
 import android.database.sqlite.SQLiteDatabase
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.TextFieldValue
+import oblitusnumen.calendar.implementation.checkRecursiveLinks
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.tables.*
 import oblitusnumen.calendar.implementation.data.views.ViewTaskWithOptions
 import oblitusnumen.calendar.implementation.defaultZoneId
+import oblitusnumen.calendar.implementation.initLinks
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -42,6 +44,63 @@ data class TaskEditState(
 
     val hasStartConstraint: Boolean
         get() = startConstraintTimestamp != null
+
+    fun validate(dbManager: DbManager): TaskEditValidationError? {
+        if (startConstraintTimestamp != null && startConstraintTimestamp >= deadlineTimestamp)
+            return TaskEditValidationError.StartAfterDeadline
+
+        val dbTasks = Task.all(dbManager)
+        val idToIndex = HashMap<Int, Int>(dbTasks.size + 1)
+        dbTasks.forEachIndexed { idx, t -> idToIndex[t.entryId!!] = idx }
+        val editedIndex = _taskId?.let { idToIndex[it] } ?: dbTasks.size
+        val n = if (_taskId == null) dbTasks.size + 1 else dbTasks.size
+
+        val predAdj: Array<MutableList<Int>> = Array(n) { mutableListOf() }
+        val succAdj: Array<MutableList<Int>> = Array(n) { mutableListOf() }
+
+        for (link in TaskLink.all(dbManager)) {
+            val p = idToIndex[link.predecessor] ?: continue
+            val s = idToIndex[link.successor] ?: continue
+            if (p == editedIndex || s == editedIndex) continue
+            predAdj[s].add(p)
+            succAdj[p].add(s)
+        }
+        for (predId in predecessors) {
+            val p = idToIndex[predId] ?: continue
+            predAdj[editedIndex].add(p)
+            succAdj[p].add(editedIndex)
+        }
+        for (sucId in successors) {
+            val s = idToIndex[sucId] ?: continue
+            succAdj[editedIndex].add(s)
+            predAdj[s].add(editedIndex)
+        }
+
+        val predClosure = initLinks(n, predAdj)
+        try {
+            checkRecursiveLinks(predClosure)
+        } catch (_: IllegalArgumentException) {
+            return TaskEditValidationError.RecursiveLinks
+        }
+        val succClosure = initLinks(n, succAdj)
+
+        val starts = LongArray(n) { idx ->
+            if (idx == editedIndex) startConstraintTimestamp ?: Long.MIN_VALUE
+            else dbTasks[idx].startConstraintTimestamp ?: Long.MIN_VALUE
+        }
+        val ends = LongArray(n) { idx ->
+            if (idx == editedIndex) deadlineTimestamp
+            else dbTasks[idx].deadlineTimestamp
+        }
+        for (i in 0 until n) {
+            predClosure[i].forEach { p -> if (starts[p] > starts[i]) starts[i] = starts[p] }
+            succClosure[i].forEach { s -> if (ends[s] < ends[i]) ends[i] = ends[s] }
+        }
+        if ((0 until n).any { starts[it] > ends[it] })
+            return TaskEditValidationError.IllegalLinks
+
+        return null
+    }
 
     fun commit(dbManager: DbManager) {
         val options = options
@@ -123,4 +182,10 @@ data class TaskEditState(
                 successors)
         }
     }
+}
+
+sealed class TaskEditValidationError {
+    object StartAfterDeadline : TaskEditValidationError()
+    object RecursiveLinks : TaskEditValidationError()
+    object IllegalLinks : TaskEditValidationError()
 }

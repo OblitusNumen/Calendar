@@ -161,6 +161,12 @@ open class Task(
             }
         }
 
+        fun all(dbManager: DbManager): List<Task> {
+            dbManager.readableDatabase.rawQuery("SELECT * FROM $TABLE_NAME", arrayOf()).use { cursor ->
+                return cursorToList(cursor)
+            }
+        }
+
         fun allIds(dbManager: DbManager): MutableList<Int> {
             dbManager.readableDatabase.rawQuery(
                 "SELECT $COLUMN_NAME_ENTRY_ID FROM $TABLE_NAME",

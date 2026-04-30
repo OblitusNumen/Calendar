@@ -101,6 +101,9 @@
     <string name="edit_task_successors">Successors</string>
     <string name="edit_task_add_successor">+ Add successor</string>
     <string name="edit_task_add_successors">Add successors</string>
+    <string name="edit_task_error_start_after_deadline">Start time must be before the deadline</string>
+    <string name="edit_task_error_recursive_links">Cyclic dependency detected between tasks</string>
+    <string name="edit_task_error_illegal_links">Task dependencies make scheduling impossible</string>
 
     <!-- Settings -->
     <string name="settings_title">Settings</string>

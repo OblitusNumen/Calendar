@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.tables.Tag
 import oblitusnumen.calendar.ui.state.TaskEditState
+import oblitusnumen.calendar.ui.state.TaskEditValidationError
 import java.time.ZoneId
 
 class TaskEditViewModel(initialState: TaskEditState) : ViewModel() {
@@ -41,11 +42,20 @@ class TaskEditViewModel(initialState: TaskEditState) : ViewModel() {
 
     fun setSuccessors(successors: List<Int>): Unit = _state.update { it.copy(successors = successors) }
 
-    fun commitToDb(dbManager: DbManager) {
-        // TODO: check start < deadline, recursive links, illegal links
+    fun commitToDb(
+        dbManager: DbManager,
+        onError: (TaskEditValidationError) -> Unit,
+        onSuccess: () -> Unit,
+    ) {
+        val snapshot = _state.value
+        val err = snapshot.validate(dbManager)
+        if (err != null) {
+            onError(err)
+            return
+        }
         viewModelScope.launch {
-            val snapshot = _state.value
             snapshot.commit(dbManager)
+            onSuccess()
         }
     }
 }

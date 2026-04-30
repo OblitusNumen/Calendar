@@ -11,15 +11,10 @@ import android.content.SharedPreferences
 import androidx.core.app.NotificationCompat
 import oblitusnumen.calendar.MainActivity
 import oblitusnumen.calendar.R
-import oblitusnumen.calendar.implementation.LocaleHelper
+import oblitusnumen.calendar.implementation.*
 import oblitusnumen.calendar.implementation.data.DbManager
+import oblitusnumen.calendar.implementation.data.tables.Task
 import oblitusnumen.calendar.implementation.data.tables.TaskLink
-import oblitusnumen.calendar.implementation.data.views.ViewTaskWithOptions
-import oblitusnumen.calendar.implementation.getZonedFromEpochSeconds
-import oblitusnumen.calendar.implementation.log
-import oblitusnumen.calendar.implementation.now
-import oblitusnumen.calendar.implementation.planTasks
-import oblitusnumen.calendar.implementation.setLogFile
 import oblitusnumen.calendar.ui.displayCount
 import java.time.format.DateTimeFormatter
 
@@ -34,9 +29,9 @@ class NotificationBroadcastReceiver : BroadcastReceiver() {
             val manager = c.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
             if (intent?.action == MORNING_NOTIFICATION_ACTION) {
-                val allTasks = ViewTaskWithOptions.all(dbManager)
+                val allTasks = Task.all(dbManager)
                 val links = TaskLink.all(dbManager)
-                val planned = planTasks(
+                val planned = planTasks(// FIXME: mb extract filter
                     allTasks.filter { !it.isDone && it.deadlineTimestamp >= now }.toTypedArray(),
                     links,
                     now
