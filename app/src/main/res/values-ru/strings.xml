@@ -130,6 +130,10 @@
     <string name="planner_schedule">Запланировать</string>
     <string name="planner_deps_suffix">+%1$s зав.</string>
 
+    <!-- Planned distribution dialog -->
+    <string name="plan_dist_title">Распределение нагрузки</string>
+    <string name="plan_dist_empty">Нет запланированных задач</string>
+
     <!-- Date screen -->
     <string name="date_screen_title">Дата %1$s</string>
     <string name="date_screen_exclude_occurrence">Исключить %1$s из %2$s</string>
@@ -201,6 +205,7 @@
     <string name="cd_done">выполнено</string>
     <string name="cd_remove">удалить</string>
     <string name="cd_tags">Метки</string>
+    <string name="cd_plan_dist">показать распределение нагрузки</string>
 
     <!-- Notifications -->
     <string name="notification_channel_normal">Обычные</string>

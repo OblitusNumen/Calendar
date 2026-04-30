@@ -50,6 +50,7 @@ import oblitusnumen.calendar.ui.element.screen.OffsetType
 import oblitusnumen.calendar.ui.element.screen.PeriodType
 import oblitusnumen.calendar.ui.element.screen.TagFilterMenu
 import oblitusnumen.calendar.ui.formatDateTime
+import oblitusnumen.calendar.ui.formatTime
 import oblitusnumen.calendar.ui.navigation.NavRoutes
 import oblitusnumen.calendar.ui.theme.topBarColors
 import java.time.LocalDate
@@ -985,6 +986,75 @@ fun ActionButtonWithScroll(onClick: () -> Unit, scrollTo: suspend (LocalDate) ->
             Icon(Icons.Filled.Add, stringResource(R.string.cd_add_event))
         }
     }
+}
+
+@Composable
+fun PlanDistributionDialog(
+    planned: Map<Int, Array<Int>>,
+    startDate: LocalDate,
+    onDismiss: () -> Unit,
+) {
+    val context = LocalContext.current
+    val dayCount = planned.values.firstOrNull()?.size ?: 0
+    val dailyQuarters: IntArray = remember(planned, dayCount) {
+        IntArray(dayCount) { day -> planned.values.sumOf { it[day] } }
+    }
+    val maxValue = dailyQuarters.maxOrNull() ?: 0
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.plan_dist_title)) },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_ok)) }
+        },
+        text = {
+            if (dayCount == 0 || maxValue == 0) {
+                Text(stringResource(R.string.plan_dist_empty))
+            } else {
+                val barColor = MaterialTheme.colorScheme.primary
+                val labelColor = MaterialTheme.colorScheme.onSurface
+                val chartHeight = 180.dp
+                val barWidth = 36.dp
+                val gap = 6.dp
+                val dateFormatter = remember { DateTimeFormatter.ofPattern("d MMM") }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    verticalAlignment = Alignment.Bottom,
+                ) {
+                    dailyQuarters.forEachIndexed { day, q ->
+                        val frac = q.toFloat() / maxValue
+                        val barHeight = if (q == 0) 0.dp else (chartHeight * frac).coerceAtLeast(2.dp)
+
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(horizontal = gap / 2),
+                        ) {
+                            Text(
+                                text = formatTime(context, q),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = labelColor,
+                                maxLines = 1,
+                            )
+
+                            Box(
+                                Modifier.width(barWidth).height(barHeight)
+                                    .background(barColor, RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
+                            )
+
+                            Text(
+                                text = startDate.plusDays(day.toLong()).format(dateFormatter),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = labelColor,
+                                maxLines = 1,
+                                modifier = Modifier.padding(top = 4.dp),
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    )
 }
 
 @Composable

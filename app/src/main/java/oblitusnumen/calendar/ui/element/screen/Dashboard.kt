@@ -12,8 +12,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,6 +38,7 @@ import oblitusnumen.calendar.implementation.defaultZoneId
 import oblitusnumen.calendar.implementation.now
 import oblitusnumen.calendar.implementation.planTasks
 import oblitusnumen.calendar.implementation.zonedDateTime
+import oblitusnumen.calendar.ui.element.PlanDistributionDialog
 import oblitusnumen.calendar.ui.formatTime
 import oblitusnumen.calendar.ui.theme.topBarColors
 import java.time.DayOfWeek
@@ -69,14 +73,12 @@ fun DashboardScreen(
     val overdueTasks = remember { allTasks.filter { it.isOverdue(now) } }
     val workLeftQuarters = remember { activeTasks.sumOf { it.timeRemaining } }
 
-    val todayTasks = remember {
+    val planned = remember {
         val plannedTasks: Array<Task> = allTasks.filter { !it.isDone && it.deadlineTimestamp >= now }.toTypedArray()
-        if (plannedTasks.isEmpty()) {
-            emptyList()
-        } else {
-            val planned = planTasks(plannedTasks, links, now)
-            allTasks.filter { planned[it.taskId!!]?.let { dist -> dist[0] > 0 } ?: false }
-        }
+        if (plannedTasks.isEmpty()) emptyMap() else planTasks(plannedTasks, links, now)
+    }
+    val todayTasks = remember {
+        allTasks.filter { planned[it.taskId!!]?.let { dist -> dist[0] > 0 } ?: false }
     }
 
     val weekStart = remember { today.with(DayOfWeek.MONDAY).let { if (it.isAfter(today)) it.minusWeeks(1) else it } }
@@ -111,6 +113,10 @@ fun DashboardScreen(
     val closeDrawer: () -> Unit = { coroutineScope.launch { drawerState.close() } }
     val openDrawer: () -> Unit = { coroutineScope.launch { drawerState.open() } }
 
+    var showPlanDist by remember { mutableStateOf(false) }
+    if (showPlanDist)
+        PlanDistributionDialog(planned, today) { showPlanDist = false }
+
     ModalNavigationDrawer(
         drawerContent = {
             DashboardDrawer(
@@ -123,7 +129,7 @@ fun DashboardScreen(
         drawerState = drawerState,
     ) {
         Scaffold(
-            topBar = { DashboardTopBar(openDrawer) },
+            topBar = { DashboardTopBar(openDrawer, onShowPlanDist = { showPlanDist = true }) },
             bottomBar = navBar,
             floatingActionButton = {
                 FloatingActionButton(onClick = newEntry) {
@@ -524,7 +530,7 @@ private fun DashboardMonthGrid(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DashboardTopBar(openDrawer: () -> Unit) {
+fun DashboardTopBar(openDrawer: () -> Unit, onShowPlanDist: () -> Unit) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
 
     CenterAlignedTopAppBar(
@@ -540,11 +546,10 @@ fun DashboardTopBar(openDrawer: () -> Unit) {
         },
         title = { Text(stringResource(R.string.dashboard_title)) },
         actions = {
-            IconButton(onClick = {
-            }) {
+            IconButton(onClick = onShowPlanDist) {
                 Icon(
                     imageVector = Icons.Filled.DateRange,
-                    contentDescription = null
+                    contentDescription = stringResource(R.string.cd_plan_dist)
                 )
             }
         },

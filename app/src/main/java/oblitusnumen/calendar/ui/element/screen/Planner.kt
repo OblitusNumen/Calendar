@@ -37,9 +37,10 @@ import oblitusnumen.calendar.implementation.now
 import oblitusnumen.calendar.implementation.planTasks
 import oblitusnumen.calendar.ui.element.DateTimePicker
 import oblitusnumen.calendar.ui.element.EntryDescriptionAndTags
+import oblitusnumen.calendar.ui.element.PlanDistributionDialog
 import oblitusnumen.calendar.ui.formatTime
 import oblitusnumen.calendar.ui.theme.topBarColors
-import java.time.ZonedDateTime
+import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalKoalaPlotApi::class)
 @Composable
@@ -60,12 +61,52 @@ fun PlannerScreen(
     val dtPicker = remember { DateTimePicker() }
     dtPicker.tryCompose()
 
+    val now = now()
+    val links = remember { TaskLink.all(dbManager) }
+    val allTasks = remember {
+        mutableStateListOf(*ViewTaskWithOptions.all(dbManager).sortedBy { it.progress }.toTypedArray())
+    }
+    val predecessorLinks: Map<Int, MutableList<Int>> = remember {
+        val predecessorLinks: Map<Int, MutableList<Int>> =
+            allTasks.map { it.taskId!! }.associateWith { mutableListOf() }
+        links.forEach { link ->
+            predecessorLinks[link.successor]!!.add(link.predecessor)
+        }
+        return@remember predecessorLinks
+    }
+    val today = remember { LocalDate.now(defaultZoneId()) }
+    val todayStart = remember { today.atStartOfDay(defaultZoneId()).toEpochSecond() }
+    val todayLogs = remember { mutableStateMapOf<Int, TaskLog>() }
+    val planned = remember {
+        // FIXME: wrong filter
+        val plannedTasks: Array<Task> = allTasks.filter { task ->
+            task.deadlineTimestamp >= now && !task.isDone
+        }.toTypedArray()
+        val result = planTasks(plannedTasks, links, now)
+
+        // persist today's planned portions in TaskLog
+        result.forEach { (taskId, dist) ->
+            if (dist[0] > 0) {
+                val task = allTasks.firstOrNull { it.taskId == taskId } ?: return@forEach
+                val log = TaskLog.upsert(
+                    dbManager, taskId, todayStart, task.timeZoneId, dist[0]
+                )
+                todayLogs[taskId] = log
+            }
+        }
+        result
+    }
+
+    var showPlanDist by remember { mutableStateOf(false) }
+    if (showPlanDist)
+        PlanDistributionDialog(planned, today) { showPlanDist = false }
+
     ModalNavigationDrawer(
         drawerContent = { PlannerDrawer(closeDrawer, openSettings) },
         drawerState = drawerState,
     ) {
         Scaffold(
-            topBar = { PlannerTopBar(openDrawer) },
+            topBar = { PlannerTopBar(openDrawer, onShowPlanDist = { showPlanDist = true }) },
             bottomBar = navBar,
             floatingActionButton = {
                 FloatingActionButton(onClick = openEditNewTask) {
@@ -106,46 +147,6 @@ fun PlannerScreen(
                             }
                         )
                     }
-                }
-
-                val now = now()
-                val links = remember { TaskLink.all(dbManager) }
-                val allTasks = remember {
-                    mutableStateListOf(*ViewTaskWithOptions.all(dbManager).sortedBy { it.progress }.toTypedArray())
-                }
-                val predecessorLinks: Map<Int, MutableList<Int>> = remember {
-                    val predecessorLinks: Map<Int, MutableList<Int>> =
-                        allTasks.map { it.taskId!! }.associateWith { mutableListOf() }
-                    links.forEach { link ->
-                        predecessorLinks[link.successor]!!.add(link.predecessor)
-                    }
-                    return@remember predecessorLinks
-                }
-
-                val todayStart = remember {
-                    ZonedDateTime.now(defaultZoneId()).toLocalDate()
-                        .atStartOfDay(defaultZoneId()).toEpochSecond()
-                }
-                val todayLogs = remember { mutableStateMapOf<Int, TaskLog>() }
-
-                val planned = remember {
-                    // FIXME: wrong filter
-                    val plannedTasks: Array<Task> = allTasks.filter { task ->
-                        task.deadlineTimestamp >= now && !task.isDone
-                    }.toTypedArray()
-                    val result = planTasks(plannedTasks, links, now)
-
-                    // persist today's planned portions in TaskLog
-                    result.forEach { (taskId, dist) ->
-                        if (dist[0] > 0) {
-                            val task = allTasks.firstOrNull { it.taskId == taskId } ?: return@forEach
-                            val log = TaskLog.upsert(
-                                dbManager, taskId, todayStart, task.timeZoneId, dist[0]
-                            )
-                            todayLogs[taskId] = log
-                        }
-                    }
-                    result
                 }
 
                 fun toggleTodayDone(task: ViewTaskWithOptions, log: TaskLog, markDone: Boolean) {
@@ -360,7 +361,7 @@ fun PlannerDrawer(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PlannerTopBar(openDrawer: () -> Unit) {
+fun PlannerTopBar(openDrawer: () -> Unit, onShowPlanDist: () -> Unit) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
 
     CenterAlignedTopAppBar(
@@ -376,11 +377,10 @@ fun PlannerTopBar(openDrawer: () -> Unit) {
         },
         title = {},
         actions = {
-            IconButton(onClick = {
-            }) {
+            IconButton(onClick = onShowPlanDist) {
                 Icon(
                     imageVector = Icons.Filled.DateRange,
-                    contentDescription = null
+                    contentDescription = stringResource(R.string.cd_plan_dist)
                 )
             }
         },
