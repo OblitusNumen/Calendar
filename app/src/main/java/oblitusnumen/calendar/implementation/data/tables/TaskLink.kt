@@ -113,6 +113,8 @@ data class TaskLink(val predecessor: Int, val successor: Int) : BaseColumns {
 
         fun checkSuccessor(dbManager: DbManager, id: Int, predecessors: List<Int>): Boolean {
             for (predecessor in predecessors) {
+                if (id == predecessor)
+                    return false
                 if (!checkPredecessor(dbManager, predecessor, successors(dbManager, id)))
                     return false
             }
