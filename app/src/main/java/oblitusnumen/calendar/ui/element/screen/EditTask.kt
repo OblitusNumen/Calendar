@@ -371,7 +371,7 @@ fun EditTaskScreen(
                     ChooseTasksDialog(
                         dbManager,
                         stringResource(R.string.edit_task_add_predecessors),
-                        Task.allIds(dbManager) - state.predecessors,
+                        Task.allIds(dbManager) - state.predecessors - state.successors,
                         { chooseDialogVisible = false },
                         {
                             viewModel.setPredecessors(state.predecessors + it)
@@ -411,7 +411,7 @@ fun EditTaskScreen(
                     ChooseTasksDialog(
                         dbManager,
                         stringResource(R.string.edit_task_add_successors),
-                        Task.allIds(dbManager) - state.successors,
+                        Task.allIds(dbManager) - state.successors - state.predecessors,
                         { chooseDialogVisible = false },
                         {
                             viewModel.setSuccessors(state.successors + it)

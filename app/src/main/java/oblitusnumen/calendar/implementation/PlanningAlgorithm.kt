@@ -103,6 +103,8 @@ fun initLinks(
                 continue
             }
             val first = stack.peek().removeAt(0)
+            if (linkSets[taskId].contains(first))
+                throw IllegalArgumentException("recursive links")
             linkSets[taskId].add(first)
             if (linkSets[first].isNotEmpty()) {
                 linkSets[taskId].addAll(linkSets[first])

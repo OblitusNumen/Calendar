@@ -76,8 +76,9 @@ data class TaskEditState(
             predAdj[s].add(editedIndex)
         }
 
-        val predClosure = initLinks(n, predAdj)
+        val predClosure: Array<MutableSet<Int>>
         try {
+            predClosure = initLinks(n, predAdj)
             checkRecursiveLinks(predClosure)
         } catch (_: IllegalArgumentException) {
             return TaskEditValidationError.RecursiveLinks
@@ -115,9 +116,9 @@ data class TaskEditState(
             } else {
                 entry.update(dbManager)
             }
-            
+
             val task = task
-            
+
             if (isNew)
                 task.create(dbManager)
             else
