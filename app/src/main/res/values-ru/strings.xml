@@ -47,9 +47,9 @@
     <string name="dashboard_good_morning">Доброе утро</string>
     <string name="dashboard_good_afternoon">Добрый день</string>
     <string name="dashboard_good_evening">Добрый вечер</string>
-    <string name="dashboard_stat_events_today">Событий сегодня</string>
+    <string name="dashboard_stat_hours_today">Работы на сегодня</string>
     <string name="dashboard_stat_active_tasks">Активные задачи</string>
-    <string name="dashboard_stat_work_left">Осталось работы</string>
+    <string name="dashboard_stat_hours_week">Работы на неделе</string>
     <string name="dashboard_stat_overdue">Просрочено</string>
 
     <!-- Weekday short buttons (used in period selector) -->

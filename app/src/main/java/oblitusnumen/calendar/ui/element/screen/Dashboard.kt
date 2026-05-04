@@ -72,7 +72,6 @@ fun DashboardScreen(
 
     val activeTasks = remember { allTasks.filter { !it.isDone } }
     val overdueTasks = remember { allTasks.filter { it.isOverdue(now) } }
-    val workLeftQuarters = remember { activeTasks.sumOf { it.timeRemaining } }
 
     val planned = remember {
         val plannedTasks: Array<Task> = allTasks.filter { !it.isDone && it.deadlineTimestamp >= now }.toTypedArray()
@@ -80,6 +79,14 @@ fun DashboardScreen(
     }
     val todayTasks = remember {
         allTasks.filter { planned[it.taskId!!]?.let { dist -> dist[0] > 0 } ?: false }
+    }
+    val todayWorkQuarters = remember { planned.values.sumOf { if (it.isNotEmpty()) it[0] else 0 } }
+    val weekWorkQuarters = remember {
+        planned.values.sumOf { dist ->
+            var sum = 0
+            for (i in 0 until minOf(7, dist.size)) sum += dist[i]
+            sum
+        }
     }
 
     val weekStart = remember { today.with(DayOfWeek.MONDAY).let { if (it.isAfter(today)) it.minusWeeks(1) else it } }
@@ -147,13 +154,13 @@ fun DashboardScreen(
 
                 item {
                     DashboardStats(
-                        todayCount = todayOccurrences.size,
+                        todayWorkQuarters = todayWorkQuarters,
                         activeCount = activeTasks.size,
-                        workLeftQuarters = workLeftQuarters,
+                        weekWorkQuarters = weekWorkQuarters,
                         overdueCount = overdueTasks.size,
-                        onEventsClick = { openThatDayInfo(today) },
+                        onTodayWorkClick = { openPlanner(PlannerTab.TODAY) },
                         onTasksClick = { openPlanner(PlannerTab.CURRENT) },
-                        onWorkClick = { openPlanner(PlannerTab.ALL) },
+                        onWeekWorkClick = { openPlanner(PlannerTab.CURRENT) },
                         onOverdueClick = { openPlanner(PlannerTab.OVERDUE) },
                     )
                 }
@@ -198,7 +205,8 @@ fun DashboardScreen(
                     }
                 } else {
                     items(todayTasks, key = { it.taskId!! }) { task ->
-                        DashboardTaskRow(task, now) { openTaskDetails(task.taskId!!) }
+                        val todayQuarters = planned[task.taskId!!]?.let { if (it.isNotEmpty()) it[0] else 0 } ?: 0
+                        DashboardTaskRow(task, todayQuarters, now) { openTaskDetails(task.taskId!!) }
                     }
                 }
 
@@ -254,21 +262,24 @@ private fun DashboardGreeting(today: LocalDate) {
 
 @Composable
 private fun DashboardStats(
-    todayCount: Int,
+    todayWorkQuarters: Int,
     activeCount: Int,
-    workLeftQuarters: Int,
+    weekWorkQuarters: Int,
     overdueCount: Int,
-    onEventsClick: () -> Unit,
+    onTodayWorkClick: () -> Unit,
     onTasksClick: () -> Unit,
-    onWorkClick: () -> Unit,
+    onWeekWorkClick: () -> Unit,
     onOverdueClick: () -> Unit,
 ) {
     val context = LocalContext.current
     Column(Modifier.padding(horizontal = 12.dp, vertical = 4.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             DashboardStatCard(
-                Modifier.weight(1f), stringResource(R.string.dashboard_stat_events_today), todayCount.toString(),
-                Icons.Filled.Event, onClick = onEventsClick
+                Modifier.weight(1f),
+                stringResource(R.string.dashboard_stat_hours_today),
+                formatTime(context, todayWorkQuarters),
+                Icons.Filled.Schedule,
+                onClick = onTodayWorkClick
             )
             DashboardStatCard(
                 Modifier.weight(1f), stringResource(R.string.dashboard_stat_active_tasks), activeCount.toString(),
@@ -281,10 +292,10 @@ private fun DashboardStats(
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             DashboardStatCard(
                 Modifier.weight(1f),
-                stringResource(R.string.dashboard_stat_work_left),
-                formatTime(context, workLeftQuarters),
-                Icons.Filled.Schedule,
-                onClick = onWorkClick
+                stringResource(R.string.dashboard_stat_hours_week),
+                formatTime(context, weekWorkQuarters),
+                Icons.Filled.DateRange,
+                onClick = onWeekWorkClick
             )
             DashboardStatCard(
                 Modifier.weight(1f), stringResource(R.string.dashboard_stat_overdue), overdueCount.toString(),
@@ -373,10 +384,10 @@ private fun DashboardEventRow(occurrence: DateOccurrence, onClick: () -> Unit) {
 }
 
 @Composable
-private fun DashboardTaskRow(task: ViewTaskWithOptions, nowEpochSecond: Long, onClick: () -> Unit) {
+private fun DashboardTaskRow(task: ViewTaskWithOptions, todayQuarters: Int, nowEpochSecond: Long, onClick: () -> Unit) {
     val context = LocalContext.current
     val isOverdue = task.isOverdue(nowEpochSecond)
-    val timeLeft = formatTime(context, task.timeRemaining)
+    val timeLeft = formatTime(context, todayQuarters)
 
     Row(
         Modifier.fillMaxWidth().clickable(onClick = onClick)

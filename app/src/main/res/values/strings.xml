@@ -47,9 +47,9 @@
     <string name="dashboard_good_morning">Good morning</string>
     <string name="dashboard_good_afternoon">Good afternoon</string>
     <string name="dashboard_good_evening">Good evening</string>
-    <string name="dashboard_stat_events_today">Events today</string>
+    <string name="dashboard_stat_hours_today">Hours today</string>
     <string name="dashboard_stat_active_tasks">Active tasks</string>
-    <string name="dashboard_stat_work_left">Work left</string>
+    <string name="dashboard_stat_hours_week">Hours this week</string>
     <string name="dashboard_stat_overdue">Overdue</string>
 
     <!-- Weekday short buttons (used in period selector) -->
