@@ -44,6 +44,7 @@ import oblitusnumen.calendar.implementation.data.tables.Tag
 import oblitusnumen.calendar.implementation.data.views.ViewEntryWithOptions
 import oblitusnumen.calendar.implementation.data.views.ViewTaskWithOptions
 import oblitusnumen.calendar.implementation.defaultZoneId
+import oblitusnumen.calendar.ui.MINUTES_PER_QUARTER
 import oblitusnumen.calendar.ui.PositionStatus
 import oblitusnumen.calendar.ui.element.screen.ExcludeOccurrenceDialog
 import oblitusnumen.calendar.ui.element.screen.OffsetType
@@ -338,6 +339,57 @@ fun IntTextField(
         trailingIcon = trailingIcon,
         maxLines = 1
     )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MinuteDropdown(
+    selectedMinutes: Int,
+    onMinuteSelected: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val options = remember { listOf(0, MINUTES_PER_QUARTER, MINUTES_PER_QUARTER * 2, MINUTES_PER_QUARTER * 3) }
+    var expanded by remember { mutableStateOf(false) }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = it },
+        modifier = modifier,
+    ) {
+        OutlinedTextField(
+            value = selectedMinutes.toString(),
+            onValueChange = {},
+            readOnly = true,
+            textStyle = MaterialTheme.typography.bodyLarge,
+            trailingIcon = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        stringResource(R.string.edit_task_unit_minute),
+                        Modifier.padding(horizontal = 4.dp)
+                    )
+                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                }
+            },
+            modifier = Modifier
+                .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                .fillMaxWidth(),
+            maxLines = 1,
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+        ) {
+            options.forEach { m ->
+                DropdownMenuItem(
+                    text = { Text(m.toString()) },
+                    onClick = {
+                        onMinuteSelected(m)
+                        expanded = false
+                    },
+                )
+            }
+        }
+    }
 }
 
 /**
@@ -836,6 +888,7 @@ fun SelectableTagChip(name: String, color: Color, selected: Boolean, onSelect: (
 
 @Composable
 fun Link(task: ViewTaskWithOptions, isValid: Boolean, onRemove: () -> Unit) {
+    val context = LocalContext.current
     Row(Modifier.padding(horizontal = 4.dp, vertical = 2.dp)) {
         val color = remember { task.color }
         Box(
@@ -859,14 +912,7 @@ fun Link(task: ViewTaskWithOptions, isValid: Boolean, onRemove: () -> Unit) {
             )
         } else {
             Text(
-                text = "${
-                    task.timeRemaining
-                    // FIXME:
-//                    task.countPredecessorsTimeEstimate(
-//                        allTasks.associateBy { it.taskId!! },
-//                        predecessorLinks
-//                    )
-                }",
+                text = formatTime(context, task.timeRemaining),
                 modifier = Modifier.padding(horizontal = 8.dp)
                     .align(Alignment.CenterVertically),
                 style = MaterialTheme.typography.bodyLarge,

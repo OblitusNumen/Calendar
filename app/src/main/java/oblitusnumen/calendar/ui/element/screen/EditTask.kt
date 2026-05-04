@@ -308,16 +308,19 @@ fun EditTaskScreen(
                     IntTextField(
                         state.timeConsumed / QUARTERS_PER_HOUR,
                         { it?.let { h -> viewModel.setTimeConsumed(h * QUARTERS_PER_HOUR + state.timeConsumed % QUARTERS_PER_HOUR) } },
-                        modifier = Modifier.width(96.dp).padding(4.dp),
+                        modifier = Modifier.width(110.dp).padding(4.dp),
                         trailingIcon = { Text(stringResource(R.string.edit_task_unit_hour), Modifier.padding(horizontal = 4.dp)) },
                         maxDigits = 5)
 
-                    IntTextField(
-                        (state.timeConsumed % QUARTERS_PER_HOUR) * MINUTES_PER_QUARTER,
-                        { it?.let { m -> viewModel.setTimeConsumed(state.timeConsumed / QUARTERS_PER_HOUR * QUARTERS_PER_HOUR + m / MINUTES_PER_QUARTER) } },
-                        modifier = Modifier.width(88.dp).padding(4.dp),
-                        trailingIcon = { Text(stringResource(R.string.edit_task_unit_minute), Modifier.padding(horizontal = 4.dp)) },
-                        maxDigits = 2)
+                    MinuteDropdown(
+                        selectedMinutes = (state.timeConsumed % QUARTERS_PER_HOUR) * MINUTES_PER_QUARTER,
+                        onMinuteSelected = { m ->
+                            viewModel.setTimeConsumed(
+                                state.timeConsumed / QUARTERS_PER_HOUR * QUARTERS_PER_HOUR + m / MINUTES_PER_QUARTER
+                            )
+                        },
+                        modifier = Modifier.width(100.dp).padding(4.dp),
+                    )
                 }
             }
 
@@ -329,16 +332,19 @@ fun EditTaskScreen(
                     IntTextField(
                         state.timeRemaining / QUARTERS_PER_HOUR,
                         { it?.let { h -> viewModel.setTimeRemaining(h * QUARTERS_PER_HOUR + state.timeRemaining % QUARTERS_PER_HOUR) } },
-                        modifier = Modifier.width(96.dp).padding(4.dp),
+                        modifier = Modifier.width(110.dp).padding(4.dp),
                         trailingIcon = { Text(stringResource(R.string.edit_task_unit_hour), Modifier.padding(horizontal = 4.dp)) },
                         maxDigits = 5)
 
-                    IntTextField(
-                        (state.timeRemaining % QUARTERS_PER_HOUR) * MINUTES_PER_QUARTER,
-                        { it?.let { m -> viewModel.setTimeRemaining(state.timeRemaining / QUARTERS_PER_HOUR * QUARTERS_PER_HOUR + m / MINUTES_PER_QUARTER) } },
-                        modifier = Modifier.width(88.dp).padding(4.dp),
-                        trailingIcon = { Text(stringResource(R.string.edit_task_unit_minute), Modifier.padding(horizontal = 4.dp)) },
-                        maxDigits = 2)
+                    MinuteDropdown(
+                        selectedMinutes = (state.timeRemaining % QUARTERS_PER_HOUR) * MINUTES_PER_QUARTER,
+                        onMinuteSelected = { m ->
+                            viewModel.setTimeRemaining(
+                                state.timeRemaining / QUARTERS_PER_HOUR * QUARTERS_PER_HOUR + m / MINUTES_PER_QUARTER
+                            )
+                        },
+                        modifier = Modifier.width(100.dp).padding(4.dp),
+                    )
                 }
             }
 
