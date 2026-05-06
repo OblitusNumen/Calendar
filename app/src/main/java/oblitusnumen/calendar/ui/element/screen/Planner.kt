@@ -39,6 +39,7 @@ import oblitusnumen.calendar.ui.element.DateTimePicker
 import oblitusnumen.calendar.ui.element.EntryDescriptionAndTags
 import oblitusnumen.calendar.ui.element.MainDrawer
 import oblitusnumen.calendar.ui.element.PlanDistributionDialog
+import oblitusnumen.calendar.ui.element.TopBarTagFilterTitle
 import oblitusnumen.calendar.ui.formatTime
 import oblitusnumen.calendar.ui.theme.topBarColors
 import java.time.LocalDate
@@ -64,10 +65,15 @@ fun PlannerScreen(
     val dtPicker = remember { DateTimePicker() }
     dtPicker.tryCompose()
 
+    var tagsFilter by remember { tagsFilter }
+
     val now = now()
     val links = remember { TaskLink.all(dbManager) }
     val allTasks = remember {
         mutableStateListOf(*ViewTaskWithOptions.all(dbManager).sortedBy { it.progress }.toTypedArray())
+    }
+    val taskTagIds: Map<Int, Set<Int>> = remember(allTasks.size) {
+        allTasks.associate { it.entryId!! to Tag.forEntry(dbManager, it.entryId!!).map { t -> t.id!! }.toSet() }
     }
     val predecessorLinks: Map<Int, MutableList<Int>> = remember {
         val predecessorLinks: Map<Int, MutableList<Int>> =
@@ -109,7 +115,7 @@ fun PlannerScreen(
         drawerState = drawerState,
     ) {
         Scaffold(
-            topBar = { PlannerTopBar(openDrawer, onShowPlanDist = { showPlanDist = true }) },
+            topBar = { PlannerTopBar(dbManager, tagsFilter, { tagsFilter = it }, openDrawer, onShowPlanDist = { showPlanDist = true }) },
             bottomBar = navBar,
             floatingActionButton = {
                 FloatingActionButton(onClick = openEditNewTask) {
@@ -169,6 +175,8 @@ fun PlannerScreen(
                         allTasks[idx] = ViewTaskWithOptions.byId(dbManager, task.taskId!!)!!
                 }
 
+                val selectedTagIds = remember(tagsFilter) { tagsFilter.map { it.id!! }.toSet() }
+
                 HorizontalPager(pagerState, verticalAlignment = Alignment.Top) { page ->
                     val isToday = PlannerTab.entries[page] == PlannerTab.TODAY
                     val tabTasks = when (PlannerTab.entries[page]) {
@@ -188,8 +196,13 @@ fun PlannerScreen(
                         PlannerTab.ALL -> allTasks.toList()
                     }
 
+                    val visibleTasks = if (selectedTagIds.isEmpty()) tabTasks
+                    else tabTasks.filter { task ->
+                        (taskTagIds[task.entryId!!] ?: emptySet()).containsAll(selectedTagIds)
+                    }
+
                     LazyColumn(Modifier.fillMaxSize()) {
-                        items(tabTasks, key = { it.taskId!! }) { task ->
+                        items(visibleTasks, key = { it.taskId!! }) { task ->
                             val log = if (isToday) todayLogs[task.taskId!!] else null
                             Task(
                                 openTaskDetails, task, now, allTasks, predecessorLinks, dbManager,
@@ -334,7 +347,13 @@ fun Task(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PlannerTopBar(openDrawer: () -> Unit, onShowPlanDist: () -> Unit) {
+fun PlannerTopBar(
+    dbManager: DbManager,
+    tagsFilter: List<Tag>,
+    tagsFilterUpdate: (List<Tag>) -> Unit,
+    openDrawer: () -> Unit,
+    onShowPlanDist: () -> Unit,
+) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
 
     CenterAlignedTopAppBar(
@@ -348,7 +367,7 @@ fun PlannerTopBar(openDrawer: () -> Unit, onShowPlanDist: () -> Unit) {
                 )
             }
         },
-        title = {},
+        title = { TopBarTagFilterTitle(dbManager, tagsFilter, tagsFilterUpdate) },
         actions = {
             IconButton(onClick = onShowPlanDist) {
                 Icon(
