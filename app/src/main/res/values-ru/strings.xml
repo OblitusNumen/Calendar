@@ -138,7 +138,6 @@
     <string name="plan_dist_empty">Нет запланированных задач</string>
 
     <!-- Date screen -->
-    <string name="date_screen_title">Дата %1$s</string>
     <string name="date_screen_exclude_occurrence">Исключить %1$s из %2$s</string>
 
     <!-- Details Entry -->

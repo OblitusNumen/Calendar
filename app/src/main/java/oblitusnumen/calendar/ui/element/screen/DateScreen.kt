@@ -35,6 +35,7 @@ import oblitusnumen.calendar.ui.theme.topBarColors
 import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import kotlin.math.max
 import kotlin.math.min
 
@@ -253,7 +254,7 @@ fun DateTopBar(day: LocalDate, openAgenda: () -> Unit, backPress: () -> Unit) {
         navigationIcon = { BackPressButton(backPress) },
         title = {
             Row {
-                Text(stringResource(R.string.date_screen_title, day.toString()), Modifier.weight(1f).align(Alignment.CenterVertically), maxLines = 1)
+                Text(day.format(DateTimeFormatter.ofPattern("EEE, d MMM yyyy")), Modifier.weight(1f).align(Alignment.CenterVertically), maxLines = 1)
 
                 IconButton(openAgenda, Modifier.align(Alignment.CenterVertically)) {
                     Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, stringResource(R.string.cd_open_month_agenda))
