@@ -393,11 +393,10 @@ fun DisplayDayAgenda(
         AgendaDayHeader(day, now, openDayInfo)
 
         if (dates.isEmpty()) {
-            Text(
-                stringResource(R.string.agenda_no_events),
-                Modifier.padding(start = 56.dp, top = 4.dp, bottom = 8.dp),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodyMedium
+            InfoRow(
+                icon = null,
+                text = stringResource(R.string.agenda_no_events),
+                textColor = MaterialTheme.colorScheme.onSurfaceVariant
             )
         } else {
             for (occurrence in dates) {
@@ -405,7 +404,7 @@ fun DisplayDayAgenda(
             }
         }
 
-        HorizontalDivider(Modifier.padding(horizontal = 12.dp))
+        SectionDivider()
     }
 }
 

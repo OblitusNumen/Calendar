@@ -12,11 +12,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,6 +36,7 @@ import oblitusnumen.calendar.implementation.data.DateOccurrence
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.tables.Task
 import oblitusnumen.calendar.implementation.data.tables.TaskLink
+import oblitusnumen.calendar.implementation.data.tables.TaskLog
 import oblitusnumen.calendar.implementation.data.views.ViewDateWithOptions
 import oblitusnumen.calendar.implementation.data.views.ViewTaskWithOptions
 import oblitusnumen.calendar.implementation.defaultZoneId
@@ -56,41 +61,66 @@ fun DashboardScreen(
     openThatDayInfo: (LocalDate) -> Unit,
     openEntriesScreen: () -> Unit,
     openTagsScreen: () -> Unit,
+    openTaskLogs: () -> Unit,
     openSettings: () -> Unit,
     openEntryDetails: (Int) -> Unit,
     openTaskDetails: (Int) -> Unit,
     openAgenda: (Int, Int, Int?) -> Unit,
     openCalendar: () -> Unit,
     openPlanner: (PlannerTab) -> Unit,
+    openYearView: () -> Unit,
 ) {
     val today = LocalDate.now()
     val now = now()
 
-    val todayOccurrences = remember { ViewDateWithOptions.occurrencesForDay(dbManager, today) }
-    val allTasks = remember { ViewTaskWithOptions.all(dbManager) }
-    val links = remember { TaskLink.all(dbManager) }
+    // for updating
+    var refreshKey by remember { mutableStateOf(0) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) refreshKey++
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
-    val activeTasks = remember { allTasks.filter { !it.isDone } }
-    val overdueTasks = remember { allTasks.filter { it.isOverdue(now) } }
+    val todayOccurrences = remember(refreshKey) { ViewDateWithOptions.occurrencesForDay(dbManager, today) }
+    val allTasks = remember(refreshKey) { ViewTaskWithOptions.all(dbManager) }
+    val links = remember(refreshKey) { TaskLink.all(dbManager) }
 
-    val planned = remember {
+    val activeTasks = remember(allTasks) { allTasks.filter { !it.isDone } }
+    val overdueTasks = remember(allTasks, now) { allTasks.filter { it.isOverdue(now) } }
+
+    val todayStart = remember { today.atStartOfDay(defaultZoneId()).toEpochSecond() }
+    val todayConsumed: Map<Int, Int> = remember(refreshKey) {
+        TaskLog.forDay(dbManager, todayStart).associate { it.taskId to it.timeConsumed }
+    }
+    val planned = remember(allTasks, links, todayConsumed, now) {
         val plannedTasks: Array<Task> = allTasks.filter { !it.isDone && it.deadlineTimestamp >= now }.toTypedArray()
-        if (plannedTasks.isEmpty()) emptyMap() else planTasks(plannedTasks, links, now)
+        if (plannedTasks.isEmpty() && todayConsumed.isEmpty()) emptyMap()
+        else planTasks(plannedTasks, links, now, todayConsumed)
     }
-    val todayTasks = remember {
-        allTasks.filter { planned[it.taskId!!]?.let { dist -> dist[0] > 0 } ?: false }
+    val todayTasks = remember(allTasks, planned, todayConsumed) {
+        allTasks.filter { task ->
+            (planned[task.taskId!!]?.getOrNull(0) ?: 0) > 0 ||
+                    (todayConsumed[task.taskId!!] ?: 0) > 0
+        }
     }
-    val todayWorkQuarters = remember { planned.values.sumOf { if (it.isNotEmpty()) it[0] else 0 } }
-    val weekWorkQuarters = remember {
+    val todayWorkQuarters = remember(planned, todayConsumed) {
+        planned.entries.sumOf { (id, dist) ->
+            (if (dist.isNotEmpty()) dist[0] else 0) + (todayConsumed[id] ?: 0)
+        }
+    }
+    val weekWorkQuarters = remember(planned, todayConsumed) {
         planned.values.sumOf { dist ->
             var sum = 0
             for (i in 0 until minOf(7, dist.size)) sum += dist[i]
             sum
-        }
+        } + todayConsumed.values.sum()
     }
 
     val weekStart = remember { today.with(DayOfWeek.MONDAY).let { if (it.isAfter(today)) it.minusWeeks(1) else it } }
-    val weekDates = remember {
+    val weekDates = remember(refreshKey) {
         ViewDateWithOptions.all(
             dbManager,
             zonedDateTime(weekStart).toEpochSecond(),
@@ -106,7 +136,7 @@ fun DashboardScreen(
     val gridEnd = remember {
         monthEnd.with(DayOfWeek.SUNDAY).let { if (it.isBefore(monthEnd)) it.plusWeeks(1) else it }
     }
-    val monthDates = remember {
+    val monthDates = remember(refreshKey) {
         ViewDateWithOptions.all(
             dbManager,
             zonedDateTime(gridStart).toEpochSecond(),
@@ -130,8 +160,10 @@ fun DashboardScreen(
             MainDrawer(
                 stringResource(R.string.dashboard_title),
                 closeDrawer,
+                openYearView,
                 openEntriesScreen,
                 openTagsScreen,
+                openTaskLogs,
                 openSettings
             )
         },
@@ -205,7 +237,8 @@ fun DashboardScreen(
                     }
                 } else {
                     items(todayTasks, key = { it.taskId!! }) { task ->
-                        val todayQuarters = planned[task.taskId!!]?.let { if (it.isNotEmpty()) it[0] else 0 } ?: 0
+                        val todayQuarters = (planned[task.taskId!!]?.let { if (it.isNotEmpty()) it[0] else 0 } ?: 0) +
+                                (todayConsumed[task.taskId!!] ?: 0)
                         DashboardTaskRow(task, todayQuarters, now) { openTaskDetails(task.taskId!!) }
                     }
                 }

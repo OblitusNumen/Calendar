@@ -19,6 +19,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
@@ -73,7 +74,7 @@ fun SearchTopBar(
         title = {
             Row(
                 Modifier.background(
-                    MaterialTheme.colorScheme.background.copy(alpha = .5f),
+                    MaterialTheme.colorScheme.surfaceContainerHigh,
                     shape = RoundedCornerShape(100)
                 )
                     .clip(RoundedCornerShape(100))
@@ -195,9 +196,9 @@ fun PeriodSelector(
     Row {
         //offset text field
         val focusRequester = remember { FocusRequester() }
-        OutlinedTextField(// FIXME: ui paddings
+        OutlinedTextField(
             enabled = selectedPeriodType.period !is Once,
-            modifier = Modifier.width(100.dp).padding(horizontal = 8.dp)
+            modifier = Modifier.width(100.dp).padding(horizontal = 4.dp)
                 .focusRequester(focusRequester),
             value = offsetCount, onValueChange = {
                 val text = it.text
@@ -259,9 +260,9 @@ fun OffsetSelector(
     Row {
         //offset text field
         val focusRequester = remember { FocusRequester() }
-        OutlinedTextField(// FIXME: ui paddings
+        OutlinedTextField(
             enabled = selectedOffsetType.period !is Once,
-            modifier = Modifier.width(100.dp).padding(horizontal = 8.dp)
+            modifier = Modifier.width(100.dp).padding(horizontal = 4.dp)
                 .focusRequester(focusRequester),
             value = offsetCount, onValueChange = {
                 val text = it.text
@@ -414,7 +415,6 @@ fun TimeZoneSelector(
     selectedTimeZoneId: String,
     onTimeZoneSelected: (String) -> Unit,
     modifier: Modifier = Modifier,
-    label: @Composable () -> Unit = { Text(stringResource(R.string.timezone_label)) }
 ) {
     val selectedTimeZone = remember(selectedTimeZoneId) {
         TimeZone.getTimeZone(selectedTimeZoneId.ifBlank { TimeZone.getDefault().id })
@@ -434,26 +434,28 @@ fun TimeZoneSelector(
 
     var showDialog by remember { mutableStateOf(false) }
 
-    // ─────────────────────────────────────────────────────────────
-    // This is the key component that makes the whole field clickable
-    // ─────────────────────────────────────────────────────────────
     ExposedDropdownMenuBox(
         expanded = showDialog,
-        onExpandedChange = { showDialog = it },   // handles click perfectly
+        onExpandedChange = { showDialog = it },
         modifier = modifier
     ) {
-        OutlinedTextField(
-            value = displayText,
-            onValueChange = {}, // read-only
-            readOnly = true,
-            label = label,
-            trailingIcon = {
-                ExposedDropdownMenuDefaults.TrailingIcon(expanded = showDialog)
-            },
-            modifier = Modifier
+        Row(
+            Modifier
+                .menuAnchor(MenuAnchorType.PrimaryNotEditable)
                 .fillMaxWidth()
-                .menuAnchor(MenuAnchorType.PrimaryNotEditable)   // ← THIS IS THE MAGIC
-        )
+                .defaultMinSize(minHeight = 40.dp)
+                .padding(horizontal = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                displayText,
+                Modifier.weight(1f),
+                style = MaterialTheme.typography.bodyLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            ExposedDropdownMenuDefaults.TrailingIcon(expanded = showDialog)
+        }
     }
 
     if (showDialog) {
@@ -619,14 +621,7 @@ fun SelectableEntry(
     Row {
         if (selected)
             Checkbox(checked = true, onCheckedChange = {})
-        Column(
-            Modifier.padding(2.dp).fillMaxWidth().defaultMinSize(minHeight = 64.dp).background(
-                MaterialTheme.colorScheme.primaryContainer, shape = RoundedCornerShape(10.dp)
-            ).combinedClickable(
-                onLongClick = onLongClick,
-                onClick = onClick
-            )
-        ) {
+        EntryCardSurface(onClick = onClick, onLongClick = onLongClick) {
             Row(Modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 8.dp)) {
                 Box(
                     Modifier.padding(end = 8.dp).size(24.dp).background(entryView.color, CircleShape)
@@ -657,12 +652,9 @@ fun Entry(dbManager: DbManager, occurrence: DateOccurrence, openEntryInfo: () ->
     var excludeDateShown by remember(hack) { mutableStateOf(false) }
     val dateMeta = occurrence.date
 
-    Column(
-        Modifier.padding(2.dp).fillMaxWidth().defaultMinSize(minHeight = 64.dp)
-            .background(
-                MaterialTheme.colorScheme.primaryContainer,
-                shape = RoundedCornerShape(10.dp)
-            ).combinedClickable(onLongClick = { excludeDateShown = true }, onClick = openEntryInfo)
+    EntryCardSurface(
+        onClick = openEntryInfo,
+        onLongClick = { excludeDateShown = true }
     ) {
         Row(Modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 8.dp)) {
             Box(
@@ -809,7 +801,7 @@ fun TopBarTagFilterTitle(dbManager: DbManager, tagsFilter: List<Tag>, tagsFilter
 @Composable
 fun Tag(text: String, color: Color) {
     Text(
-        modifier = Modifier.padding(horizontal = 2.dp, vertical = 1.5.dp).background(
+        modifier = Modifier.padding(horizontal = 2.dp, vertical = 2.dp).background(
             color, shape = RoundedCornerShape(10.dp)
         ).padding(vertical = 1.dp, horizontal = 6.dp),
         text = text,
@@ -889,16 +881,19 @@ fun SelectableTagChip(name: String, color: Color, selected: Boolean, onSelect: (
 @Composable
 fun Link(task: ViewTaskWithOptions, isValid: Boolean, onRemove: () -> Unit) {
     val context = LocalContext.current
-    Row(Modifier.padding(horizontal = 4.dp, vertical = 2.dp)) {
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         val color = remember { task.color }
         Box(
-            Modifier.padding(8.dp).background(color, CircleShape).border(0.dp, color, CircleShape)
-                .size(24.dp).align(Alignment.CenterVertically)
+            Modifier.padding(end = 8.dp).size(24.dp)
+                .background(color, CircleShape).border(0.dp, color, CircleShape)
         )
 
         Text(
             task.displayName,
-            Modifier.align(Alignment.CenterVertically).padding(4.dp).weight(1f),
+            Modifier.weight(1f),
             style = MaterialTheme.typography.titleLarge,
             color = if (isValid) MaterialTheme.colorScheme.onBackground else Color.Red,
         )
@@ -907,14 +902,12 @@ fun Link(task: ViewTaskWithOptions, isValid: Boolean, onRemove: () -> Unit) {
             Icon(
                 Icons.Filled.Done,
                 contentDescription = stringResource(R.string.cd_done),
-                Modifier.align(Alignment.CenterVertically),
                 tint = Color.Green
             )
         } else {
             Text(
                 text = formatTime(context, task.timeRemaining),
-                modifier = Modifier.padding(horizontal = 8.dp)
-                    .align(Alignment.CenterVertically),
+                modifier = Modifier.padding(horizontal = 8.dp),
                 style = MaterialTheme.typography.bodyLarge,
                 overflow = TextOverflow.Ellipsis,
                 maxLines = 1,
@@ -959,20 +952,23 @@ fun ChooseTasksDialog(
 
 @Composable
 fun SelectableTask(task: ViewTaskWithOptions, checked: Boolean, onClick: () -> Unit) {
-    Row(Modifier.padding(horizontal = 4.dp, vertical = 2.dp).clickable(onClick = onClick)) {
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp).clickable(onClick = onClick),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         if (checked) {
-            Checkbox(checked = true, onCheckedChange = {}, modifier = Modifier.align(Alignment.CenterVertically))
+            Checkbox(checked = true, onCheckedChange = {})
         }
 
         val color = remember { task.color }
         Box(
-            Modifier.padding(8.dp).background(color, CircleShape).border(0.dp, color, CircleShape)
-                .size(24.dp).align(Alignment.CenterVertically)
+            Modifier.padding(end = 8.dp).size(24.dp)
+                .background(color, CircleShape).border(0.dp, color, CircleShape)
         )
 
         Text(
             task.displayName,
-            Modifier.align(Alignment.CenterVertically).padding(4.dp).weight(1f),
+            Modifier.weight(1f),
             style = MaterialTheme.typography.titleLarge,
         )
 
@@ -980,7 +976,6 @@ fun SelectableTask(task: ViewTaskWithOptions, checked: Boolean, onClick: () -> U
             Icon(
                 Icons.Filled.Done,
                 contentDescription = stringResource(R.string.cd_done),
-                Modifier.align(Alignment.CenterVertically),
                 tint = Color.Green
             )
         } else {
@@ -993,8 +988,7 @@ fun SelectableTask(task: ViewTaskWithOptions, checked: Boolean, onClick: () -> U
 //                        predecessorLinks
 //                    )
                 }",
-                modifier = Modifier.padding(horizontal = 8.dp)
-                    .align(Alignment.CenterVertically),
+                modifier = Modifier.padding(horizontal = 8.dp),
                 style = MaterialTheme.typography.bodyLarge,
                 overflow = TextOverflow.Ellipsis,
                 maxLines = 1,
@@ -1152,8 +1146,7 @@ fun EntryDescriptionAndTags(dbManager: DbManager, contents: String, tags: List<T
     if (tags.isNotEmpty()) {
         FlowRow(
             Modifier.fillMaxWidth()
-                .padding(horizontal = 4.dp)
-                .padding(bottom = 6.5.dp)
+                .padding(start = 4.dp, end = 4.dp, bottom = 8.dp)
         ) {
             for (tag in tags) {
                 Tag(tag.name, tag.colorOrDefault(dbManager))
@@ -1166,17 +1159,38 @@ fun EntryDescriptionAndTags(dbManager: DbManager, contents: String, tags: List<T
 fun MainDrawer(
     title: String,
     closeDrawer: () -> Unit,
+    openYearView: () -> Unit,
     openEntriesScreen: () -> Unit,
     openTagsScreen: () -> Unit,
+    openTaskLogs: () -> Unit,
     openSettings: () -> Unit
 ) {
     ModalDrawerSheet {
         Row(Modifier.padding(16.dp)) {
-            Text(title, Modifier.align(Alignment.CenterVertically).weight(1f))
+            Text(
+                title,
+                Modifier.align(Alignment.CenterVertically).weight(1f),
+                style = MaterialTheme.typography.titleLarge,
+            )
             IconButton(onClick = closeDrawer) {
                 Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.cd_close_drawer))
             }
         }
+
+        NavigationDrawerItem(
+            label = { Text(text = stringResource(R.string.nav_year)) },
+            selected = false,
+            onClick = {
+                openYearView()
+                closeDrawer()
+            },
+            icon = {
+                Icon(
+                    imageVector = Icons.Filled.CalendarMonth,
+                    contentDescription = null
+                )
+            }
+        )
 
         NavigationDrawerItem(
             label = { Text(text = stringResource(R.string.nav_entries)) },
@@ -1203,6 +1217,21 @@ fun MainDrawer(
             icon = {
                 Icon(
                     imageVector = Icons.Filled.Star,
+                    contentDescription = null
+                )
+            }
+        )
+
+        NavigationDrawerItem(
+            label = { Text(text = stringResource(R.string.nav_task_logs)) },
+            selected = false,
+            onClick = {
+                openTaskLogs()
+                closeDrawer()
+            },
+            icon = {
+                Icon(
+                    imageVector = Icons.Filled.History,
                     contentDescription = null
                 )
             }
@@ -1260,6 +1289,102 @@ fun BottomBar(navController: NavController) {
             )
         }
     }
+}
+
+@Composable
+fun SectionDivider(tight: Boolean = false) {
+    HorizontalDivider(Modifier.padding(horizontal = 24.dp, vertical = if (tight) 2.dp else 8.dp))
+}
+
+@Composable
+fun SectionHeader(text: String, emphasised: Boolean = false) {
+    if (emphasised)
+        Text(
+            text,
+            Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+            style = MaterialTheme.typography.titleMedium
+        )
+    else
+        Text(text, Modifier.padding(12.dp))
+}
+
+@Composable
+fun InfoRow(
+    icon: ImageVector?,
+    text: String,
+    modifier: Modifier = Modifier,
+    tint: Color = LocalContentColor.current,
+    textColor: Color = Color.Unspecified,
+    trailing: @Composable RowScope.() -> Unit = {}
+) {
+    Row(
+        modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (icon != null) {
+            Icon(icon, contentDescription = null, Modifier.size(20.dp), tint = tint)
+            Spacer(Modifier.width(8.dp))
+        } else {
+            Spacer(Modifier.width(28.dp))
+        }
+        Text(
+            text,
+            Modifier.weight(1f),
+            style = MaterialTheme.typography.bodyLarge,
+            color = textColor
+        )
+        trailing()
+    }
+}
+
+@Composable
+fun LabeledValue(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier) {
+        Text(
+            label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(value, style = MaterialTheme.typography.bodyLarge)
+    }
+}
+
+@Composable
+fun AddActionRow(
+    label: String,
+    icon: ImageVector = Icons.Filled.Add,
+    onClick: () -> Unit
+) {
+    Row(
+        Modifier.defaultMinSize(minHeight = 52.dp).fillMaxWidth().clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(icon, contentDescription = null, Modifier.size(20.dp))
+        Spacer(Modifier.width(8.dp))
+        Text(label, style = MaterialTheme.typography.bodyLarge)
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun EntryCardSurface(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Column(
+        modifier.padding(2.dp).fillMaxWidth().defaultMinSize(minHeight = 64.dp)
+            .background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(10.dp))
+            .combinedClickable(onLongClick = onLongClick, onClick = onClick),
+        content = content
+    )
 }
 
 @Preview

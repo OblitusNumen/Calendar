@@ -23,7 +23,7 @@ data class TaskEditState(
     val deadlineTimestamp: Long,
     val timeZoneId: ZoneId,
     val timeConsumed: Int = 0,
-    val timeRemaining: Int = 0,
+    val timeRemaining: Int = 1, // FIXME: non-zero; might be better if configured in settings
     val contents: TextFieldValue,
     val tags: List<Tag>,
     val predecessors: List<Int>,
@@ -145,6 +145,8 @@ data class TaskEditState(
         } else {
             options.updateWithTransaction(dbManager, updateTransaction)
         }
+
+        dbManager.tryScheduleNotification()
     }
 
     fun withTimeZone(timeZoneId: ZoneId): TaskEditState {
@@ -176,7 +178,7 @@ data class TaskEditState(
                 task?.deadlineTimestamp ?: ZonedDateTime.now().toEpochSecond(),
                 task?.timeZoneId ?: defaultZoneId(),
                 task?.timeConsumed ?: 0,
-                task?.timeRemaining ?: 0,
+                task?.timeRemaining ?: 1, // FIXME: non-zero; might be better if configured in settings
                 TextFieldValue(task?.getContents(dbManager) ?: ""),
                 taskId?.let { Tag.forEntry(dbManager, taskId).sortedBy { it.name } } ?: emptyList(),
                 predecessors,

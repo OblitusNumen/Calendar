@@ -84,6 +84,7 @@ fun NavigationGraph(
                 { NavRoutes.ThatDayDetails.navHere(navController, it) },
                 { NavRoutes.Entries.navHere(navController) },
                 { NavRoutes.Tags.navHere(navController) },
+                { NavRoutes.TaskLogs.navHere(navController) },
                 { NavRoutes.Settings.navHere(navController) },
                 { NavRoutes.EntryDetails.navHere(navController, it) },
                 { NavRoutes.TaskDetails.navHere(navController, it) },
@@ -93,6 +94,7 @@ fun NavigationGraph(
                 },
                 { NavRoutes.Calendar.navHere(navController) },
                 { NavRoutes.Planner.navHere(navController, it) },
+                { NavRoutes.YearView.navHere(navController) },
             )
         }
 
@@ -111,7 +113,9 @@ fun NavigationGraph(
                 },
                 { NavRoutes.Entries.navHere(navController) },
                 { NavRoutes.Tags.navHere(navController) },
+                { NavRoutes.TaskLogs.navHere(navController) },
                 { NavRoutes.Settings.navHere(navController) },
+                { NavRoutes.YearView.navHere(navController) },
             )
         }
 
@@ -126,7 +130,9 @@ fun NavigationGraph(
                 { NavRoutes.TaskDetails.navHere(navController, it) },
                 { NavRoutes.Entries.navHere(navController) },
                 { NavRoutes.Tags.navHere(navController) },
+                { NavRoutes.TaskLogs.navHere(navController) },
                 { NavRoutes.Settings.navHere(navController) },
+                { NavRoutes.YearView.navHere(navController) },
                 initialTab = if (openPlannerToday) PlannerTab.TODAY else tab
             )
         }
@@ -250,6 +256,18 @@ fun NavigationGraph(
 
         composable(route = NavRoutes.Settings.route) {
             SettingsScreen(dbManager, { NavRoutes.backPress(navController) })
+        }
+
+        composable(route = NavRoutes.TaskLogs.route) {
+            TaskLogsScreen(dbManager) { NavRoutes.backPress(navController) }
+        }
+
+        composable(route = NavRoutes.YearView.route) {
+            YearViewScreen(
+                dbManager,
+                { year, monthValue -> NavRoutes.Agenda.navHere(navController, year, monthValue, null) },
+                { NavRoutes.backPress(navController) },
+            )
         }
     }
 }

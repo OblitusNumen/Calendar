@@ -1,6 +1,5 @@
 package oblitusnumen.calendar.ui.element.screen
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -74,7 +73,10 @@ fun TagEditScreen(
 
                 var selectedEntries by selectedEntries
                 if (selectedEntries.isNotEmpty())
-                    Row(Modifier.background(MaterialTheme.colorScheme.background.copy(alpha = 0.5f))) {
+                    Row(
+                        Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Checkbox(
                             checked = selectedEntries.size == edits.entryAssociations.size,
                             onCheckedChange = {
@@ -82,7 +84,10 @@ fun TagEditScreen(
                             }
                         )
 
-                        Text(stringResource(R.string.tags_selected_count, selectedEntries.size, edits.entryAssociations.size), Modifier.weight(1f))
+                        Text(
+                            stringResource(R.string.tags_selected_count, selectedEntries.size, edits.entryAssociations.size),
+                            Modifier.weight(1f)
+                        )
 
                         DeleteButton { edits.rmEntryAssociations(*selectedEntries.toIntArray()) }
                     }
@@ -167,11 +172,11 @@ fun TagEditTopBar(
             title = {
 //                val focusRequester = remember { FocusRequester() }
                 Column {
-                    TextField(// FIXME: ui paddings
+                    TextField(
                         isError = error != TagNameError.NONE,
                         modifier = Modifier
 //                            .focusRequester(focusRequester)
-                            .padding(horizontal = 8.dp)
+                            .padding(horizontal = 12.dp)
                             .align(Alignment.CenterHorizontally),
                         value = name,
                         readOnly = !editable,
@@ -233,7 +238,7 @@ fun TagEditTopBar(
                     TagNameError.ALREADY_EXISTS -> stringResource(R.string.tags_name_exists)
                     else -> throw RuntimeException("Unknown error")
                 },
-                Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background.copy(alpha = .5f)),
+                Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
                 color = Color.Red
             )
     }
@@ -320,7 +325,10 @@ fun AddEntriesDialog(
         },
         text = {
             Column {
-                Row(Modifier.background(MaterialTheme.colorScheme.background.copy(alpha = 0.5f))) {
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Checkbox(
                         checked = selectedEntries.size == allEntries.size,
                         onCheckedChange = { value ->
@@ -328,8 +336,10 @@ fun AddEntriesDialog(
                         }
                     )
 
-                    Text(stringResource(R.string.tags_selected_count, selectedEntries.size, allEntries.size), Modifier.weight(1f))
-
+                    Text(
+                        stringResource(R.string.tags_selected_count, selectedEntries.size, allEntries.size),
+                        Modifier.weight(1f)
+                    )
 
                     IconButton({ selectedEntries = setOf() }) {
                         Icon(

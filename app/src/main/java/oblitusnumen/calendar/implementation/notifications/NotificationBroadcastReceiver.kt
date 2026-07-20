@@ -15,7 +15,9 @@ import oblitusnumen.calendar.implementation.*
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.tables.Task
 import oblitusnumen.calendar.implementation.data.tables.TaskLink
+import oblitusnumen.calendar.implementation.data.tables.TaskLog
 import oblitusnumen.calendar.ui.displayCount
+import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 class NotificationBroadcastReceiver : BroadcastReceiver() {
@@ -31,12 +33,17 @@ class NotificationBroadcastReceiver : BroadcastReceiver() {
             if (intent?.action == MORNING_NOTIFICATION_ACTION) {
                 val allTasks = Task.all(dbManager)
                 val links = TaskLink.all(dbManager)
+                val todayStart = LocalDate.now(defaultZoneId()).atStartOfDay(defaultZoneId()).toEpochSecond()
+                val todayConsumed = TaskLog.forDay(dbManager, todayStart).associate { it.taskId to it.timeConsumed }
                 val planned = planTasks(// FIXME: mb extract filter
                     allTasks.filter { !it.isDone && it.deadlineTimestamp >= now }.toTypedArray(),
                     links,
-                    now
+                    now,
+                    todayConsumed,
                 )
-                val todayCount = planned.count { (_, dist) -> dist[0] > 0 }
+                val todayCount = planned.count { (id, dist) ->
+                    (dist.getOrNull(0) ?: 0) + (todayConsumed[id] ?: 0) > 0
+                }
 
                 val notification = NotificationCompat.Builder(c, MORNING_TASK_CHANNEL_ID)
                     .setSmallIcon(R.drawable.ic_calendar)
@@ -59,12 +66,8 @@ class NotificationBroadcastReceiver : BroadcastReceiver() {
             }
 
             val sharedPreferences: SharedPreferences = DbManager.getSharedPrefs(c)
-            val pendingNotifications = dbManager.getPendingNotificationsInRange(
-                sharedPreferences.getLong(
-                    LAST_NOTIFICATION_TIME_PREFERENCE_NAME,
-                    now
-                ), now
-            )
+            val from = sharedPreferences.getLong(LAST_NOTIFICATION_TIME_PREFERENCE_NAME, now)
+            val pendingNotifications = dbManager.getPendingNotificationsInRange(from, now)
             for (pendingNotification in pendingNotifications) {
                 log("NotificationBroadcastReceiver SENDING_NOTIFICATION " + pendingNotification.notification.eventOptionsId + ":" + pendingNotification.notification.offset)
                 val notification = NotificationCompat.Builder(
@@ -94,6 +97,37 @@ class NotificationBroadcastReceiver : BroadcastReceiver() {
                     )
                     .build()
                 manager.notify(pendingNotification.dateHash(), notification)
+            }
+            val pendingDeadlines = dbManager.getPendingDeadlineNotificationsInRange(from, now)
+            for (pending in pendingDeadlines) {
+                log("NotificationBroadcastReceiver SENDING_DEADLINE_NOTIFICATION ${pending.task.taskId}:${pending.offset}")
+                val notification = NotificationCompat.Builder(
+                    c,
+                    if (pending.sound) NORMAL_CHANNEL_ID else SILENT_CHANNEL_ID
+                )
+                    .setSmallIcon(R.drawable.ic_calendar)
+                    .setContentTitle(pending.task.displayName)
+                    .setContentIntent(
+                        PendingIntent.getActivity(
+                            c,
+                            pending.task.taskId!!,
+                            Intent(c, MainActivity::class.java).putExtra(
+                                INTENT_EXTRA_ENTRY_ID,
+                                pending.task.taskId!!
+                            ),
+                            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+                        )
+                    )
+                    .setContentText(
+                        c.getString(
+                            R.string.notification_upcoming_deadline,
+                            pending.offset.displayCount(c),
+                            getZonedFromEpochSeconds(pending.deadline)
+                                .format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm"))
+                        )
+                    )
+                    .build()
+                manager.notify(pending.dateHash(), notification)
             }
             dbManager.tryScheduleNotification(now)
         }

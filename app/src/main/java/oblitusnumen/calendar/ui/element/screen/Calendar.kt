@@ -62,7 +62,9 @@ fun CalendarScreen(
     openMonthAgenda: (Int, Int) -> Unit,
     openEntriesScreen: () -> Unit,
     openTagsScreen: () -> Unit,
+    openTaskLogs: () -> Unit,
     openSettings: () -> Unit,
+    openYearView: () -> Unit,
 ) {
     val now = LocalDate.now()
 
@@ -96,8 +98,10 @@ fun CalendarScreen(
             MainDrawer(
                 stringResource(R.string.nav_calendar),
                 closeDrawer,
+                openYearView,
                 openEntriesScreen,
                 openTagsScreen,
+                openTaskLogs,
                 openSettings
             )
         },
@@ -306,7 +310,7 @@ fun DisplayDay(
             it.anyInRange(
                 startOfDayCache,
                 endOfDayCache
-            ) != null && it.hasDuration
+            ) != null// todo move to settings && it.hasDuration
         }
             .sortedBy { it.anyInRange(startOfDayCache, endOfDayCache) }
     }

@@ -32,9 +32,32 @@
     <string name="nav_dashboard">Главная</string>
     <string name="nav_calendar">Календарь</string>
     <string name="nav_planner">Планировщик</string>
+    <string name="nav_year">Обзор года</string>
     <string name="nav_entries">Записи</string>
     <string name="nav_tags">Метки</string>
+    <string name="nav_task_logs">Журнал задач</string>
     <string name="nav_settings">Настройки</string>
+
+    <!-- Task logs -->
+    <string name="task_logs_title">Журнал задач</string>
+    <string name="task_logs_empty">Записей в журнале пока нет</string>
+    <string name="task_logs_unknown_task">[Удалённая задача]</string>
+    <string name="task_logs_edit_title">Редактировать запись</string>
+    <string name="task_logs_consumed_label">Затрачено времени</string>
+    <string name="task_logs_save">Сохранить</string>
+    <string name="task_logs_cancel">Отмена</string>
+    <string name="cd_edit_log">Редактировать запись</string>
+    <string name="cd_delete_log">Удалить запись</string>
+    <string name="cd_task_stats">Статистика выполнения задач</string>
+    <string name="cd_add_log">Добавить затраченное время</string>
+    <string name="task_logs_stats_title">Выполнение задач</string>
+    <string name="task_logs_stats_total_time">Всего учтено времени: %1$s</string>
+    <string name="task_logs_stats_days">Дней учтено: %1$d</string>
+    <string name="task_logs_stats_no_data">Ни по одной задаче ещё нет записей</string>
+    <string name="task_logs_stats_progress">%1$s / %2$s</string>
+    <string name="task_logs_add_title">Учесть время</string>
+    <string name="task_logs_pick_task">Задача</string>
+    <string name="task_logs_no_tasks">Нет доступных задач</string>
 
     <!-- Dashboard -->
     <string name="dashboard_title">Главная</string>
@@ -110,6 +133,7 @@
     <string name="settings_default_entry_color">Цвет записи по умолчанию</string>
     <string name="settings_default_tag_color">Цвет метки по умолчанию</string>
     <string name="settings_default_notifications">Уведомления по умолчанию</string>
+    <string name="settings_deadline_notifications">Уведомления о дедлайнах</string>
     <string name="settings_add_notification">Добавить уведомление</string>
     <string name="settings_morning_notification_time">Время утреннего уведомления</string>
     <string name="settings_hour">Час</string>
@@ -139,10 +163,20 @@
 
     <!-- Date screen -->
     <string name="date_screen_exclude_occurrence">Исключить %1$s из %2$s</string>
+    <string name="date_screen_range">%1$s – %2$s</string>
+    <plurals name="date_screen_days_count">
+        <item quantity="one">%d день</item>
+        <item quantity="few">%d дня</item>
+        <item quantity="many">%d дней</item>
+        <item quantity="other">%d дня</item>
+    </plurals>
 
     <!-- Details Entry -->
     <string name="details_entry_description">Описание</string>
     <string name="details_entry_no_duration">без длительности</string>
+    <string name="details_entry_next_occurrence">Следующее: %1$s</string>
+    <string name="entry_calendar_title">Повторения</string>
+    <string name="cd_show_calendar">Показать календарь повторений</string>
 
     <!-- Task details -->
     <string name="task_details_description">Описание</string>
@@ -208,6 +242,10 @@
     <string name="cd_remove">удалить</string>
     <string name="cd_tags">Метки</string>
     <string name="cd_plan_dist">показать распределение нагрузки</string>
+    <string name="cd_prev_year">предыдущий год</string>
+    <string name="cd_next_year">следующий год</string>
+    <string name="cd_prev_day_pack">предыдущие дни</string>
+    <string name="cd_next_day_pack">следующие дни</string>
 
     <!-- Notifications -->
     <string name="notification_channel_normal">Обычные</string>
@@ -216,6 +254,7 @@
     <string name="notification_today_tasks_title">Задачи на сегодня: %1$d</string>
     <string name="notification_tap_to_view">Нажмите, чтобы посмотреть</string>
     <string name="notification_upcoming_event">Предстоящее событие через %1$s\n(в %2$s)</string>
+    <string name="notification_upcoming_deadline">Дедлайн через %1$s\n(в %2$s)</string>
 
     <!-- Toasts -->
     <string name="toast_restore_finished">Восстановление завершено</string>

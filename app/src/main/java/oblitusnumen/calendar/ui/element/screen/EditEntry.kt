@@ -3,6 +3,9 @@ package oblitusnumen.calendar.ui.element.screen
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -10,7 +13,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.EventBusy
+import androidx.compose.material.icons.filled.HourglassEmpty
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Schedule
@@ -89,168 +96,147 @@ fun EditEntryScreen(
             backPress
         )
     }) { paddingValues ->
-        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).fillMaxHeight()) {
-            Spacer(Modifier.height(paddingValues.calculateTopPadding()))
+        var tagChoose by remember { mutableStateOf(false) }
+        if (tagChoose)
+            TagChooseMenu(dbManager, state.tags, { tagChoose = false }, { viewModel.setTags(it) })
 
-            // name and color
-            OutlinedTextField(
-                modifier = Modifier.fillMaxWidth().padding(12.dp),
-                value = state.name, onValueChange = {
-                    if (!it.text.contains('\n'))
-                        viewModel.setName(it)
-                },
-                textStyle = MaterialTheme.typography.titleLarge,
-                label = { Text(stringResource(R.string.edit_entry_name_hint)) },
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                trailingIcon = {
-                    ColorSelectButton(state.color, true) {
-                        viewModel.setColor(it)
+        var notificationChoose by remember { mutableStateOf(false) }
+        if (notificationChoose)
+            NotificationAddMenu({ offset, sound ->
+                notificationChoose = false
+                for (notification in state.notificationStates) {
+                    if (notification.offset.toString() == offset.toString()) {
+                        viewModel.setNotificationSound(notification.uiId, sound)
+                        return@NotificationAddMenu
                     }
                 }
-            )
+                viewModel.addNotification(offset, sound)
+            }, { notificationChoose = false })
+
+        LazyColumn(contentPadding = paddingValues) {
+            // name and color
+            item {
+                OutlinedTextField(
+                    modifier = Modifier.fillMaxWidth().padding(12.dp),
+                    value = state.name, onValueChange = {
+                        if (!it.text.contains('\n'))
+                            viewModel.setName(it)
+                    },
+                    textStyle = MaterialTheme.typography.titleLarge,
+                    label = { Text(stringResource(R.string.edit_entry_name_hint)) },
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    trailingIcon = {
+                        ColorSelectButton(state.color, true) {
+                            viewModel.setColor(it)
+                        }
+                    }
+                )
+            }
 
             // description
-            OutlinedTextField(
-                modifier = Modifier.defaultMinSize(minHeight = 52.dp).fillMaxWidth().padding(horizontal = 12.dp)
-                    .padding(bottom = 12.dp),
-                value = state.contents, onValueChange = {
-                    viewModel.setContents(it)
-                },
-                textStyle = MaterialTheme.typography.bodyLarge,
-                label = { Text(stringResource(R.string.edit_entry_description_hint)) },
-                minLines = 5
-            )
-//            HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
-//
-//            // hide from calendar view
-//            CheckboxOption(hideInCalendarView, "Hide from calendar view")
-
-            // tags
-            var tagChoose by remember { mutableStateOf(false) }
-            if (tagChoose)
-                TagChooseMenu(dbManager, state.tags, { tagChoose = false }, { viewModel.setTags(it) })
+            item {
+                OutlinedTextField(
+                    modifier = Modifier.defaultMinSize(minHeight = 52.dp).fillMaxWidth().padding(horizontal = 12.dp)
+                        .padding(bottom = 12.dp),
+                    value = state.contents, onValueChange = {
+                        viewModel.setContents(it)
+                    },
+                    textStyle = MaterialTheme.typography.bodyLarge,
+                    label = { Text(stringResource(R.string.edit_entry_description_hint)) },
+                    minLines = 5
+                )
+            }
 
             // draw tags
-            Row {
-                Icon(Icons.Filled.Star, stringResource(R.string.cd_tags), Modifier.padding(8.dp))
+            item {
+                Row {
+                    Icon(Icons.Filled.Star, stringResource(R.string.cd_tags), Modifier.padding(8.dp))
 
-                FlowRow(
-                    Modifier.fillMaxWidth().padding(end = 16.dp)
-                ) {
-                    for (tag in state.tags)
-                        RemovableTagChip(
-                            tag.name,
-                            tag.colorOrDefault(dbManager),
-                            { viewModel.setTags(state.tags - tag) }
-                        )
+                    FlowRow(
+                        Modifier.fillMaxWidth().padding(end = 16.dp)
+                    ) {
+                        for (tag in state.tags)
+                            RemovableTagChip(
+                                tag.name,
+                                tag.colorOrDefault(dbManager),
+                                { viewModel.setTags(state.tags - tag) }
+                            )
+                    }
                 }
             }
 
             // choose tags
-            Row(
-                Modifier.fillMaxWidth().padding(top = 8.dp).clickable { tagChoose = true }
-                    .padding(horizontal = 8.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(Icons.Filled.Star, null, Modifier.padding(end = 8.dp))
-                Text(stringResource(R.string.edit_entry_choose_tags), style = MaterialTheme.typography.bodyLarge)
+            item {
+                AddActionRow(
+                    icon = Icons.Filled.Star,
+                    label = stringResource(R.string.edit_entry_choose_tags),
+                    onClick = { tagChoose = true }
+                )
+                SectionDivider()
             }
-            HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
 
             // dates
-            for (date in state.dateStates)
-                key(date.uiId) {
-                    // FIXME:  toDbEntity() is a hack; do the fix in other places
-                    Date(
-                        date,
-                        periodSelectorDate,
-                        durationSelectorDate,
-                        dateTimePicker,
-                        { viewModel.rmDate(date.uiId) }) {
-                        viewModel.updateDate(date.uiId, it)
-                    }
+            itemsIndexed(state.dateStates, key = { _, it -> it.uiId }) { index, date ->
+                if (index > 0) SectionDivider()
+                Date(
+                    date,
+                    periodSelectorDate,
+                    durationSelectorDate,
+                    dateTimePicker,
+                    { viewModel.rmDate(date.uiId) }) {
+                    viewModel.updateDate(date.uiId, it)
                 }
+            }
 
             // add date
-            Row(
-                Modifier.defaultMinSize(minHeight = 52.dp).fillMaxWidth().clickable {
-                    dateTimePicker.dateTimePick(
-                        {},
-                        {
-                            periodSelectorDate.value =
-                                viewModel.addDate(
-                                    Date(
-                                        ZonedDateTime.of(it, ZoneId.systemDefault()),
-                                        Once(),
-                                        1,
-                                        Once()
+            item {
+                AddActionRow(
+                    icon = Icons.Outlined.Schedule,
+                    label = stringResource(R.string.edit_entry_add_date),
+                    onClick = {
+                        dateTimePicker.dateTimePick(
+                            {},
+                            {
+                                periodSelectorDate.value =
+                                    viewModel.addDate(
+                                        Date(
+                                            ZonedDateTime.of(it, ZoneId.systemDefault()),
+                                            Once(),
+                                            1,
+                                            Once()
+                                        )
                                     )
-                                )
-                        })
-                }.padding(horizontal = 8.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(Icons.Outlined.Schedule, null, Modifier.padding(end = 8.dp))
-                Text(stringResource(R.string.edit_entry_add_date), style = MaterialTheme.typography.bodyLarge)
-            }
-            HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
-
-            // notifications
-            var notificationChoose by remember { mutableStateOf(false) }
-            if (notificationChoose)
-                NotificationAddMenu({ offset, sound ->
-                    notificationChoose = false
-                    for (notification in state.notificationStates) {
-                        if (notification.offset.toString() == offset.toString()) {
-                            viewModel.setNotificationSound(notification.uiId, sound)
-                            return@NotificationAddMenu
-                        }
+                            })
                     }
-                    viewModel.addNotification(offset, sound)
-                }, { notificationChoose = false })
+                )
+                SectionDivider()
+            }
 
             // draw notifications
-            for (notification in state.notificationStates) key(notification.uiId) {
-                Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp).clickable {
-                    viewModel.setNotificationSound(notification.uiId, !notification.sound)
-                }) {
-                    // sound
-                    Icon(
-                        if (notification.sound) Icons.Filled.Notifications else Icons.Outlined.Notifications, null,
-                        Modifier.align(Alignment.CenterVertically).padding(8.dp)
-                    )
-
-                    // offset
-                    val ctx = LocalContext.current
-                    Text(
-                        modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp)
-                            .weight(1f),
-                        text = notification.offset.displayOffsetBefore(ctx),
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-
-                    // remove button
-                    IconButton(
-                        modifier = Modifier.align(Alignment.CenterVertically),
-                        onClick = {
-                            viewModel.rmNotification(notification.uiId)
-                        },
-                        content = { Icon(Icons.Filled.Clear, contentDescription = null) })
+            itemsIndexed(state.notificationStates, key = { _, it -> it.uiId }) { index, notification ->
+                if (index > 0) SectionDivider()
+                val ctx = LocalContext.current
+                InfoRow(
+                    icon = if (notification.sound) Icons.Filled.Notifications else Icons.Outlined.Notifications,
+                    text = notification.offset.displayOffsetBefore(ctx),
+                    modifier = Modifier.fillMaxWidth().clickable {
+                        viewModel.setNotificationSound(notification.uiId, !notification.sound)
+                    }
+                ) {
+                    IconButton(onClick = { viewModel.rmNotification(notification.uiId) }) {
+                        Icon(Icons.Filled.Clear, contentDescription = null)
+                    }
                 }
             }
 
             // add notifications
-            Row(
-                Modifier.defaultMinSize(minHeight = 52.dp).fillMaxWidth().clickable {
-                    notificationChoose = true
-                }.padding(horizontal = 8.dp, vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(Icons.Filled.Add, null, Modifier.padding(end = 8.dp))
-                Text(stringResource(R.string.edit_entry_add_notification), style = MaterialTheme.typography.bodyLarge)
+            item {
+                AddActionRow(
+                    icon = Icons.Filled.Add,
+                    label = stringResource(R.string.edit_entry_add_notification),
+                    onClick = { notificationChoose = true }
+                )
             }
-
-            Spacer(Modifier.height(paddingValues.calculateBottomPadding()))
         }
     }
 }
@@ -279,7 +265,7 @@ fun TagChooseMenu(dbManager: DbManager, tags: List<Tag>, onClose: () -> Unit, on
         },
         text = {
             Column {
-                OutlinedTextField(// FIXME: ui paddings
+                OutlinedTextField(
                     modifier = Modifier.padding(horizontal = 8.dp),
                     value = searchTag, onValueChange = {
                         searchTag = it
@@ -380,18 +366,22 @@ fun Date(
         else -> stringResource(R.string.edit_entry_duration_for, dur.displayCount(context))
     }
 
-    Column(Modifier.padding(bottom = 6.dp)) {
-        Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp)) {
-            Icon(
-                Icons.Outlined.Schedule, "",
-                Modifier.align(Alignment.CenterVertically).padding(8.dp)
-            )
+    Column {
+        // start date + time + time zone
+        val localDateTime = date.getFirstZoneDateTime().toLocalDateTime()
+        Column(Modifier.padding(vertical = 4.dp)) {
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Outlined.Schedule, null, Modifier.size(20.dp))
+                Spacer(Modifier.width(8.dp))
 
-            // pick date
-            val localDateTime = date.getFirstZoneDateTime().toLocalDateTime()
-            Text(
-                modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp, vertical = 8.dp)
-                    .weight(.5f).clickable {
+                // pick date
+                Text(
+                    text = dateStartText,
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.weight(.5f).clickable {
                         dateTimePicker.datePick({}, {
                             onUpdateDate(
                                 date.setRange(
@@ -402,15 +392,14 @@ fun Date(
                                 )
                             )
                         }, localDateTime.toLocalDate())
-                    },
-                text = dateStartText,
-                style = MaterialTheme.typography.bodyLarge
-            )
+                    }.padding(vertical = 8.dp)
+                )
 
-            // pick time
-            Text(
-                modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp, vertical = 8.dp)
-                    .weight(.5f).clickable {
+                // pick time
+                Text(
+                    text = timeText,
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.weight(.5f).clickable {
                         dateTimePicker.timePick({}, {
                             onUpdateDate(
                                 date.setRange(
@@ -421,83 +410,76 @@ fun Date(
                                 )
                             )
                         }, localDateTime.toLocalTime())
+                    }.padding(vertical = 8.dp)
+                )
+
+                // remove date
+                IconButton(onClick = onRmDate) {
+                    Icon(Icons.Filled.Clear, contentDescription = null)
+                }
+            }
+
+            // choose time zine
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Filled.Language, null, Modifier.size(20.dp))
+                Spacer(Modifier.width(8.dp))
+                TimeZoneSelector(
+                    date.timeZoneId.id,
+                    onTimeZoneSelected = {
+                        onUpdateDate(date.withTimeZone(ZoneId.of(it)))
                     },
-                text = timeText,
-                style = MaterialTheme.typography.bodyLarge
-            )
-
-            // remove date
-            IconButton(
-                modifier = Modifier.align(Alignment.CenterVertically),
-                onClick = { onRmDate() },
-                content = { Icon(Icons.Filled.Clear, contentDescription = null) })
+                    modifier = Modifier.weight(1f)
+                )
+            }
         }
 
-        // choose time zine
-        Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp).padding(horizontal = 40.dp)) {
-            TimeZoneSelector(date.timeZoneId.id, onTimeZoneSelected = {
-                val dbEntity = date.toDbEntity()
-                onUpdateDate(date.withTimeZone(ZoneId.of(it)))
-            })
-        }
+        SectionDivider(tight = true)
 
-        // choose duration
-        Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp).clickable {
-            durationSelectorDate = date
-        }.padding(horizontal = 40.dp)) {
-            Text(
-                modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp, vertical = 8.dp)
-                    .weight(1f),
+        // duration + period
+        Column(Modifier.padding(vertical = 4.dp)) {
+            // choose duration
+            InfoRow(
+                icon = Icons.Filled.HourglassEmpty,
                 text = textDuration,
-                style = MaterialTheme.typography.bodyLarge
+                modifier = Modifier.fillMaxWidth().clickable { durationSelectorDate = date }
             )
-        }
 
-        // choose period
-        Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp).clickable {
-            periodSelectorDate = date
-        }.padding(horizontal = 40.dp)) {
-            Text(
-                modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp, vertical = 8.dp)
-                    .weight(1f),
+            // choose period
+            InfoRow(
+                icon = Icons.Filled.Repeat,
                 text = textPeriod,
-                style = MaterialTheme.typography.bodyLarge
+                modifier = Modifier.fillMaxWidth().clickable { periodSelectorDate = date }
             )
         }
 
         // exceptions
         if (date.isPeriodic) {
-            for (epochDay in date.exceptionRules.listAll()) {
-                val textException = stringResource(R.string.edit_entry_period_except, convertMillisToDate(epochDay * 86400000))
-
-                Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp).padding(horizontal = 40.dp)) {
-                    Text(
-                        modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp)
-                            .weight(1f),
+            SectionDivider(tight = true)
+            Column(Modifier.padding(vertical = 4.dp)) {
+                for (epochDay in date.exceptionRules.listAll()) {
+                    val textException = stringResource(R.string.edit_entry_period_except, convertMillisToDate(epochDay * 86400000))
+                    InfoRow(
+                        icon = Icons.Filled.EventBusy,
                         text = textException,
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-
-                    IconButton(
-                        modifier = Modifier.align(Alignment.CenterVertically),
-                        onClick = {
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        IconButton(onClick = {
                             onUpdateDate(date.removeExceptions(LocalDate.ofEpochDay(epochDay)))
-                        },
-                        content = { Icon(Icons.Filled.Clear, contentDescription = null) }
-                    )
+                        }) {
+                            Icon(Icons.Filled.Clear, contentDescription = null)
+                        }
+                    }
                 }
-            }
 
-            // add exceptions
-            Row(
-                Modifier.defaultMinSize(minHeight = 52.dp).fillMaxWidth().clickable {
-                    dateTimePicker.datePick({}, { onUpdateDate(date.addExceptions(it)) })
-                }.padding(horizontal = 8.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Spacer(Modifier.width(32.dp))
-                Icon(Icons.Filled.Add, null, Modifier.padding(end = 8.dp))
-                Text(stringResource(R.string.edit_entry_add_exception), style = MaterialTheme.typography.bodyLarge)
+                // add exceptions
+                AddActionRow(
+                    icon = Icons.Filled.Add,
+                    label = stringResource(R.string.edit_entry_add_exception),
+                    onClick = { dateTimePicker.datePick({}, { onUpdateDate(date.addExceptions(it)) }) }
+                )
             }
         }
     }
@@ -644,9 +626,7 @@ fun PeriodSelectorDialog(
                     }
                 }
 
-                HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp).padding(top = 8.dp)
-                )
+                SectionDivider()
 
                 //end variant selection
                 //endless radiobutton
@@ -654,7 +634,7 @@ fun PeriodSelectorDialog(
                     Modifier.fillMaxWidth().clickable {
                         if (selectedPeriodType.period !is Once) endVariantSelectedOption =
                             DateSequenceEndVariant.ENDLESS
-                    }
+                    }.padding(horizontal = 8.dp)
                 ) {
                     RadioButton(
                         selected = (endVariantSelectedOption == DateSequenceEndVariant.ENDLESS),
@@ -677,7 +657,7 @@ fun PeriodSelectorDialog(
                     Modifier.fillMaxWidth().clickable {
                         if (selectedPeriodType.period !is Once) endVariantSelectedOption =
                             DateSequenceEndVariant.BY_DATE
-                    }
+                    }.padding(horizontal = 8.dp)
                 ) {
                     RadioButton(
                         selected = (endVariantSelectedOption == DateSequenceEndVariant.BY_DATE),
@@ -699,7 +679,7 @@ fun PeriodSelectorDialog(
                     Modifier.fillMaxWidth().clickable {
                         if (selectedPeriodType.period !is Once) endVariantSelectedOption =
                             DateSequenceEndVariant.OCCURRENCES
-                    }
+                    }.padding(horizontal = 8.dp)
                 ) {
                     RadioButton(
                         selected = (endVariantSelectedOption == DateSequenceEndVariant.OCCURRENCES),
@@ -815,7 +795,7 @@ fun DurationSelectorDialog(
                     }
                 }
 
-                HorizontalDivider(Modifier.padding(vertical = 8.dp))
+                SectionDivider()
 
                 OffsetSelector(initialOffsetType, initialOffsetCount, { selectedOffsetType = it }, { offsetCount = it })
             }
@@ -826,10 +806,10 @@ fun DurationSelectorDialog(
 @Composable
 fun CheckboxOption(checked: MutableState<Boolean>, label: String) {
     Row(
-        Modifier.fillMaxWidth().padding(8.dp).defaultMinSize(minHeight = 52.dp)
+        Modifier.fillMaxWidth().defaultMinSize(minHeight = 52.dp)
             .clickable {
                 checked.value = !checked.value
-            },
+            }.padding(horizontal = 12.dp, vertical = 4.dp),
         horizontalArrangement = Arrangement.Start
     ) {
         Checkbox(

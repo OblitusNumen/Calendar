@@ -25,10 +25,14 @@ import oblitusnumen.calendar.R
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.zipDirectoryToStream
 import oblitusnumen.calendar.ui.displayOffsetBefore
+import oblitusnumen.calendar.ui.element.AddActionRow
 import oblitusnumen.calendar.ui.element.BackPressButton
 import oblitusnumen.calendar.ui.element.ColorSelectButton
+import oblitusnumen.calendar.ui.element.InfoRow
 import oblitusnumen.calendar.ui.element.IntTextField
 import oblitusnumen.calendar.ui.element.NotificationAddMenu
+import oblitusnumen.calendar.ui.element.SectionDivider
+import oblitusnumen.calendar.ui.element.SectionHeader
 import oblitusnumen.calendar.ui.theme.topBarColors
 import java.io.BufferedOutputStream
 import java.io.File
@@ -39,11 +43,14 @@ fun SettingsScreen(dbManager: DbManager, backPress: () -> Unit) {
     Scaffold(topBar = { SettingsTopBar(backPress) }) { paddingValues ->
         LazyColumn(contentPadding = paddingValues) {
             item {
-                Row(Modifier.padding(top = 8.dp, bottom = 4.dp)) {
+                Row(
+                    Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Text(
                         stringResource(R.string.settings_default_entry_color),
-                        Modifier.weight(1f).align(Alignment.CenterVertically),
-                        style = MaterialTheme.typography.titleLarge
+                        Modifier.weight(1f),
+                        style = MaterialTheme.typography.titleMedium
                     )
                     var color by remember { mutableStateOf(dbManager.defaultEntryColor) }
                     ColorSelectButton(color, false) {
@@ -52,12 +59,16 @@ fun SettingsScreen(dbManager: DbManager, backPress: () -> Unit) {
                     }
                 }
             }
+            item { SectionDivider(tight = true) }
             item {
-                Row(Modifier.padding(vertical = 8.dp)) {
+                Row(
+                    Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Text(
                         stringResource(R.string.settings_default_tag_color),
-                        Modifier.weight(1f).align(Alignment.CenterVertically),
-                        style = MaterialTheme.typography.titleLarge
+                        Modifier.weight(1f),
+                        style = MaterialTheme.typography.titleMedium
                     )
                     var color by remember { mutableStateOf(dbManager.defaultTagColor) }
                     ColorSelectButton(color, false) {
@@ -66,6 +77,7 @@ fun SettingsScreen(dbManager: DbManager, backPress: () -> Unit) {
                     }
                 }
             }
+            item { SectionDivider(tight = true) }
             item {
                 var notifications by remember { mutableStateOf(dbManager.defaultNotifications) }
                 var notificationChoose by remember { mutableStateOf(false) }
@@ -81,61 +93,88 @@ fun SettingsScreen(dbManager: DbManager, backPress: () -> Unit) {
                         notifications = (notifications + (offset to sound)).sortedBy { it.first.secondsApproximation() }
                         dbManager.defaultNotifications = notifications
                     }, { notificationChoose = false })
-                Column(Modifier.padding(vertical = 8.dp)) {
-                    Text(
-                        stringResource(R.string.settings_default_notifications),
-                        style = MaterialTheme.typography.titleLarge
-                    )
-                    for (notification in notifications) {
-                        Row(modifier = Modifier.defaultMinSize(minHeight = 52.dp).clickable {
+                SectionHeader(stringResource(R.string.settings_default_notifications), emphasised = true)
+                for (notification in notifications) {
+                    InfoRow(
+                        icon = if (notification.second) Icons.Filled.Notifications else Icons.Outlined.Notifications,
+                        text = notification.first.displayOffsetBefore(context),
+                        modifier = Modifier.fillMaxWidth().clickable {
                             notifications =
                                 (notifications + (notification.first to !notification.second) - notification)
                                     .sortedBy { it.first.secondsApproximation() }
                             dbManager.defaultNotifications = notifications
+                        }
+                    ) {
+                        IconButton(onClick = {
+                            notifications -= notification
+                            dbManager.defaultNotifications = notifications
                         }) {
-                            Icon(
-                                if (notification.second) Icons.Filled.Notifications else Icons.Outlined.Notifications,
-                                null,
-                                Modifier.align(Alignment.CenterVertically).padding(8.dp)
-                            )
-                            Text(
-                                modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp)
-                                    .weight(1f),
-                                text = notification.first.displayOffsetBefore(context),
-                                style = MaterialTheme.typography.bodyLarge
-                            )
-                            IconButton(
-                                modifier = Modifier.align(Alignment.CenterVertically),
-                                onClick = {
-                                    notifications -= notification
-                                    dbManager.defaultNotifications = notifications
-                                },
-                                content = { Icon(Icons.Filled.Clear, contentDescription = null) })
+                            Icon(Icons.Filled.Clear, contentDescription = null)
                         }
                     }
-                    Row(
-                        Modifier.defaultMinSize(minHeight = 52.dp).fillMaxWidth().clickable {
-                            notificationChoose = true
-                        }.padding(horizontal = 8.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                }
+                AddActionRow(
+                    icon = Icons.Filled.Add,
+                    label = stringResource(R.string.settings_add_notification),
+                    onClick = { notificationChoose = true }
+                )
+            }
+            item { SectionDivider(tight = true) }
+            item {
+                var notifications by remember { mutableStateOf(dbManager.deadlineNotifications) }
+                var notificationChoose by remember { mutableStateOf(false) }
+                if (notificationChoose)
+                    NotificationAddMenu({ offset, sound ->
+                        notificationChoose = false
+                        for (notification in notifications) {
+                            if (notification.first.toString() == offset.toString()) {
+                                notifications -= notification
+                                break
+                            }
+                        }
+                        notifications = (notifications + (offset to sound)).sortedBy { it.first.secondsApproximation() }
+                        dbManager.deadlineNotifications = notifications
+                    }, { notificationChoose = false })
+                SectionHeader(stringResource(R.string.settings_deadline_notifications), emphasised = true)
+                for (notification in notifications) {
+                    InfoRow(
+                        icon = if (notification.second) Icons.Filled.Notifications else Icons.Outlined.Notifications,
+                        text = notification.first.displayOffsetBefore(context),
+                        modifier = Modifier.fillMaxWidth().clickable {
+                            notifications =
+                                (notifications + (notification.first to !notification.second) - notification)
+                                    .sortedBy { it.first.secondsApproximation() }
+                            dbManager.deadlineNotifications = notifications
+                        }
                     ) {
-                        Icon(Icons.Filled.Add, null, Modifier.padding(end = 8.dp))
-                        Text(stringResource(R.string.settings_add_notification), style = MaterialTheme.typography.bodyLarge)
+                        IconButton(onClick = {
+                            notifications -= notification
+                            dbManager.deadlineNotifications = notifications
+                        }) {
+                            Icon(Icons.Filled.Clear, contentDescription = null)
+                        }
                     }
                 }
+                AddActionRow(
+                    icon = Icons.Filled.Add,
+                    label = stringResource(R.string.settings_add_notification),
+                    onClick = { notificationChoose = true }
+                )
             }
+            item { SectionDivider(tight = true) }
             item {
                 LanguageSetting()
             }
+            item { SectionDivider(tight = true) }
             item {
                 var hour by remember { mutableStateOf(dbManager.morningNotificationHour) }
                 var minute by remember { mutableStateOf(dbManager.morningNotificationMinute) }
-                Column(Modifier.padding(vertical = 8.dp)) {
-                    Text(
-                        stringResource(R.string.settings_morning_notification_time),
-                        style = MaterialTheme.typography.titleLarge
-                    )
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                Column {
+                    SectionHeader(stringResource(R.string.settings_morning_notification_time), emphasised = true)
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         IntTextField(
                             value = hour,
                             onValueChange = { v ->
@@ -164,6 +203,7 @@ fun SettingsScreen(dbManager: DbManager, backPress: () -> Unit) {
                     }
                 }
             }
+            item { SectionDivider(tight = true) }
             item {
                 val scope = rememberCoroutineScope()
                 val appDataDir = dbManager.filesDir.parentFile!! // contains databases, shared_prefs, files, etc.
@@ -214,16 +254,16 @@ fun SettingsScreen(dbManager: DbManager, backPress: () -> Unit) {
                         dbManager.finishApp()
                     }
                 )
-                Row(Modifier.padding(vertical = 8.dp)) {
+                Row(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
                     Button(
                         onClick = { saveLauncher.launch("backup.zip") },
-                        modifier = Modifier.weight(1f).padding(horizontal = 2.dp)
+                        modifier = Modifier.weight(1f).padding(horizontal = 4.dp)
                     ) {
                         Text(text = stringResource(R.string.settings_export))
                     }
                     Button(
                         onClick = { restoreLauncher.launch(arrayOf("application/zip")) },
-                        modifier = Modifier.weight(1f).padding(horizontal = 2.dp)
+                        modifier = Modifier.weight(1f).padding(horizontal = 4.dp)
                     ) {
                         Text(text = stringResource(R.string.settings_restore))
                     }
@@ -235,7 +275,7 @@ fun SettingsScreen(dbManager: DbManager, backPress: () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun LanguageSetting() {
+fun LanguageSetting() {
     val context = LocalContext.current
     val options = listOf(
         "" to stringResource(R.string.settings_language_system),
@@ -245,11 +285,8 @@ private fun LanguageSetting() {
     val selectedTag = LocaleHelper.getTag(context)
     val selectedLabel = options.firstOrNull { it.first == selectedTag }?.second ?: options[0].second
     var expanded by remember { mutableStateOf(false) }
-    Column(Modifier.padding(vertical = 8.dp)) {
-        Text(
-            stringResource(R.string.settings_language),
-            style = MaterialTheme.typography.titleLarge
-        )
+    Column {
+        SectionHeader(stringResource(R.string.settings_language), emphasised = true)
         ExposedDropdownMenuBox(
             expanded = expanded,
             onExpandedChange = { expanded = it },
@@ -259,7 +296,8 @@ private fun LanguageSetting() {
                 onValueChange = {},
                 readOnly = true,
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp)
+                    .menuAnchor(MenuAnchorType.PrimaryNotEditable)
             )
             ExposedDropdownMenu(
                 expanded = expanded,

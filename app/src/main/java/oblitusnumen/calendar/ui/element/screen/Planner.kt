@@ -54,7 +54,9 @@ fun PlannerScreen(
     openTaskDetails: (Int) -> Unit,
     openEntriesScreen: () -> Unit,
     openTagsScreen: () -> Unit,
+    openTaskLogs: () -> Unit,
     openSettings: () -> Unit,
+    openYearView: () -> Unit,
     initialTab: PlannerTab = PlannerTab.TODAY,
 ) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
@@ -85,25 +87,20 @@ fun PlannerScreen(
     }
     val today = remember { LocalDate.now(defaultZoneId()) }
     val todayStart = remember { today.atStartOfDay(defaultZoneId()).toEpochSecond() }
-    val todayLogs = remember { mutableStateMapOf<Int, TaskLog>() }
-    val planned = remember {
-        // FIXME: wrong filter
-        val plannedTasks: Array<Task> = allTasks.filter { task ->
-            task.deadlineTimestamp >= now && !task.isDone
-        }.toTypedArray()
-        val result = planTasks(plannedTasks, links, now)
-
-        // persist today's planned portions in TaskLog
-        result.forEach { (taskId, dist) ->
-            if (dist[0] > 0) {
-                val task = allTasks.firstOrNull { it.taskId == taskId } ?: return@forEach
-                val log = TaskLog.upsert(
-                    dbManager, taskId, todayStart, task.timeZoneId, dist[0]
-                )
-                todayLogs[taskId] = log
-            }
+    val todayLogs = remember {
+        mutableStateMapOf<Int, TaskLog>().also { map ->
+            TaskLog.forDay(dbManager, todayStart).forEach { map[it.taskId] = it }
         }
-        result
+    }
+    val planned by remember {
+        derivedStateOf {
+            // FIXME: wrong filter
+            val plannedTasks: Array<Task> = allTasks.filter { task ->
+                task.deadlineTimestamp >= now && !task.isDone
+            }.toTypedArray()
+            val todayConsumed = todayLogs.mapValues { it.value.timeConsumed }
+            planTasks(plannedTasks, links, now, todayConsumed)
+        }
     }
 
     var showPlanDist by remember { mutableStateOf(false) }
@@ -111,7 +108,7 @@ fun PlannerScreen(
         PlanDistributionDialog(planned, today) { showPlanDist = false }
 
     ModalNavigationDrawer(
-        drawerContent = { MainDrawer(stringResource(R.string.planner_title), closeDrawer, openEntriesScreen, openTagsScreen, openSettings) },
+        drawerContent = { MainDrawer(stringResource(R.string.planner_title), closeDrawer, openYearView, openEntriesScreen, openTagsScreen, openTaskLogs, openSettings) },
         drawerState = drawerState,
     ) {
         Scaffold(
@@ -158,21 +155,36 @@ fun PlannerScreen(
                     }
                 }
 
-                fun toggleTodayDone(task: ViewTaskWithOptions, log: TaskLog, markDone: Boolean) {
-                    val prev = log.timeConsumed
-                    val next = if (markDone) log.timePlanned else 0
-                    val delta = next - prev
-                    log.timeConsumed = next
-                    log.update()
-                    Task.updateTimeValues(
-                        dbManager, task.taskId!!,
-                        task.timeConsumed + delta,
-                        maxOf(0, task.timeRemaining - delta)
-                    )
-                    todayLogs[task.taskId!!] = log
-                    val idx = allTasks.indexOfFirst { it.taskId == task.taskId }
+                fun toggleTodayDone(task: ViewTaskWithOptions, markDone: Boolean) {
+                    val taskId = task.taskId!!
+                    if (markDone) {
+                        val dist0 = planned[taskId]?.getOrNull(0) ?: 0
+                        if (dist0 <= 0) return
+                        val log = todayLogs[taskId] ?: TaskLog.upsert(dbManager, taskId, todayStart, task.timeZoneId)
+                        log.timeConsumed += dist0
+                        log.update()
+                        todayLogs[taskId] = log
+                        Task.updateTimeValues(
+                            dbManager, taskId,
+                            task.timeConsumed + dist0,
+                            maxOf(0, task.timeRemaining - dist0)
+                        )
+                    } else {
+                        val existing = todayLogs[taskId] ?: return
+                        val undo = existing.timeConsumed
+                        if (undo <= 0) return
+                        existing.timeConsumed = 0
+                        existing.update()
+                        if (existing.id == null) todayLogs.remove(taskId) else todayLogs[taskId] = existing
+                        Task.updateTimeValues(
+                            dbManager, taskId,
+                            maxOf(0, task.timeConsumed - undo),
+                            task.timeRemaining + undo
+                        )
+                    }
+                    val idx = allTasks.indexOfFirst { it.taskId == taskId }
                     if (idx >= 0)
-                        allTasks[idx] = ViewTaskWithOptions.byId(dbManager, task.taskId!!)!!
+                        allTasks[idx] = ViewTaskWithOptions.byId(dbManager, taskId)!!
                 }
 
                 val selectedTagIds = remember(tagsFilter) { tagsFilter.map { it.id!! }.toSet() }
@@ -181,7 +193,8 @@ fun PlannerScreen(
                     val isToday = PlannerTab.entries[page] == PlannerTab.TODAY
                     val tabTasks = when (PlannerTab.entries[page]) {
                         PlannerTab.TODAY -> allTasks.filter { task ->
-                            planned[task.taskId!!]?.let { dist -> dist[0] > 0 } ?: false
+                            (planned[task.taskId!!]?.getOrNull(0) ?: 0) > 0 ||
+                                    (todayLogs[task.taskId!!]?.timeConsumed ?: 0) > 0
                         }
 
                         PlannerTab.CURRENT -> allTasks.filter { task ->
@@ -204,15 +217,18 @@ fun PlannerScreen(
                     LazyColumn(Modifier.fillMaxSize()) {
                         items(visibleTasks, key = { it.taskId!! }) { task ->
                             val log = if (isToday) todayLogs[task.taskId!!] else null
+                            val todayPlannedQuarters =
+                                if (isToday) planned[task.taskId!!]?.getOrNull(0) ?: 0 else 0
                             Task(
                                 openTaskDetails, task, now, allTasks, predecessorLinks, dbManager,
                                 todayLog = log,
-                                onToggleDone = if (isToday) { l, markDone ->
-                                    toggleTodayDone(task, l, markDone)
+                                todayPlannedQuarters = todayPlannedQuarters,
+                                onToggleDone = if (isToday) { markDone ->
+                                    toggleTodayDone(task, markDone)
                                 } else null,
-                                onSchedulePortion = if ((isToday && log != null) || task.timeRemaining > 0) { ->
+                                onSchedulePortion = if ((isToday && todayPlannedQuarters > 0) || task.timeRemaining > 0) { ->
                                     val durationMinutes =
-                                        if (isToday && log != null) log.timePlanned * 15
+                                        if (isToday) todayPlannedQuarters * 15
                                         else task.timeRemaining * 15
                                     dtPicker.dateTimePick(
                                         onCancel = {},
@@ -246,7 +262,8 @@ fun Task(
     predecessorLinks: Map<Int, MutableList<Int>>,
     dbManager: DbManager,
     todayLog: TaskLog? = null,
-    onToggleDone: ((TaskLog, Boolean) -> Unit)? = null,
+    todayPlannedQuarters: Int = 0,
+    onToggleDone: ((Boolean) -> Unit)? = null,
     onSchedulePortion: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
@@ -323,15 +340,15 @@ fun Task(
                 Modifier.fillMaxWidth().padding(4.dp),
             )
 
-        if ((todayLog != null && onToggleDone != null) || onSchedulePortion != null) {
+        val showToggle = onToggleDone != null && (todayPlannedQuarters > 0 || (todayLog?.timeConsumed ?: 0) > 0)
+        if (showToggle || onSchedulePortion != null) {
             Row(Modifier.align(Alignment.End)) {
-                if (todayLog != null && onToggleDone != null) {
-                    val isDoneToday =
-                        todayLog.timeConsumed >= todayLog.timePlanned && todayLog.timePlanned > 0
-                    TextButton(onClick = { onToggleDone(todayLog, !isDoneToday) }) {
+                if (showToggle) {
+                    val isDoneToday = todayPlannedQuarters == 0 && (todayLog?.timeConsumed ?: 0) > 0
+                    TextButton(onClick = { onToggleDone(!isDoneToday) }) {
                         Text(
                             if (isDoneToday) stringResource(R.string.planner_undo_today)
-                            else stringResource(R.string.planner_done_today, formatTime(context, todayLog.timePlanned))
+                            else stringResource(R.string.planner_done_today, formatTime(context, todayPlannedQuarters))
                         )
                     }
                 }

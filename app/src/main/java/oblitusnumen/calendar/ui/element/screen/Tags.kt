@@ -1,13 +1,10 @@
 package oblitusnumen.calendar.ui.element.screen
 
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -31,7 +28,8 @@ import oblitusnumen.calendar.R
 import oblitusnumen.calendar.implementation.data.DbManager
 import oblitusnumen.calendar.implementation.data.tables.Tag
 import oblitusnumen.calendar.implementation.log
-import oblitusnumen.calendar.ui.element.ColorPicker
+import oblitusnumen.calendar.ui.element.ColorSelectButton
+import oblitusnumen.calendar.ui.element.EntryCardSurface
 import oblitusnumen.calendar.ui.element.SearchTopBar
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -65,39 +63,38 @@ fun TagsScreen(
 
         LazyColumn(contentPadding = paddingValues) {
             items(filteredTags, key = { it.id!! }) { tag ->
-                Row(
-                    Modifier.fillMaxWidth().defaultMinSize(minHeight = 56.dp)
-                        .padding(horizontal = 8.dp).clickable(onClick = {
-                            // TODO: move to entries menu
-                            log("open")
-                            openEditTag(tag.id!!)
-                        })
-                ) {
-                    var editShown by remember { mutableStateOf(false) }
-                    if (editShown) EditTag(dbManager, tagsWithEntryCount, tags, tagNames, tag) {
-                        editShown = false
-                    }
-                    Icon(
-                        Icons.Filled.Star, null,
-                        Modifier.align(Alignment.CenterVertically).padding(8.dp),
-                        tag.colorOrDefault(dbManager)
-                    )
-                    Text(
-                        modifier = Modifier.weight(1.0f).padding(end = 8.dp).align(Alignment.CenterVertically),
-                        text = tag.name,
-                        style = MaterialTheme.typography.headlineSmall,
-                        overflow = TextOverflow.Ellipsis,
-                        maxLines = 1,
-                    )
-                    Text(
-                        modifier = Modifier.align(Alignment.CenterVertically),
-                        text = pluralStringResource(R.plurals.tags_event_count, tagsWithEntryCount[tag] ?: 0, tagsWithEntryCount[tag] ?: 0),
-                        style = MaterialTheme.typography.bodyLarge,
-                    )
-                    IconButton(modifier = Modifier.size(48.dp).align(Alignment.CenterVertically), onClick = {
-                        editShown = true
-                    }) {
-                        Icon(Icons.Filled.Edit, null)
+                var editShown by remember { mutableStateOf(false) }
+                if (editShown) EditTag(dbManager, tagsWithEntryCount, tags, tagNames, tag) {
+                    editShown = false
+                }
+                EntryCardSurface(onClick = {
+                    // TODO: move to entries menu
+                    log("open")
+                    openEditTag(tag.id!!)
+                }) {
+                    Row(Modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 8.dp)) {
+                        Icon(
+                            Icons.Filled.Star, null,
+                            Modifier.align(Alignment.CenterVertically).padding(8.dp),
+                            tag.colorOrDefault(dbManager)
+                        )
+                        Text(
+                            modifier = Modifier.weight(1.0f).padding(horizontal = 8.dp).align(Alignment.CenterVertically),
+                            text = tag.name,
+                            style = MaterialTheme.typography.titleLarge,
+                            overflow = TextOverflow.Ellipsis,
+                            maxLines = 1,
+                        )
+                        Text(
+                            modifier = Modifier.align(Alignment.CenterVertically),
+                            text = pluralStringResource(R.plurals.tags_event_count, tagsWithEntryCount[tag] ?: 0, tagsWithEntryCount[tag] ?: 0),
+                            style = MaterialTheme.typography.bodyLarge,
+                        )
+                        IconButton(modifier = Modifier.align(Alignment.CenterVertically), onClick = {
+                            editShown = true
+                        }) {
+                            Icon(Icons.Filled.Edit, null)
+                        }
                     }
                 }
             }
@@ -157,13 +154,13 @@ fun EditTag(
         },
         text = {
             Column {
-                Row {
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     val focusRequester = remember { FocusRequester() }
                     var laidOut by remember { mutableStateOf(false) }
-                    OutlinedTextField(// FIXME: ui paddings
+                    OutlinedTextField(
                         isError = hasError,
                         modifier = Modifier
-                            .padding(horizontal = 8.dp)
+                            .padding(horizontal = 12.dp)
                             .weight(1f)
                             .onGloballyPositioned { laidOut = true }
                             .focusRequester(focusRequester),
@@ -185,23 +182,16 @@ fun EditTag(
                         ),
                         label = { Text(stringResource(R.string.tags_name_label)) }
                     )
-                    var colorPickerShown by remember { mutableStateOf(false) }
-                    Box(
-                        Modifier.align(Alignment.CenterVertically).background(color, CircleShape)
-                            .border(0.dp, color, CircleShape).size(48.dp).padding(horizontal = 8.dp)
-                            .clickable { colorPickerShown = true }
-                    )
-                    if (colorPickerShown)
-                        ColorPicker(color, true) {
-                            if (it != null)
-                                color = it
-                            colorPickerShown = false
-                        }
+                    ColorSelectButton(color, true) { color = it }
                     LaunchedEffect(laidOut) {
                         focusRequester.requestFocus()
                     }
                 }
-                if (hasError) Text(error, color = Color.Red)//errortext
+                if (hasError) Text(
+                    error,
+                    Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                    color = Color.Red
+                )
             }
         }
     )

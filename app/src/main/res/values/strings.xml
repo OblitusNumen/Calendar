@@ -32,9 +32,32 @@
     <string name="nav_dashboard">Dashboard</string>
     <string name="nav_calendar">Calendar</string>
     <string name="nav_planner">Planner</string>
+    <string name="nav_year">Year overview</string>
     <string name="nav_entries">Entries</string>
     <string name="nav_tags">Tags</string>
+    <string name="nav_task_logs">Task logs</string>
     <string name="nav_settings">Settings</string>
+
+    <!-- Task logs -->
+    <string name="task_logs_title">Task logs</string>
+    <string name="task_logs_empty">No task logs yet</string>
+    <string name="task_logs_unknown_task">[Removed task]</string>
+    <string name="task_logs_edit_title">Edit log</string>
+    <string name="task_logs_consumed_label">Time consumed</string>
+    <string name="task_logs_save">Save</string>
+    <string name="task_logs_cancel">Cancel</string>
+    <string name="cd_edit_log">Edit log</string>
+    <string name="cd_delete_log">Delete log</string>
+    <string name="cd_task_stats">Task completion statistics</string>
+    <string name="cd_add_log">Add time spent on task</string>
+    <string name="task_logs_stats_title">Task completion</string>
+    <string name="task_logs_stats_total_time">Total time tracked: %1$s</string>
+    <string name="task_logs_stats_days">Days tracked: %1$d</string>
+    <string name="task_logs_stats_no_data">No tasks have logged time yet</string>
+    <string name="task_logs_stats_progress">%1$s / %2$s</string>
+    <string name="task_logs_add_title">Log time</string>
+    <string name="task_logs_pick_task">Task</string>
+    <string name="task_logs_no_tasks">No tasks available</string>
 
     <!-- Dashboard -->
     <string name="dashboard_title">Dashboard</string>
@@ -110,6 +133,7 @@
     <string name="settings_default_entry_color">Default entry color</string>
     <string name="settings_default_tag_color">Default tag color</string>
     <string name="settings_default_notifications">Default notifications</string>
+    <string name="settings_deadline_notifications">Deadline notifications</string>
     <string name="settings_add_notification">Add notification</string>
     <string name="settings_morning_notification_time">Morning notification time</string>
     <string name="settings_hour">Hour</string>
@@ -139,10 +163,18 @@
 
     <!-- Date screen -->
     <string name="date_screen_exclude_occurrence">Exclude %1$s from %2$s</string>
+    <string name="date_screen_range">%1$s – %2$s</string>
+    <plurals name="date_screen_days_count">
+        <item quantity="one">%d day</item>
+        <item quantity="other">%d days</item>
+    </plurals>
 
     <!-- Details Entry -->
     <string name="details_entry_description">Description</string>
     <string name="details_entry_no_duration">no duration</string>
+    <string name="details_entry_next_occurrence">Next: %1$s</string>
+    <string name="entry_calendar_title">Occurrences</string>
+    <string name="cd_show_calendar">Show occurrence calendar</string>
 
     <!-- Task details -->
     <string name="task_details_description">Description</string>
@@ -206,6 +238,10 @@
     <string name="cd_remove">remove</string>
     <string name="cd_tags">Tags</string>
     <string name="cd_plan_dist">show planned distribution</string>
+    <string name="cd_prev_year">previous year</string>
+    <string name="cd_next_year">next year</string>
+    <string name="cd_prev_day_pack">previous days</string>
+    <string name="cd_next_day_pack">next days</string>
 
     <!-- Notifications -->
     <string name="notification_channel_normal">Normal</string>
@@ -214,6 +250,7 @@
     <string name="notification_today_tasks_title">Today\'s tasks: %1$d</string>
     <string name="notification_tap_to_view">Tap to view</string>
     <string name="notification_upcoming_event">Upcoming event in %1$s\n(at %2$s)</string>
+    <string name="notification_upcoming_deadline">Upcoming deadline in %1$s\n(at %2$s)</string>
 
     <!-- Toasts -->
     <string name="toast_restore_finished">Restore finished</string>

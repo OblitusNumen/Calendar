@@ -90,7 +90,6 @@ CREATE TABLE IF NOT EXISTS "TaskLogs"
     "startOfDayTimestamp"   BIGINT  NOT NULL,
     "timeZoneId"            TEXT    NOT NULL,
     "timeConsumed"          INTEGER NOT NULL,
-    "timePlanned"           INTEGER NOT NULL,
     FOREIGN KEY ("taskId") REFERENCES "Tasks" ("entryId")
 );
 

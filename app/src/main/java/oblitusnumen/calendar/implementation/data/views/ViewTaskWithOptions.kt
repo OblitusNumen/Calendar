@@ -9,14 +9,13 @@ import oblitusnumen.calendar.implementation.data.tables.EventOptions
 import oblitusnumen.calendar.implementation.data.tables.Task
 import oblitusnumen.calendar.implementation.toColor
 import java.time.ZoneId
-import java.time.ZonedDateTime
 
 class ViewTaskWithOptions(
     id: Int,
     val optionsId: Int,
     val name: String,
     val color: Color,
-    startConstraintTimestamp: Long,
+    startConstraintTimestamp: Long?,
     deadlineTimestamp: Long,
     timeZoneId: ZoneId,
     timeConsumed: Int,
@@ -91,8 +90,7 @@ class ViewTaskWithOptions(
                         cursor.getInt(optionsIdx),
                         cursor.getString(idxName),
                         cursor.getInt(idxColor).toColor() ?: dbManager.defaultTaskColor,
-                        // FIXME: if null?
-                        cursor.getLongOrNull(idxStart) ?: ZonedDateTime.now().toEpochSecond(),
+                        cursor.getLongOrNull(idxStart),
                         cursor.getLong(idxEnd),
                         ZoneId.of(cursor.getString(idxZoneId)),
                         cursor.getInt(idxTimeConsumed),

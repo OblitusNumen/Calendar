@@ -14,25 +14,32 @@ class Task(val index: Int, val duration: Int, var startLimit: Int, var endLimit:
 fun planTasks(
     tasks: Array<oblitusnumen.calendar.implementation.data.tables.Task>,
     links: Collection<TaskLink>,
-    now: Long
+    now: Long,
+    todayConsumed: Map<Int, Int> = emptyMap(),
 ): Map<Int, Array<Int>> {
+    val fictitious = todayConsumed.entries.filter { it.value > 0 }.toList()
     if (tasks.isEmpty()) return emptyMap()
-    // id translations
+    // id translations (real tasks only; fictitious entries have no reverse mapping)
     val indexTranslation: Map<Int, Int> = tasks.withIndex().associateBy({ it.value.taskId!! }, { it.index })
     val indexTranslationReverse: Map<Int, Int> = tasks.withIndex().associateBy({ it.index }, { it.value.taskId!! })
     // FIXME: filtering links
     val links =
         links.filter { indexTranslation.containsKey(it.predecessor) && indexTranslation.containsKey(it.successor) }
             .map { TaskLink(indexTranslation[it.predecessor]!!, indexTranslation[it.successor]!!) }
-    val tasks = Array(tasks.size) { idx ->
-        val task = tasks[idx]
-        Task(
-            idx, task.timeRemaining,
-            // FIXME: calculating limits
-            task.startConstraintTimestamp?.let { (it - now + 86399) / 86400 }?.toInt()?.let { if (it < 0) 0 else it }
-                ?: 0,
-            ((task.deadlineTimestamp - now + 86399) / 86400).toInt()
-        )
+    val realCount = tasks.size
+    val tasks = Array(realCount + fictitious.size) { idx ->
+        if (idx < realCount) {
+            val task = tasks[idx]
+            Task(
+                idx, task.timeRemaining,
+                // FIXME: calculating limits
+                task.startConstraintTimestamp?.let { (it - now + 86399) / 86400 }?.toInt()?.let { if (it < 0) 0 else it }
+                    ?: 0,
+                ((task.deadlineTimestamp - now + 86399) / 86400).toInt()
+            )
+        } else {
+            Task(idx, fictitious[idx - realCount].value, 0, 0)
+        }
     }
 
     // initialization and checks
@@ -82,8 +89,10 @@ fun planTasks(
 
     checkResult(tasks, links, time)
 
-    // id translation
-    return time.withIndex().associateBy({ indexTranslationReverse[it.index]!! }, { it.value })
+    // id translation — emit only entries with a real-task reverse mapping
+    return time.withIndex()
+        .filter { indexTranslationReverse.containsKey(it.index) }
+        .associate { indexTranslationReverse[it.index]!! to it.value }
 }
 
 // flatten tree
@@ -247,7 +256,7 @@ fun rangeOptimizingAlgorithm(
         var exit = true
         var day = from
         while (day < to) {
-            var toMove = (sumByDay(time, day) - avg[day - from]) / 2
+            var toMove = (sumByDay(time, day) - avg[day - from])
             if (toMove <= 0) {
                 day++
                 continue
@@ -291,7 +300,7 @@ fun rangeOptimizingAlgorithm(
         var exit = true
         var day = to
         while (day > from) {
-            var toMove = (sumByDay(time, day) - avg[day - from]) / 2
+            var toMove = (sumByDay(time, day) - avg[day - from])
             if (toMove <= 0) {
                 day--
                 continue

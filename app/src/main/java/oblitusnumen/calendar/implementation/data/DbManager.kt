@@ -13,9 +13,11 @@ import oblitusnumen.calendar.implementation.*
 import oblitusnumen.calendar.implementation.data.tables.*
 import oblitusnumen.calendar.implementation.data.tables.Task
 import oblitusnumen.calendar.implementation.data.views.ViewNotificationDateWithOptions
+import oblitusnumen.calendar.implementation.data.views.ViewTaskWithOptions
 import oblitusnumen.calendar.implementation.notifications.NotificationBroadcastReceiver.Companion.LAST_NOTIFICATION_TIME_PREFERENCE_NAME
 import oblitusnumen.calendar.implementation.notifications.NotificationBroadcastReceiver.Companion.scheduleMorningNotification
 import oblitusnumen.calendar.implementation.notifications.NotificationBroadcastReceiver.Companion.scheduleNotification
+import oblitusnumen.calendar.implementation.notifications.PendingDeadlineNotification
 import oblitusnumen.calendar.implementation.notifications.PendingNotification
 import java.io.File
 import java.time.ZoneId
@@ -36,6 +38,23 @@ class DbManager(val context: Context) :
                     notifications.joinToString(",") { it.first.toString() + "_" + it.second })
             }
             field = notifications
+        }
+    var deadlineNotifications: List<Pair<Period, Boolean>> =
+        getSharedPrefs(context).getString(DEADLINE_NOTIFICATIONS_PREF_NAME, null)
+            ?.takeIf { it.isNotEmpty() }
+            ?.split(",")
+            ?.map {
+                val notification = it.split("_")
+                Period.decode(notification[0]) to (notification[1] != "0")
+            } ?: emptyList()
+        set(notifications) {
+            getSharedPrefs(context).edit {
+                putString(
+                    DEADLINE_NOTIFICATIONS_PREF_NAME,
+                    notifications.joinToString(",") { it.first.toString() + "_" + it.second })
+            }
+            field = notifications
+            tryScheduleNotification()
         }
     val filesDir: File = context.filesDir
     val contentResolver: ContentResolver = context.contentResolver
@@ -101,7 +120,13 @@ class DbManager(val context: Context) :
     }
 
     fun tryScheduleNotification(now: Long = System.currentTimeMillis() / 1000) {
-        val nextNotificationTime = getNextNotificationTime(now)
+        val nextEvent = getNextNotificationTime(now)
+        val nextDeadline = getNextDeadlineNotificationTime(now)
+        val nextNotificationTime = when {
+            nextEvent == null -> nextDeadline
+            nextDeadline == null -> nextEvent
+            else -> minOf(nextEvent, nextDeadline)
+        }
         getSharedPrefs(context).edit { putLong(LAST_NOTIFICATION_TIME_PREFERENCE_NAME, now) }
         if (nextNotificationTime != null)
             scheduleNotification(context, nextNotificationTime * 1000)
@@ -117,6 +142,22 @@ class DbManager(val context: Context) :
                 notificationTime = nnt
         }
 
+        return notificationTime
+    }
+
+    private fun getNextDeadlineNotificationTime(timeStamp: Long): Long? {
+        if (deadlineNotifications.isEmpty()) return null
+        var notificationTime: Long? = null
+        for (task in Task.all(this)) {
+            if (task.isDone) continue
+            if (task.deadlineTimestamp <= timeStamp) continue
+            val deadlineZdt = getZonedFromEpochSeconds(task.deadlineTimestamp)
+            for ((offset, _) in deadlineNotifications) {
+                val nnt = offset.addTo(deadlineZdt, -1).toEpochSecond()
+                if (nnt <= timeStamp) continue
+                if (notificationTime == null || nnt < notificationTime) notificationTime = nnt
+            }
+        }
         return notificationTime
     }
 
@@ -140,6 +181,22 @@ class DbManager(val context: Context) :
         }
 
         return dedupeAndSort(notifications)
+    }
+
+    fun getPendingDeadlineNotificationsInRange(from: Long, to: Long): List<PendingDeadlineNotification> {
+        if (deadlineNotifications.isEmpty()) return emptyList()
+        val list = mutableListOf<PendingDeadlineNotification>()
+        val tasks = ViewTaskWithOptions.all(this)
+        for (task in tasks) {
+            if (task.isDone) continue
+            val deadlineZdt = getZonedFromEpochSeconds(task.deadlineTimestamp)
+            for ((offset, sound) in deadlineNotifications) {
+                val nnt = offset.addTo(deadlineZdt, -1).toEpochSecond()
+                if (nnt in (from + 1)..to)
+                    list.add(PendingDeadlineNotification(task, offset, sound, nnt))
+            }
+        }
+        return list.sortedBy { it.notificationDateTime }
     }
 
     private fun dedupeAndSort(notifications: List<PendingNotification>): List<PendingNotification> {
@@ -167,10 +224,7 @@ class DbManager(val context: Context) :
     }
 
     override fun onUpgrade(sqLiteDatabase: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        if (oldVersion < 2)
-            sqLiteDatabase.execSQL(
-                "ALTER TABLE ${TaskLog.TABLE_NAME} ADD COLUMN ${TaskLog.COLUMN_NAME_TIME_PLANNED} INTEGER NOT NULL DEFAULT 0"
-            )
+        throw IllegalStateException()
     }
 
     override fun onDowngrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
@@ -360,13 +414,14 @@ class DbManager(val context: Context) :
     }
 
     companion object {
-        const val DATABASE_VERSION: Int = 2
+        const val DATABASE_VERSION: Int = 1
         const val DB_NAME: String = "entries.db"
 
         private const val SHARED_PREFERENCES_NAME: String = "calendar_preferences"
         private const val DEFAULT_ENTRY_COLOR_PREF_NAME: String = "default_entry_color"
         private const val DEFAULT_TAG_COLOR_PREF_NAME: String = "default_tag_color"
         private const val DEFAULT_NOTIFICATIONS_PREF_NAME: String = "default_notifications"
+        private const val DEADLINE_NOTIFICATIONS_PREF_NAME: String = "deadline_notifications"
         private const val MORNING_NOTIFICATION_HOUR_PREF: String = "morning_notification_hour"
         private const val MORNING_NOTIFICATION_MINUTE_PREF: String = "morning_notification_minute"
 

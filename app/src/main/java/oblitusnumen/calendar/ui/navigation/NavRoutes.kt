@@ -43,6 +43,18 @@ sealed class NavRoutes(private val path: String, val route: String = path) {
         }
     }
 
+    data object TaskLogs : NavRoutes("taskLogs") {
+        fun navHere(navController: NavController) {
+            navController.navigate(route)
+        }
+    }
+
+    data object YearView : NavRoutes("yearView") {
+        fun navHere(navController: NavController) {
+            navController.navigate(route)
+        }
+    }
+
     data object TaskEdit : NavRoutes("taskEdit", route = "taskEdit/{task}") {
         private const val task = "task"
 

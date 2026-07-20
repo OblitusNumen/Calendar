@@ -123,15 +123,12 @@ fun EditTaskScreen(
 
             // choose tags
             item {
-                Row(
-                    Modifier.fillMaxWidth().padding(top = 8.dp).clickable { tagChoose = true }
-                        .padding(horizontal = 8.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(Icons.Filled.Star, null, Modifier.padding(end = 8.dp))
-                    Text(stringResource(R.string.edit_task_choose_tags), style = MaterialTheme.typography.bodyLarge)
-                }
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
+                AddActionRow(
+                    icon = Icons.Filled.Star,
+                    label = stringResource(R.string.edit_task_choose_tags),
+                    onClick = { tagChoose = true }
+                )
+                SectionDivider()
             }
 
             //release day
@@ -184,46 +181,48 @@ fun EditTaskScreen(
                             maxLines = 1
                         )
 
-                        // pick date
-                        Text(
-                            modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp, vertical = 8.dp)
-                                .weight(1f).clickable {
-                                    dateTimePicker.datePick({}, {
-                                        localDate = it
-                                        viewModel.setStartConstraint(
-                                            ZonedDateTime.of(
-                                                localDate.atTime(localTime),
-                                                state.timeZoneId
-                                            ).toEpochSecond()
-                                        )
-                                    }, localDate)
-                                },
-                            text = localDate.format(DateTimeFormatter.ofPattern("dd MMM yyyy ")),
-                            style = MaterialTheme.typography.bodyLarge,
-                            maxLines = 1
-                        )
+                        if (state.hasStartConstraint) {
+                            // pick date
+                            Text(
+                                modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp, vertical = 8.dp)
+                                    .weight(1f).clickable {
+                                        dateTimePicker.datePick({}, {
+                                            localDate = it
+                                            viewModel.setStartConstraint(
+                                                ZonedDateTime.of(
+                                                    localDate.atTime(localTime),
+                                                    state.timeZoneId
+                                                ).toEpochSecond()
+                                            )
+                                        }, localDate)
+                                    },
+                                text = localDate.format(DateTimeFormatter.ofPattern("dd MMM yyyy ")),
+                                style = MaterialTheme.typography.bodyLarge,
+                                maxLines = 1
+                            )
 
-                        // pick time
-                        Text(
-                            modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp, vertical = 8.dp)
-                                .clickable {
-                                    dateTimePicker.timePick({}, {
-                                        localTime = it
-                                        viewModel.setStartConstraint(
-                                            ZonedDateTime.of(
-                                                localDate.atTime(localTime),
-                                                state.timeZoneId
-                                            ).toEpochSecond()
-                                        )
-                                    }, localTime)
-                                },
-                            text = localTime.format(DateTimeFormatter.ofPattern("HH:mm")),
-                            style = MaterialTheme.typography.bodyLarge,
-                            maxLines = 1
-                        )
+                            // pick time
+                            Text(
+                                modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp, vertical = 8.dp)
+                                    .clickable {
+                                        dateTimePicker.timePick({}, {
+                                            localTime = it
+                                            viewModel.setStartConstraint(
+                                                ZonedDateTime.of(
+                                                    localDate.atTime(localTime),
+                                                    state.timeZoneId
+                                                ).toEpochSecond()
+                                            )
+                                        }, localTime)
+                                    },
+                                text = localTime.format(DateTimeFormatter.ofPattern("HH:mm")),
+                                style = MaterialTheme.typography.bodyLarge,
+                                maxLines = 1
+                            )
+                        }
                     }
                 }
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
+                SectionDivider()
             }
 
             //deadline
@@ -245,9 +244,11 @@ fun EditTaskScreen(
                         )
                     }
 
+                    Spacer(Modifier.width(48.dp))
+
                     Text(
                         modifier = Modifier.align(Alignment.CenterVertically).padding(vertical = 8.dp)
-                            .padding(start = 40.dp),
+                            .weight(1f),
                         text = stringResource(R.string.edit_task_deadline_at),
                         style = MaterialTheme.typography.bodyLarge,
                         maxLines = 1
@@ -256,7 +257,6 @@ fun EditTaskScreen(
                     // pick date
                     Text(
                         modifier = Modifier.align(Alignment.CenterVertically).padding(4.dp, vertical = 8.dp)
-                            .padding(start = 24.dp)
                             .weight(1f).clickable {
                                 dateTimePicker.datePick({}, {
                                     localDate = it
@@ -292,18 +292,27 @@ fun EditTaskScreen(
                         maxLines = 1
                     )
                 }
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
+                SectionDivider()
             }
 
             //time zone
             item {
                 TimeZoneSelector(state.timeZoneId.toString(), { viewModel.setTimeZone(ZoneId.of(it)) })
+                SectionDivider()
             }
 
             // time consumed
             item {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(stringResource(R.string.edit_task_time_elapsed), Modifier.padding(horizontal = 8.dp).weight(1f))
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        stringResource(R.string.edit_task_time_elapsed),
+                        Modifier.weight(1f),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
 
                     IntTextField(
                         state.timeConsumed / QUARTERS_PER_HOUR,
@@ -326,8 +335,16 @@ fun EditTaskScreen(
 
             // time remaining
             item {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(stringResource(R.string.edit_task_time_remaining), Modifier.padding(horizontal = 8.dp).weight(1f))
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        stringResource(R.string.edit_task_time_remaining),
+                        Modifier.weight(1f),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
 
                     IntTextField(
                         state.timeRemaining / QUARTERS_PER_HOUR,
@@ -349,12 +366,8 @@ fun EditTaskScreen(
             }
 
             item {
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
-                Text(
-                    stringResource(R.string.edit_task_predecessors),
-                    Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                    style = MaterialTheme.typography.titleMedium
-                )
+                SectionDivider()
+                SectionHeader(stringResource(R.string.edit_task_predecessors), emphasised = true)
             }
 
             // predecessors
@@ -385,16 +398,11 @@ fun EditTaskScreen(
                         })
                 }
 
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
             }
 
             item {
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
-                Text(
-                    stringResource(R.string.edit_task_successors),
-                    Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                    style = MaterialTheme.typography.titleMedium
-                )
+                SectionDivider()
+                SectionHeader(stringResource(R.string.edit_task_successors), emphasised = true)
             }
 
             // successors
